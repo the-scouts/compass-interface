@@ -1,7 +1,7 @@
 import json
 import time
-from datetime import datetime
-from io import StringIO
+import datetime
+import io
 
 import pandas as pd
 import requests
@@ -25,11 +25,7 @@ class CompassLogon:
         self.credentials = credentials
         self.role_to_use = role_to_use
 
-        self._session = self.do_logon()
-
-    @property
-    def session(self) -> requests.sessions.Session:
-        return self._session
+        self.session: requests.sessions.Session = self.do_logon()
 
     @property
     def mrn(self) -> int:
@@ -42,6 +38,25 @@ class CompassLogon:
     @property
     def jk(self) -> int:
         return self._jk
+
+    def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.sessions.Session:
+        # create session and get ASP.Net Session ID cookie from the compass server
+        s = self.create_session()
+
+        auth = credentials if credentials else self.credentials
+        logon_response = self.logon(s, auth)
+
+        # Create and set auth headers for post requests
+        self.update_authentication(s, logon_response)
+
+        if role_to_use:
+            self.change_role(s, role_to_use, logon_response)
+        elif self.role_to_use:
+            self.change_role(s, self.role_to_use, logon_response)
+        else:
+            print("not changing role")
+
+        return s
 
     @staticmethod
     def create_session() -> requests.sessions.Session:
@@ -84,6 +99,10 @@ class CompassLogon:
 
         return form  # quick fix before doing auth headers and role change properly
 
+    def update_authentication(self, s: requests.sessions.Session, form_tree) -> None:
+        auth_headers = self.create_auth_headers(form_tree)
+        s.headers.update(auth_headers)
+
     # @staticmethod
     def create_auth_headers(self, form_tree) -> dict:
         compass_dict = {}
@@ -101,20 +120,6 @@ class CompassLogon:
             "Authorization": f'{self._contact_name}~{self._member_role_number}',
             "SID": session_id
         }
-
-    def update_authentication(self, s: requests.sessions.Session, form_tree) -> None:
-        auth_headers = self.create_auth_headers(form_tree)
-        s.headers.update(auth_headers)
-
-    @staticmethod
-    def get_available_roles(form_tree):
-        # get roles from compass page (list of option tags)
-        roles_selector = form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles']
-
-        # List comp into dict comp to generate role name: role number dict
-        roles_dict = {role.text: role.get("value") for role in roles_selector.getchildren()}
-
-        return roles_dict
 
     def change_role(self, s: requests.sessions.Session, new_role, form_tree):
         print("Changing role")
@@ -146,28 +151,15 @@ class CompassLogon:
         self.update_authentication(s, new_form_tree)
         print(f"Role changed to {new_role}")
 
-    def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.sessions.Session:
-        # create session and get ASP.Net Session ID cookie from the compass server
-        s = self.create_session()
+    @staticmethod
+    def get_available_roles(form_tree):
+        # get roles from compass page (list of option tags)
+        roles_selector = form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles']
 
-        auth = credentials if credentials else self.credentials
-        logon_response = self.logon(s, auth)
+        # List comp into dict comp to generate role name: role number dict
+        roles_dict = {role.text: role.get("value") for role in roles_selector.getchildren()}
 
-        # Create and set auth headers for post requests
-        self.update_authentication(s, logon_response)
-
-        if role_to_use:
-            self.change_role(s, role_to_use, logon_response)
-        elif self.role_to_use:
-            self.change_role(s, self.role_to_use, logon_response)
-        else:
-            print("not changing role")
-
-        return s
-
-    @session.setter
-    def session(self, value):
-        self._session = value
+        return roles_dict
 
 
 class CompassPeopleScraper:
@@ -472,7 +464,7 @@ class CompassHierarchyScraper:
     def get_members_with_roles_in_unit(self, unit_number):
         # Construct request data
         # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
-        dt = datetime.now()
+        dt = datetime.datetime.now()
         dt_milli = dt.microsecond // 1000  # Get the the milliseconds from microseconds
         time_uid = f"{dt.hour}{dt.minute}{dt_milli}"
         data = {"SearchType": "HIERARCHY", "OrganisationNumber": unit_number, "UI": time_uid}
@@ -506,7 +498,7 @@ class CompassHierarchyScraper:
 
 class CompassHierarchy:
     # It is important that the separators are tabs, as there are spaces in the values
-    hierarchy_levels = pd.read_csv(StringIO('''
+    hierarchy_levels = pd.read_csv(io.StringIO('''
     level	parent_level	type				endpoint			has_children
 0	1		Organisation	Countries			/countries			True
 1	1		Organisation	Org Sections		/hq/sections		False
