@@ -8,10 +8,10 @@ if __name__ == '__main__':
     compass_role_to_use = 'Regional Administrator'
     # compass_role_to_use = 'Country Scout Active Support Member'
     # compass_role_to_use = 'County Executive Committee Member'
-    l = compass_logon = CompassLogon(auth_keys, compass_role_to_use)
-    s = compass_session = compass_logon.session
-    hierarchy = CompassHierarchy(compass_session)
-    people = CompassPeople(compass_session)
+    c_logon = CompassLogon(auth_keys, compass_role_to_use)
+    c_session = c_logon.session
+    hierarchy = CompassHierarchy(c_session)
+    people = CompassPeople(c_session)
 
     reports = {
         37: "Member Directory",
@@ -23,27 +23,27 @@ if __name__ == '__main__':
 
     def jk_hash():
         data = {
-            "pKeyHash": f"{int(datetime.now().timestamp())}{l.jk}{l.mrn}{l.cn}",  # JK, MRN & CN are all required.
-            "pCN": l.cn,
+            "pKeyHash": f"{int(datetime.now().timestamp())}{c_logon.jk}{c_logon.mrn}{c_logon.cn}",  # JK, MRN & CN are all required.
+            "pCN": c_logon.cn,
         }
         rest_data = [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
-        s.post(f"{CompassSettings.base_url}/System/Preflight", json=rest_data, verify=False)
+        c_session.post(f"{CompassSettings.base_url}/System/Preflight", json=rest_data, verify=False)
         return data["pKeyHash"]
 
 
     headers = {
         'Auth': jk_hash()
     }
-    params={
+    params = {
         "pReportNumber": f"{52}",
-        "pMemberRoleNumber": f"{l.mrn}",
+        "pMemberRoleNumber": f"{c_logon.mrn}",
         # "__": "~",  # This is in the JS source but seems unnecessary
-        "x1": f"{l.cn}",
-        "x2": f"{l.jk}",
-        "x3": f"{l.mrn}",
+        "x1": f"{c_logon.cn}",
+        "x2": f"{c_logon.jk}",
+        "x3": f"{c_logon.mrn}",
     }
     print('Getting report token')
-    rep = s.get("https://compass.scouts.org.uk/JSon.svc/ReportToken", headers=headers, params=params)
+    rep = c_session.get("https://compass.scouts.org.uk/JSon.svc/ReportToken", headers=headers, params=params)
     rep.raise_for_status()  # TODO json result could be -1 to -4 as well, check for those
 
     run_report_url = rep.json().get('d')
@@ -92,9 +92,9 @@ if __name__ == '__main__':
     }
 
     print('Generating report')
-    report = s.post(f"{CompassSettings.base_url}/{run_report_url}")
+    report = c_session.post(f"{CompassSettings.base_url}/{run_report_url}")
     report.raise_for_status()
-    report2 = s.post(f"{CompassSettings.base_url}/{run_report_url}", data=run_report_data)
+    report2 = c_session.post(f"{CompassSettings.base_url}/{run_report_url}", data=run_report_data)
     report2.raise_for_status()
     report_export_url = re.search(r'"ExportUrlBase":"(.*?)"', report2.text).group(1).encode().decode("unicode-escape")
     # report_export_url_prefix = report_export_url.split("?")[0][1:]
@@ -102,12 +102,10 @@ if __name__ == '__main__':
     # report_export_url_data["Format"] = "CSV"
     print('Exporting report')
     # report_csv_content = s.get(f"{CompassSettings.base_url}/{report_export_url_prefix}", params=report_export_url_data)
-    report_csv_content = s.get(f"{CompassSettings.base_url}{report_export_url}CSV")
+    report_csv_content = c_session.get(f"{CompassSettings.base_url}{report_export_url}CSV")
     print('Saving report')
     with open('export_report all.csv', 'wb') as file:
         file.write(report_csv_content.content)
-
-
 
     # All works, but no control over what exported, currently using default settings.
 
@@ -142,5 +140,3 @@ if __name__ == '__main__':
     # View DBS    : https://compass.scouts.org.uk/MemberProfile.aspx?CN=183755&Page=DISCLOSURES&TAB
 
     # View permit detail : https://compass.scouts.org.uk/Popups/Maint/NewPermit.aspx?CN=12047820&VIEW=64093&UseCN=849454
-
-
