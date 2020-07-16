@@ -1,4 +1,4 @@
-name: scouts_mapping
+name: compass-interface
 channels:
   - conda-forge
   - defaults

@@ -1,12 +1,15 @@
-import json
-import time
 import datetime
 import io
+import json
+import time
 
 import pandas as pd
 import requests
+import urllib3
 from lxml import html
-requests.urllib3.disable_warnings(requests.urllib3.exceptions.InsecureRequestWarning)
+
+# Disable requests' warnings about insecure requests
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def safe_xpath(tree, path: str):

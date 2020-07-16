@@ -1,6 +1,10 @@
-from compass_data import CompassSettings, CompassLogon, CompassHierarchy, CompassPeople
-from datetime import datetime
 import re
+from datetime import datetime
+
+from compass_data import CompassHierarchy
+from compass_data import CompassLogon
+from compass_data import CompassPeople
+from compass_data import CompassSettings
 
 # https://stackoverflow.com/a/8831937
 if __name__ == '__main__':
