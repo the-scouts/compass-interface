@@ -1,0 +1,20 @@
+name: scouts_mapping
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.7
+
+  # Scraping
+  - requests
+  - lxml
+
+  # Transforming
+  - pandas
+
+  # Development requirements:
+  - pytest
+  - hypothesis
+  - pytest-cov
+  - pre-commit
+  - black
