@@ -1,22 +1,13 @@
 import re
-from datetime import datetime
 
 from src.compass_hierarchy import CompassHierarchy
 from src.compass_logon import CompassLogon
 from src.compass_people import CompassPeople
 from src.utility import CompassSettings
+from src.utility import jk_hash
 
-# https://stackoverflow.com/a/8831937
-if __name__ == '__main__':
-    auth_keys = ['username', 'password']
-    compass_role_to_use = 'Regional Administrator'
-    # compass_role_to_use = 'Country Scout Active Support Member'
-    # compass_role_to_use = 'County Executive Committee Member'
-    c_logon = CompassLogon(auth_keys, compass_role_to_use)
-    c_session = c_logon.session
-    hierarchy = CompassHierarchy(c_session)
-    people = CompassPeople(c_session)
 
+def get_report(logon: CompassLogon):
     reports = {
         37: "Member Directory",
         52: "Appointments Report",
@@ -25,29 +16,19 @@ if __name__ == '__main__':
         100: "Disclosure Management Report",
     }
 
-    def jk_hash():
-        data = {
-            "pKeyHash": f"{int(datetime.now().timestamp())}{c_logon.jk}{c_logon.mrn}{c_logon.cn}",  # JK, MRN & CN are all required.
-            "pCN": c_logon.cn,
-        }
-        rest_data = [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
-        c_session.post(f"{CompassSettings.base_url}/System/Preflight", json=rest_data, verify=False)
-        return data["pKeyHash"]
-
-
     headers = {
-        'Auth': jk_hash()
+        'Auth': jk_hash(logon)
     }
     params = {
         "pReportNumber": f"{52}",
-        "pMemberRoleNumber": f"{c_logon.mrn}",
+        "pMemberRoleNumber": f"{logon.mrn}",
         # "__": "~",  # This is in the JS source but seems unnecessary
-        "x1": f"{c_logon.cn}",
-        "x2": f"{c_logon.jk}",
-        "x3": f"{c_logon.mrn}",
+        "x1": f"{logon.cn}",
+        "x2": f"{logon.jk}",
+        "x3": f"{logon.mrn}",
     }
     print('Getting report token')
-    rep = c_session.get("https://compass.scouts.org.uk/JSon.svc/ReportToken", headers=headers, params=params)
+    rep = logon.get("https://compass.scouts.org.uk/JSon.svc/ReportToken", headers=headers, params=params)
     rep.raise_for_status()  # TODO json result could be -1 to -4 as well, check for those
 
     run_report_url = rep.json().get('d')
@@ -96,9 +77,9 @@ if __name__ == '__main__':
     }
 
     print('Generating report')
-    report = c_session.post(f"{CompassSettings.base_url}/{run_report_url}")
+    report = logon.post(f"{CompassSettings.base_url}/{run_report_url}")
     report.raise_for_status()
-    report2 = c_session.post(f"{CompassSettings.base_url}/{run_report_url}", data=run_report_data)
+    report2 = logon.post(f"{CompassSettings.base_url}/{run_report_url}", data=run_report_data)
     report2.raise_for_status()
     report_export_url = re.search(r'"ExportUrlBase":"(.*?)"', report2.text).group(1).encode().decode("unicode-escape")
     # report_export_url_prefix = report_export_url.split("?")[0][1:]
@@ -106,16 +87,30 @@ if __name__ == '__main__':
     # report_export_url_data["Format"] = "CSV"
     print('Exporting report')
     # report_csv_content = s.get(f"{CompassSettings.base_url}/{report_export_url_prefix}", params=report_export_url_data)
-    report_csv_content = c_session.get(f"{CompassSettings.base_url}{report_export_url}CSV")
+    report_csv_content = logon.get(f"{CompassSettings.base_url}{report_export_url}CSV")
     print('Saving report')
     with open('export_report all.csv', 'wb') as file:
         file.write(report_csv_content.content)
 
     # All works, but no control over what exported, currently using default settings.
 
+
+if __name__ == '__main__':
+    auth_keys = ['user', 'pass']
+    compass_role_to_use = 'Regional Administrator'
+    # compass_role_to_use = 'Country Scout Active Support Member'
+    # compass_role_to_use = 'County Executive Committee Member'
+    c_logon = CompassLogon(auth_keys, compass_role_to_use)
+    hierarchy = CompassHierarchy(c_logon.session)
+    people = CompassPeople(c_logon.session)
+
+    # get_report(c_logon)
+
     # SCRATCH #
-    # leah_sier_id = 11861706
-    # a = people._roles_tab(leah_sier_id)
+    leah_sier_id = 11861706
+    a = people._roles_tab(leah_sier_id)
+    b = people.get_member_data(leah_sier_id)
+    print()
 
     # Get all units within a given OU
     # surrey_county_id = 10000115
