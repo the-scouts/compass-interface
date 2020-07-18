@@ -1,3 +1,4 @@
+import re
 import time
 
 import pandas as pd
@@ -7,10 +8,12 @@ from lxml import html
 from src.utility import CompassSettings
 from src.utility import safe_xpath
 
+normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
+
 
 class CompassPeopleScraper:
-    def __init__(self):
-        self.s = None
+    def __init__(self, session: requests.sessions.Session):
+        self.s = session
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: str) -> dict:
         profile_tab = profile_tab.upper()
@@ -38,11 +41,11 @@ class CompassPeopleScraper:
         email = safe_xpath(tree, './/label/b[contains(text(),"Email")]/../../../td[3]//text()')
 
         return {
-            "Membership_Num": membership_num,
-            "Forenames": first_name,
-            "Surname": last_names,
-            "Known_As": known_as,
-            "Email": email,
+            "membership_number": membership_num,
+            "forenames": first_name,
+            "surname": last_names,
+            "known_as": known_as,
+            "email": email,
         }
 
     def get_roles_tab(self, membership_num: int):
@@ -114,10 +117,15 @@ class CompassPeopleScraper:
 
 class CompassPeople:
     def __init__(self, session: requests.sessions.Session):
-        self._scraper = CompassPeopleScraper()
-        self._scraper.s = session
+        self._scraper = CompassPeopleScraper(session)
 
     def get_member_data(self, membership_num: int):
+        """
+        Gets Compliance Report data for a specified member
+
+        :param membership_num:
+        :return:
+        """
 
         # Columns for the compliance report in order
         compliance_columns = [
@@ -132,45 +140,58 @@ class CompassPeople:
         roles_data = self._roles_tab(membership_num)
         if roles_data.empty:
             return pd.DataFrame(columns=compliance_columns)
-        training_data = self._scraper.get_training_tab(membership_num)
-        open_roles = roles_data["RoleStatus"].loc[
-            (roles_data["RoleStatus"] != "Closed") & (roles_data["location_id"] > 0)].index.to_list()
+
+        full_roles_mask = (roles_data["role_status"] != "Closed") & (roles_data["location_id"] > 0)
+        open_roles = roles_data.index[full_roles_mask].to_list()
         roles_detail_array = [self._scraper.get_roles_detail(role_number) for role_number in open_roles]
+        training_data = self._training_tab(membership_num)
+
+        compliance_data = pd.DataFrame(roles_detail_array)
+        compliance_data = compliance_data.set_index(["role_number"])
+        compliance_data = compliance_data.join(roles_data)
+        compliance_data = compliance_data.join(training_data)
+        compliance_data = compliance_data.reindex(columns=compliance_columns)
+        compliance_data.columns = compliance_data.columns.str.replace(normalise_cols, r"_\1\2", regex=True).str.lower()
+
+        compliance_data['membership_number'] = membership_num
+
         personal_details = self._scraper.get_personal_tab(membership_num)
-
-        compliance_data = pd.DataFrame(roles_detail_array) \
-            .set_index(["role_number"]) \
-            .join(roles_data) \
-            .join(training_data) \
-            .reindex(columns=compliance_columns)
-
-        compliance_data['Membership_Number'] = membership_num
-
         for key, value in personal_details.items():
             compliance_data[key] = value
 
-        # Fill all rows with Mandatory Ongoing Learning data
-        mol_columns = ['SafetyTraining', 'SafeguardingTraining', 'FirstAidTraining']
-        mol_data = compliance_data[mol_columns].dropna().iloc[0:1]
-        compliance_data[mol_columns] = compliance_data[mol_columns].fillna(mol_data)
+        # # Fill all rows with Mandatory Ongoing Learning data
+        # mol_columns = ['safety_training', 'safeguarding_training', 'first_aid_training']
+        # mol_data = compliance_data[mol_columns].dropna().iloc[0:1]
+        # compliance_data[mol_columns] = compliance_data[mol_columns].fillna(mol_data)
+        #
+        # date_cols = [
+        #     "role_start_date", "role_end_date",
+        #     "ce_check", "review_date", "essential_info", "personal_learning_plan", "tools4_role", "gdpr",
+        #     "wood_badge_received", "safety_training", "safeguarding_training", "first_aid_training"
+        # ]
+        #
+        # # Covert to dd/mm/YYYY format, and get values where it isn't 'NaT', as NaT gets stringifyed
+        # for col in date_cols:
+        #     compliance_data[col] = pd.to_datetime(compliance_data[col])\
+        #         .dt.strftime('%d/%m/%Y')\
+        #         .str.replace("NaT", "", regex=False)
 
-        date_cols = [
-            "Role_Start_Date", "Role_End_Date",
-            "CE_Check", "Review_date", "Essential_Info", "PersonalLearningPlan", "Tools4Role", "GDPR",
-            "WoodBadgeReceived", "SafetyTraining", "SafeguardingTraining", "FirstAidTraining"
-        ]
+        text_cols = compliance_data.columns[compliance_data.dtypes == "object"]
+        for col in text_cols:
+            compliance_data[col] = compliance_data[col].str.strip()
 
-        # Covert to dd/mm/YYYY format, and get values where it isn't 'NaT', as NaT gets stringifyed
-        compliance_data[date_cols] = compliance_data[date_cols].apply(
-            lambda x: pd.to_datetime(x).dt.strftime('%d/%m/%Y'))
-        compliance_data[date_cols] = compliance_data[date_cols].where(compliance_data[date_cols] != "NaT")
+        return compliance_data
 
-        text_cols = [col for col, dtype in compliance_data.dtypes.to_dict().items() if dtype == pd.np.dtype("O")]
-        compliance_data[text_cols] = compliance_data[text_cols].apply(lambda x: x.str.strip())
+    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> pd.DataFrame:
+        """
+        Gets the data from the Role tab in Compass for the specified member.
 
-        return compliance_data.reindex(columns=compliance_columns)
+        Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
 
-    def _roles_tab(self, membership_num: int) -> pd.DataFrame:
+        :param membership_num:
+        :param keep_non_volunteer_roles:
+        :return:
+        """
         print(f"getting roles tab for member number: {membership_num}")
         response = self._scraper.get_roles_tab(membership_num)
         tree = html.fromstring(response.get("content"))
@@ -199,11 +220,14 @@ class CompassPeople:
         roles_data["location_id"] = pd.to_numeric(roles_data["location_id"]).astype("Int64")  # handles NaNs
         roles_data["membership_num"] = membership_num
 
-        # Remove OHs from list
-        try:
-            roles_data = roles_data.loc[roles_data["role_type"] != "Occasional Helper"]
-        except KeyError:
-            roles_data = roles_data.loc[~roles_data["Role"].str.lower().str.contains("occasional helper")]
+        if not keep_non_volunteer_roles:
+            # Remove OHs from list
+            try:
+                roles_data = roles_data.loc[roles_data["role_class"] != "Helper"]
+            except KeyError:
+                roles_data = roles_data.loc[~roles_data["Role"].str.lower().str.contains("occasional helper")]
+
+            # TODO remove Network Members, remove PVG roles
 
         return roles_data
 
