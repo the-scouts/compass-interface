@@ -1,32 +1,67 @@
 import datetime
-import io
 import json
+from pathlib import Path
 
 import pandas as pd
 import requests
 from lxml import html
 
 from src.utility import CompassSettings
+from src.utility import compass_restify
+
+
+def create_hierarchy_levels() -> pd.DataFrame:
+    data = pd.DataFrame(
+        columns=['level', 'type'],
+        data=[
+            [1, 'Countries'],
+            [1, 'HQ Sections'],
+            [2, 'Regions'],
+            [2, 'Country Sections'],
+            [3, 'Counties'],
+            [3, 'Region Sections'],
+            [4, 'Districts'],
+            [4, 'County Sections'],
+            [5, 'Groups'],
+            [5, 'District Sections'],
+            [6, 'Group Sections']
+        ]
+    )
+
+    parent_level_map = {
+        1:  "Organisation",
+        2:  "Country",
+        3:  "Region",
+        4:  "County",
+        5:  "District",
+        6:  "Group",
+    }
+
+    data["parent_level"] = data["level"].map(parent_level_map)
+    data["endpoint"] = "/" + data["type"].str.lower().str.replace(" ", "/", regex=False)
+    data["has_children"] = data["endpoint"].str.rpartition("/").iloc[:, -1] != "sections"
+
+    return data
 
 
 class CompassHierarchyScraper:
-    def __init__(self):
-        self._s = None
+    def __init__(self, session: requests.sessions.Session):
+        self.s: requests.sessions.Session = session
 
-    @property
-    def s(self):
-        return self._s
+    def get(self, url, **kwargs):
+        return self.s.get(url, **kwargs)
 
-    @s.setter
-    def s(self, session: requests.sessions.Session):
-        self._s = session
+    def post(self, url, **kwargs):
+        data = kwargs.pop("data", None)
+        json_ = kwargs.pop("json", None)
+        return self.s.post(url, data=data, json=json_, **kwargs)
 
-    def get_units_from_hierarchy(self, parent_unit: int, level: str, ) -> list:
+    def get_units_from_hierarchy(self, parent_unit: int, level: str) -> list:
         # Get API endpoint from level
         url_string = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["type"] == level, "endpoint"].str.cat()
 
         CompassSettings.total_requests += 1
-        result = self._s.post(f"{CompassSettings.base_url}/hierarchy{url_string}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"}, verify=False)
+        result = self.post(f"{CompassSettings.base_url}/hierarchy{url_string}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"}, verify=False)
 
         # Handle unauthorised access
         if result.json() == {'Message': 'Authorization has been denied for this request.'}:
@@ -51,15 +86,14 @@ class CompassHierarchyScraper:
         dt_milli = dt.microsecond // 1000  # Get the the milliseconds from microseconds
         time_uid = f"{dt.hour}{dt.minute}{dt_milli}"
         data = {"SearchType": "HIERARCHY", "OrganisationNumber": unit_number, "UI": time_uid}
-        rest_data = [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
         # Execute search
         CompassSettings.total_requests += 1
-        self._s.post(f"{CompassSettings.base_url}/Search/Members", json=rest_data, verify=False)
+        self.post(f"{CompassSettings.base_url}/Search/Members", json=compass_restify(data), verify=False)
 
         # Fetch results from Compass
         CompassSettings.total_requests += 1
-        search_results = self._s.get(f"{CompassSettings.base_url}/SearchResults.aspx", verify=False,)
+        search_results = self.get(f"{CompassSettings.base_url}/SearchResults.aspx", verify=False)
 
         # Gets the compass form from the returned document
         form = html.fromstring(search_results.content).forms[0]
@@ -75,44 +109,31 @@ class CompassHierarchyScraper:
             del member['visibility_status']     # This is meaningless as we can only see Y people
             del member['address']               # This doesn't reliably give us postcode and is a lot of data
             del member['role']                  # This is Primary role and so not useful
-
+        # member_data = [prop for member in member_data for prop in member if prop not in ["visibility_status", "address", "role"]]
         return member_data
 
 
 class CompassHierarchy:
-    # It is important that the separators are tabs, as there are spaces in the values
-    hierarchy_levels = pd.read_csv(io.StringIO('''
-    level	parent_level	type				endpoint			has_children
-0	1		Organisation	Countries			/countries			True
-1	1		Organisation	Org Sections		/hq/sections		False
-2	2		Country			Regions				/regions			True
-3	2		Country			Country Sections	/country/sections	False
-4	3		Region			Counties			/counties			True
-5	3		Region			Region Sections		/region/sections	False
-6	4		County			Districts			/districts			True
-7	4		County			County Sections		/county/sections	False
-8	5		District		Groups				/groups				True
-9	5		District		District Sections	/district/sections	False
-10	6		Group			Group Sections		/group/sections		False
-'''), engine='python', sep=r'\t+')
+    hierarchy_levels = create_hierarchy_levels()
 
     def __init__(self, session: requests.sessions.Session):
-        self._scraper = CompassHierarchyScraper()
-        self._scraper.s = session
+        self._scraper = CompassHierarchyScraper(session)
 
     def get_hierarchy(self, compass_id: int, level: str) -> dict:
+        filename = Path(f"hierarchy-{compass_id}.json")
+        # Attempt to see if the hierarchy has been fetched already and is on the local system
         try:
-            # Attempt to see if the hierarchy has been fetched already and is on the local system
-            with open(f"hierarchy-{compass_id}.json", 'r', encoding='utf-8') as f:
-                out = json.load(f)
-                if out:
-                    return out
+            text = filename.read_text(encoding='utf-8')
+            out = json.loads(text)
+            if out:
+                return out
         except FileNotFoundError:
             pass
 
         out = self._get_descendants_recursive(compass_id, hier_level=level)
-        with open(f"hierarchy-{compass_id}.json", 'w', encoding='utf-8') as f:
+        with open(filename, 'w', encoding='utf-8') as f:
             json.dump(out, f, ensure_ascii=False, indent=4)
+
         return out
 
     def _get_descendants_recursive(self, compass_id: int, hier_level: str = None, hier_num: int = None) -> dict:
