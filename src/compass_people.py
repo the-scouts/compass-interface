@@ -1,3 +1,4 @@
+import datetime
 import re
 import time
 
@@ -54,6 +55,7 @@ class CompassPeopleScraper:
     def get_training_tab(self, membership_num: int):
         return self._get_member_profile_tab(membership_num, "Training")
 
+    # See getAppointment in PGS\Needle
     def get_roles_detail(self, role_number: int):
         renamed_levels = {
             'Organisation':                                      'Organisation',
@@ -144,7 +146,7 @@ class CompassPeople:
         full_roles_mask = (roles_data["role_status"] != "Closed") & (roles_data["location_id"] > 0)
         open_roles = roles_data.index[full_roles_mask].to_list()
         roles_detail_array = [self._scraper.get_roles_detail(role_number) for role_number in open_roles]
-        training_data = self._training_tab(membership_num)
+        training_data = self._training_tab(membership_num, return_frame=True)  # TODO rename completion date to WoodBadgeReceived
 
         compliance_data = pd.DataFrame(roles_detail_array)
         compliance_data = compliance_data.set_index(["role_number"])
@@ -182,6 +184,7 @@ class CompassPeople:
 
         return compliance_data
 
+    # See getRole in PGS\Needle
     def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> pd.DataFrame:
         """
         Gets the data from the Role tab in Compass for the specified member.
@@ -231,47 +234,132 @@ class CompassPeople:
 
         return roles_data
 
-    def _training_tab(self, membership_num: int):
+    def _training_tab(self, membership_num: int, return_frame: bool = False) -> dict or pd.DataFrame:
+        """
+        Gets training tab data for a given member
+
+        :param membership_num: Compass ID
+        :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
+        :return:
+        """
         response = self._scraper.get_training_tab(membership_num)
         tree = html.fromstring(response.get("content"))
 
-        first_aid = {
-            "name": safe_xpath(tree, "//tr[@data-ng_code='FA']//text()"),
-            "last_completed": safe_xpath(tree, "//td[@id='tdLastComplete_FA']/label/text()"),
-            "renewal_date": safe_xpath(tree, "//td[@id='tdRenewal_FA']/label/text()")
-        }
+        rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
+        roles = [row for row in rows if "msTR" in row.get("class")]
+        personal_learning_plans = [row for row in rows if "trPLP" in row.get("class")]
 
-        safety = {
-            "name": safe_xpath(tree, "//tr[@data-ng_code='SA']//text()"),
-            "last_completed": safe_xpath(tree, "//td[@id='tdLastComplete_SA']/label/text()"),
-            "renewal_date": safe_xpath(tree, "//td[@id='tdRenewal_SA']/label/text()")
-        }
-
-        safeguarding = {
-            "name": safe_xpath(tree, "//tr[@data-ng_code='SG']//text()"),
-            "last_completed": safe_xpath(tree, "//td[@id='tdLastComplete_SG']/label/text()"),
-            "renewal_date": safe_xpath(tree, "//td[@id='tdRenewal_SG']/label/text()")
-        }
-
-        training_completion = []
-        roles = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr[@class='msTR']")
+        training_roles = {}
         for role in roles:
-            info = {"role_number": int(role.xpath("./@data-ng_mrn")[0]), }
-            completion_date = role.xpath("./td[6]//text()")
-            if completion_date:
-                info["WoodBadgeType"] = completion_date[0].split(':')[0].strip()
-                info["WoodBadgeReceived"] = completion_date[0].split(':')[1].strip()
-            training_completion.append(info)
+            child_nodes = role.getchildren()
 
-        if training_completion:
-            training_data = pd.DataFrame(training_completion).set_index(["role_number"])
-            training_data["SafetyTraining"] = safety["renewal_date"]
-            training_data["SafeguardingTraining"] = safeguarding["renewal_date"]
-            training_data["FirstAidTraining"] = first_aid["renewal_date"]
+            info = {}
 
-            return training_data
-        else:
-            return pd.DataFrame()
+            info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
+            info["title"] = child_nodes[0].text_content()
+            info["start_date"] = datetime.datetime.strptime(child_nodes[1].text_content(), "%d %B %Y")
+            info["status"] = child_nodes[2].text_content()
+            info["location"] = child_nodes[3].text_content()
+
+            training_advisor_string = child_nodes[4].text_content()
+            info["ta_data"] = training_advisor_string
+            training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+            info["ta_number"] = training_advisor_data[0]
+            info["ta_name"] = training_advisor_data[1]
+
+            completion_string = child_nodes[5].text_content()
+            info["completion"] = completion_string
+            if completion_string:
+                parts = completion_string.split(':')
+                info["completion_type"] = parts[0].strip()
+                info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
+                info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
+            info["wood_badge_number"] = child_nodes[5].get("id")
+
+            training_roles[info["role_number"]] = info
+
+        training_plps = {}
+        training_gdpr = []
+        for plp in personal_learning_plans:
+            plp_table = plp.getchildren()[0].getchildren()[0]
+            plp_data = []
+            content_rows = [row for row in plp_table.getchildren() if "msTR trMTMN" == row.get("class")]
+            for module_row in content_rows:
+                module_data = {}
+                child_nodes = module_row.getchildren()
+                module_data["pk"] = int(module_row.get("data-pk"))
+                module_data["module_id"] = child_nodes[0].get("id")[4:]
+                matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
+                if matches:
+                    module_data["code"] = matches[0]
+                    module_data["name"] = matches[1]
+
+                module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
+                module_data["learning_method"] = child_nodes[2].text_content()
+                module_data["learning_completed"] = child_nodes[3].text_content()
+                try:
+                    module_data["learning_date"] = datetime.datetime.strptime(child_nodes[3].text_content(), "%d %B %Y")
+                except ValueError:
+                    pass
+
+                validated_by_string = child_nodes[4].text_content()
+                validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                module_data["validated_membership_number"] = validated_by_data[0]
+                module_data["validated_name"] = validated_by_data[1]
+                try:
+                    module_data["validated_date"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
+                except ValueError:
+                    pass
+
+                plp_data.append(module_data)
+
+                # Save GDPR validations
+                if str(module_data.get("code")).upper() == "GDPR":
+                    training_gdpr.append(module_data.get("validated_date"))
+
+            training_plps[int(plp_table.get("data-pk"))] = plp_data
+
+        training_ogl = {}
+        ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
+        for ongoing_learning in ongoing_learning_rows:
+            ogl_data = {}
+            ogl_data["code"] = ongoing_learning.get("data-ng_code")
+            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning.getchildren()}
+            cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
+
+            ogl_data["name"] = cell_text.get(None)
+            ogl_data["completed_date"] = cell_text.get("tdLastComplete")
+            ogl_data["renewal_date"] = cell_text.get("tdRenewal")
+
+            training_ogl[ogl_data["code"]] = ogl_data
+            # TODO missing data-pk from cell.getchildren()[0].tag == "input", and module names/codes. Are these important?
+
+        # Handle GDPR
+        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.datetime)], reverse=True)
+        gdpr_date = sorted_gdpr[0] if sorted_gdpr else datetime.datetime(1900, 1, 1)
+        training_ogl["GDPR"] = {
+            "code": "GDPR",
+            "name": "GDPR Training",
+            "completed_date": gdpr_date
+        }
+
+        training_data = {
+            "roles": training_roles,
+            "plps": training_plps,
+            "mandatory": training_ogl
+        }
+        if return_frame:
+            if training_roles:
+                training_frame = pd.DataFrame(training_roles).set_index(["role_number"])
+                training_frame["SafetyTraining"] = training_ogl["SA"]["renewal_date"]
+                training_frame["SafeguardingTraining"] = training_ogl["SG"]["renewal_date"]
+                training_frame["FirstAidTraining"] = training_ogl["FA"]["renewal_date"]
+
+                return training_frame
+            else:
+                return pd.DataFrame()
+
+        return training_data
 
     def get_roles_from_members(self, compass_unit_id: int, member_numbers: pd.Series):
         try:
