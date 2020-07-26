@@ -63,8 +63,64 @@ class CompassPeopleScraper:
             "email": email,
         }
 
-    def get_roles_tab(self, membership_num: int):
-        return self._get_member_profile_tab(membership_num, "Roles")
+    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict:
+        """
+        Gets the data from the Role tab in Compass for the specified member.
+
+        Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
+
+        :param membership_num:
+        :param keep_non_volunteer_roles:
+        :return:
+        """
+        print(f"getting roles tab for member number: {membership_num}")
+        response = self._get_member_profile_tab(membership_num, "Roles")
+        tree = html.fromstring(response.get("content"))
+
+        if tree.forms[0].action == './ScoutsPortal.aspx?Invalid=AccessCN':
+            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+
+        roles_data = {}
+        rows = tree.xpath("//tbody/tr")
+        for row in rows:
+            cells = row.getchildren()
+            role_number = cast(row.get("data-pk"))
+            roles_data[role_number] = {
+                "role_number": role_number,
+                "membership_number": membership_num,
+                "role_name": cells[0].text_content().strip(),
+                "role_class": cells[1].text_content().strip(),
+                "role_type": [*row.xpath("./td[1]/*/@title"), None][0],  # only if access to System Admin tab
+                "location_id": cast([*row.xpath("./td[3]/*/@data-ng_id"), None][0]),  # only if role in your hierarchy AND location still exists
+                "location_name": cells[2].text_content().strip(),
+                "role_start_date": cells[3].text_content().strip(),
+                "role_end_date": cells[4].text_content().strip(),
+                "role_status": cells[5].xpath("normalize-space(label)"),
+            }
+
+        if not keep_non_volunteer_roles:
+            # Remove OHs from list
+            filtered_data = {}
+            for role_number, role_details in roles_data.items():
+
+                if "role_class" in role_details:
+                    role_class = role_details.get("role_class").lower()
+                    if "helper" in role_class:
+                        continue
+
+                role_title = role_details["role_name"].lower()
+                if "occasional helper" in role_title:
+                    continue
+
+                if "pvg" in role_title:
+                    continue
+
+                if "network member" in role_title:
+                    continue
+
+                filtered_data[role_number] = role_details
+            roles_data = filtered_data
+        return roles_data
 
     def get_training_tab(self, membership_num: int):
         return self._get_member_profile_tab(membership_num, "Training")
@@ -252,7 +308,7 @@ class CompassPeople:
         return compliance_data
 
     # See getRole in PGS\Needle
-    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> pd.DataFrame:
+    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False, return_frame: bool = False) -> pd.DataFrame or dict:
         """
         Gets the data from the Role tab in Compass for the specified member.
 
@@ -262,44 +318,9 @@ class CompassPeople:
         :param keep_non_volunteer_roles:
         :return:
         """
-        print(f"getting roles tab for member number: {membership_num}")
-        response = self._scraper.get_roles_tab(membership_num)
-        tree = html.fromstring(response.get("content"))
-
-        if tree.forms[0].action == './ScoutsPortal.aspx?Invalid=AccessCN':
-            raise PermissionError(f"You do not have permission to the details of {membership_num}")
-
-        row_data = []
-        rows = tree.xpath("//tbody/tr")
-        fallback_type = [{"title": None}]
-        fallback_loc_id = [{"data-ng_id": None}]
-        for row in rows:
-            cells = row.getchildren()
-            row_data.append({
-                "role_number": int(row.get("data-pk")),
-                "role_name": cells[0].text_content().strip(),
-                "role_class": cells[1].text_content().strip(),
-                "role_type": [i.get("title") for i in cells[0].getchildren() or fallback_type][0],           # only if access to System Admin tab
-                "location_id": [i.get("data-ng_id") for i in cells[2].getchildren() or fallback_loc_id][0],  # only if role in your hierarchy AND location still exists
-                "location_name": cells[2].text_content().strip(),
-                "role_start_date": cells[3].text_content().strip(),
-                "role_end_date": cells[4].text_content().strip(),
-                "role_status": cells[5].xpath("./label//text()")[0].strip(),
-            })
-        roles_data = pd.DataFrame(row_data).set_index(["role_number"], drop=False)
-        roles_data["location_id"] = pd.to_numeric(roles_data["location_id"]).astype("Int64")  # handles NaNs
-        roles_data["membership_num"] = membership_num
-
-        if not keep_non_volunteer_roles:
-            # Remove OHs from list
-            try:
-                roles_data = roles_data.loc[roles_data["role_class"] != "Helper"]
-            except KeyError:
-                roles_data = roles_data.loc[~roles_data["Role"].str.lower().str.contains("occasional helper")]
-
-            # TODO remove Network Members, remove PVG roles
-
-        return roles_data
+        response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
+        frame = pd.DataFrame(response).T
+        return frame if return_frame else response
 
     def _training_tab(self, membership_num: int, return_frame: bool = False) -> dict or pd.DataFrame:
         """
