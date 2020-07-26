@@ -3,6 +3,7 @@ import re
 from src.compass_hierarchy import CompassHierarchy
 from src.compass_logon import CompassLogon
 from src.compass_people import CompassPeople
+from src.compass_people import CompassPeopleScraper
 from src.utility import CompassSettings
 from src.utility import jk_hash
 
@@ -95,16 +96,14 @@ def get_report(logon: CompassLogon):
     # All works, but no control over what exported, currently using default settings.
 
 
-def compass_read(auth_keys):
-    c_logon = CompassLogon(auth_keys)
-    people = CompassPeople(c_logon.session)
+def compass_read(auth: list or tuple):
+    logon = CompassLogon(auth)
+    scraper = CompassPeopleScraper(logon.session)
 
-    member_number = c_logon.cn
-    # member_number = 760357
-
-    training_data = people._training_tab(member_number)
-    permits_data = people._permits_tab(member_number)
-    roles_detail = {role: people._scraper.get_roles_detail(role) for role in training_data["roles"]}
+    member_number = logon.cn
+    training_data = scraper.get_training_tab(member_number)
+    permits_data = scraper.get_permits_tab(member_number)
+    roles_detail = {role: scraper.get_roles_detail(role) for role in training_data["roles"]}
 
     obj = {
         # **training_data,
