@@ -70,7 +70,26 @@ class CompassPeopleScraper:
         return self._get_member_profile_tab(membership_num, "Training")
 
     def get_permits_tab(self, membership_num: int):
-        return self._get_member_profile_tab(membership_num, "Permits")
+        response = self._get_member_profile_tab(membership_num, "Permits")
+        tree = html.fromstring(response.get("content"))
+
+        # Get rows with permit content
+        rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
+
+        permits = []
+        for row in rows:
+            permit = {}
+            child_nodes = row.getchildren()
+            permit["permit_type"] = child_nodes[1].text_content()
+            permit["category"] = child_nodes[2].text_content()
+            permit["type"] = child_nodes[3].text_content()
+            permit["restrictions"] = child_nodes[4].text_content()
+            permit["expires"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
+            permit["status"] = child_nodes[5].get("class")
+
+            permits.append(permit)
+
+        return permits
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(self, role_number: int):
@@ -410,27 +429,7 @@ class CompassPeople:
         return training_data
 
     def _permits_tab(self, membership_num: int):
-        response = self._scraper.get_permits_tab(membership_num)
-        tree = html.fromstring(response.get("content"))
-
-        # Get rows with permit content
-        rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
-
-        permits = []
-        for row in rows:
-            permit = {}
-            child_nodes = row.getchildren()
-            permit["permit_type"] = child_nodes[1].text_content()
-            permit["category"] = child_nodes[2].text_content()
-            permit["type"] = child_nodes[3].text_content()
-            permit["restrictions"] = child_nodes[4].text_content()
-            permit["expires"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
-            permit["status"] = child_nodes[5].get("class")
-
-            permits.append(permit)
-
-        return permits
-
+        return self._scraper.get_permits_tab(membership_num)
 
     def get_roles_from_members(self, compass_unit_id: int, member_numbers: pd.Series):
         try:
