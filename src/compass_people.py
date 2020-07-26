@@ -16,17 +16,19 @@ class CompassPeopleScraper:
     def __init__(self, session: requests.sessions.Session):
         self.s = session
 
+    def get(self, url, **kwargs):
+        CompassSettings.total_requests += 1
+        return self.s.get(url, **kwargs)
+
     def _get_member_profile_tab(self, membership_num: int, profile_tab: str) -> dict:
         profile_tab = profile_tab.upper()
         tabs = ["ROLES", "PERMITS", "TRAINING", "AWARDS", "EMERGENCY", "COMMS", "VISIBILITY", "DISCLOSURES"]
         url = f"{CompassSettings.base_url}/MemberProfile.aspx?CN={membership_num}"
         if profile_tab == "PERSONAL":
-            CompassSettings.total_requests += 1
-            response = self.s.get(url, verify=False, )
+            response = self.get(url, verify=False, )
         elif profile_tab in tabs:
             url += f"&Page={profile_tab}&TAB"
-            CompassSettings.total_requests += 1
-            response = self.s.get(url, verify=False, )
+            response = self.get(url, verify=False, )
         else:
             raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs.append('PERSONAL')}")
 
@@ -55,66 +57,99 @@ class CompassPeopleScraper:
     def get_training_tab(self, membership_num: int):
         return self._get_member_profile_tab(membership_num, "Training")
 
+    def get_permits_tab(self, membership_num: int):
+        return self._get_member_profile_tab(membership_num, "Permits")
+
     # See getAppointment in PGS\Needle
     def get_roles_detail(self, role_number: int):
         renamed_levels = {
-            'Organisation':                                      'Organisation',
-            'Country':                                           'Country',
-            'Region':                                            'Region',
             'County / Area / Scottish Region / Overseas Branch': 'County',
-            'District':                                          'District',
-            'Group':                                             'ScoutGroup',
-            'Section':                                           'Section',
         }
 
         module_names = {
-            'Essential Information': "Essential_Info",
-            "PersonalLearningPlan": "PersonalLearningPlan",
-            'Tools for the Role (Section Leaders)': "Tools4Role",
-            'Tools for the Role (Managers and Supporters)': "Tools4Role",
+            'Essential Information': "M01",
+            "PersonalLearningPlan": "M02",
+            'Tools for the Role (Section Leaders)': "M03",
+            'Tools for the Role (Managers and Supporters)': "M04",
             'General Data Protection Regulations': "GDPR",
         }
 
+        references_codes = {
+            "NC": "Not Complete",
+            "NR": "Not Required",
+            "RR": "References Requested",
+            "S": "References Satisfactory",
+            "U": "References Unsatisfactory",
+        }
+
         start_time = time.time()
-        CompassSettings.total_requests += 1
-        response = self.s.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}", verify=False, )
+        response = self.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}", verify=False, )
+        print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
+
         tree = html.fromstring(response.content)
         form = tree.forms[0]
-        print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}")
 
-        role_details_dict = {
-            "organisation_level":       form.fields.get("ctl00$workarea$cbo_p1_level"),
-            "dbs_check":                form.fields.get("ctl00$workarea$txt_p2_disclosure"),
-            "CE_Check":                 form.fields.get("ctl00$workarea$txt_p2_cecheck"),   # TODO if CE check date != current date then is valid
-            "Review_date":              form.fields.get("ctl00$workarea$txt_p2_review"),
-            "Line_manager_number":      form.fields.get("ctl00$workarea$cbo_p2_linemaneger"),
-            "LineManager":              safe_xpath(form.inputs['ctl00$workarea$cbo_p2_linemaneger'], "./*[@selected='selected']/text()"),
-            "References":               safe_xpath(tree, "//tr/td/select[@data-app_code='ROLPRP|REF']/*[@selected='selected']//text()"),
-            "AppAdvComm_Approval":      safe_xpath(tree, "//tr/td/select[@data-app_code='ROLPRP|AACA']//text()"),
-            "Commissioner_Approval":    safe_xpath(tree, "//tr/td/select[@data-app_code='ROLPRP|CAPR']//text()"),
-            "Committee_Approval":       safe_xpath(tree, "//tr/td/select[@data-app_code='ROLPRP|CCA']//text()"),
-            "DOB":                      safe_xpath(tree, "//tr/td/input/@data-dob"),
+        member_string = form.fields.get("ctl00$workarea$txt_p1_membername")
+        ref_code = form.fields.get("ctl00$workarea$cbo_p2_referee_status")
+
+        # Approval and Role details
+        role_details = {
+            "role_number": role_number,
+            "organisation_level": form.fields.get("ctl00$workarea$cbo_p1_level"),
+            "dob": form.inputs["ctl00$workarea$txt_p1_membername"].get("data-dob"),
+            "member_number": int(form.fields.get("ctl00$workarea$txt_p1_memberno")),
+            "member_name": member_string.split(" ", maxsplit=1)[1],
+            "role_title": form.fields.get("ctl00$workarea$txt_p1_alt_title"),
+            "start_date": form.fields.get("ctl00$workarea$txt_p1_startdate"),
+            # Role Status
+            "status": form.fields.get("ctl00$workarea$txt_p2_status"),
+            # Line Manager
+            "line_manager_number": form.fields.get("ctl00$workarea$cbo_p2_linemaneger"),
+            "line_manager": form.inputs["ctl00$workarea$cbo_p2_linemaneger"].xpath("string(*[@selected])"),
+            # Review Date
+            "review_date": form.fields.get("ctl00$workarea$txt_p2_review"),
+            # CE (Confidential Enquiry) Check
+            "ce_check": form.fields.get("ctl00$workarea$txt_p2_cecheck"),  # TODO if CE check date != current date then is valid
+            # Disclosure Check
+            "disclosure_check": form.fields.get("ctl00$workarea$txt_p2_disclosure"),
+            # References
+            "references": references_codes.get(ref_code, ref_code),
+            # Appointment Panel Approval
+            "appointment_panel_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|AACA']//*[@selected])"),
+            # Commissioner Approval
+            "commissioner_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|CAPR']//*[@selected])"),
+            # Committee Approval
+            "committee_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|CCA']//*[@selected])"),
         }
-        role_details_dict = {k: v for k, v in role_details_dict.items() if v is not None}
+
+        # Getting Started
+        modules_output = {}
+        getting_started_modules = tree.xpath("//tr[@class='trTrain trTrainData']")
+        # Get all training modules and then extract the required modules to a dictionary
+        for module in getting_started_modules:
+            module_name = module.xpath("string(./td/label/text())")
+            if module_name in module_names:
+                short_name = module_names[module_name]
+                info = {
+                    "name": short_name,
+                    "validated": module.xpath("./td[3]/input/@value")[0],     # Save module validation date
+                    "validated_by": module.xpath("./td/input[2]/@value")[0],  # Save who validated the module
+                }
+                mod_code = module.xpath("./td[3]/input/@data-ng_value")[0]
+                modules_output[mod_code] = info
+
+        # Filter null values
+        role_details = {k: v for k, v in role_details.items() if v is not None}
 
         # Get all levels of the org hierarchy and select those that will have information
-        rows = tree.xpath("//tr/td/select")[:7]
-        all_locations = {row.xpath("./@title")[0]: row.xpath("./option/text()")[0] for row in rows}
+        org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]  # Get all inputs with location data
+        all_locations = {row.get("title"): row.findtext("./option") for row in org_levels}
         unset_vals = ['--- Not Selected ---', '--- No Items Available ---']
-        clipped_locations = {renamed_levels[key]: value for key, value in all_locations.items() if value not in unset_vals}
+        clipped_locations = {renamed_levels.get(key, key): value for key, value in all_locations.items() if value not in unset_vals}
 
-        # Get all training modules and then extract the required modules to a dictionary
-        modules_output = {}
-        modules = tree.xpath("//*[@class='trTrain trTrainData']")
-        for module in modules:
-            for name, out_name in module_names.items():
-                # If the module name matches any of the modules in module_names
-                if safe_xpath(module, "./td/label/text()") == name:
-                    modules_output[f"{out_name}"] = safe_xpath(module, "./td[3]/input/@value")          # Save module validation date
-                    modules_output[f"{out_name}_val_by"] = safe_xpath(module, "./td/input[2]/@value")   # Save who validated the module
-        del rows, all_locations, unset_vals, modules
-
-        return {**{"role_number": role_number}, **clipped_locations, **role_details_dict, **modules_output}
+        # TODO data-ng_id?, data-rtrn_id?
+        # return {**clipped_locations, **role_details, **modules_output}
+        return {"hierarchy": clipped_locations, "details": role_details, "getting_started": modules_output}
 
 
 class CompassPeople:
@@ -360,6 +395,29 @@ class CompassPeople:
                 return pd.DataFrame()
 
         return training_data
+
+    def _permits_tab(self, membership_num: int):
+        response = self._scraper.get_permits_tab(membership_num)
+        tree = html.fromstring(response.get("content"))
+
+        # Get rows with permit content
+        rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
+
+        permits = []
+        for row in rows:
+            permit = {}
+            child_nodes = row.getchildren()
+            permit["permit_type"] = child_nodes[1].text_content()
+            permit["category"] = child_nodes[2].text_content()
+            permit["type"] = child_nodes[3].text_content()
+            permit["restrictions"] = child_nodes[4].text_content()
+            permit["expires"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
+            permit["status"] = child_nodes[5].get("class")
+
+            permits.append(permit)
+
+        return permits
+
 
     def get_roles_from_members(self, compass_unit_id: int, member_numbers: pd.Series):
         try:
