@@ -49,50 +49,65 @@ class CompassHierarchyScraper:
         self.s: requests.sessions.Session = session
 
     def get(self, url, **kwargs):
+        CompassSettings.total_requests += 1
         return self.s.get(url, **kwargs)
 
     def post(self, url, **kwargs):
+        CompassSettings.total_requests += 1
         data = kwargs.pop("data", None)
         json_ = kwargs.pop("json", None)
         return self.s.post(url, data=data, json=json_, **kwargs)
 
+    # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
     def get_units_from_hierarchy(self, parent_unit: int, level: str) -> list:
-        # Get API endpoint from level
-        url_string = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["type"] == level, "endpoint"].str.cat()
+        """Get all children of a given unit
 
-        CompassSettings.total_requests += 1
-        result = self.post(f"{CompassSettings.base_url}/hierarchy{url_string}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"}, verify=False)
+        TODO can we do this without needing to provide the level string?
+
+        """
+
+        # Get API endpoint from level
+        level_endpoint = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["type"] == level, "endpoint"].str.cat()
+
+        # TODO PGS\Needle has `extra` bool in func signature to turn LiveData on/off
+        result = self.post(f"{CompassSettings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"}, verify=False)
+        result_json = result.json()
 
         # Handle unauthorised access
-        if result.json() == {'Message': 'Authorization has been denied for this request.'}:
+        if result_json == {'Message': 'Authorization has been denied for this request.'}:
             return [{"id": None, "name": None}]
 
         result_units = []
-        for unit_dict in result.json():
-            result_units.append({
+        for unit_dict in result_json:
+            # TODO LiveData check here too
+            parsed = {
                 "id": int(unit_dict["Value"]),
                 "name": unit_dict["Description"],
-                "adults": json.loads(unit_dict["Tag"])[0]["Members"],
-                # "parent_id": unit_dict["Parent"],
-                # "section_type": json.loads(unit_dict["Tag"])[0]["SectionTypeDesc"],
-            })
+                "parent_id": unit_dict["Parent"],
+            }
+            if unit_dict["Tag"]:
+                tag = json.loads(unit_dict["Tag"])
+                parsed["status"] = tag[0]["org_status"]
+                parsed["address"] = tag[0]["address"]
+                parsed["member_count"] = tag[0]["Members"]
+                parsed["section_type"] = tag[0]["SectionTypeDesc"]
+
+            result_units.append(parsed)
 
         return result_units
 
     def get_members_with_roles_in_unit(self, unit_number):
         # Construct request data
-        # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
+
         dt = datetime.datetime.now()
-        dt_milli = dt.microsecond // 1000  # Get the the milliseconds from microseconds
-        time_uid = f"{dt.hour}{dt.minute}{dt_milli}"
+        time_uid = f"{dt.hour}{dt.minute}{dt.microsecond // 1000}"
         data = {"SearchType": "HIERARCHY", "OrganisationNumber": unit_number, "UI": time_uid}
 
         # Execute search
-        CompassSettings.total_requests += 1
+        # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
         self.post(f"{CompassSettings.base_url}/Search/Members", json=compass_restify(data), verify=False)
 
         # Fetch results from Compass
-        CompassSettings.total_requests += 1
         search_results = self.get(f"{CompassSettings.base_url}/SearchResults.aspx", verify=False)
 
         # Gets the compass form from the returned document
@@ -119,12 +134,13 @@ class CompassHierarchy:
     def __init__(self, session: requests.sessions.Session):
         self._scraper = CompassHierarchyScraper(session)
 
+    # See recurseRetrieve in PGS\Needle
     def get_hierarchy(self, compass_id: int, level: str) -> dict:
+        """Recursively get all children from given unit ID and level, with caching"""
         filename = Path(f"hierarchy-{compass_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
         try:
-            text = filename.read_text(encoding='utf-8')
-            out = json.loads(text)
+            out = json.loads(filename.read_text(encoding='utf-8'))
             if out:
                 return out
         except FileNotFoundError:
@@ -132,44 +148,58 @@ class CompassHierarchy:
 
         out = self._get_descendants_recursive(compass_id, hier_level=level)
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(out, f, ensure_ascii=False, indent=4)
+            json.dump(out, f, ensure_ascii=False)
 
         return out
 
+    # See recurseRetrieve in PGS\Needle
     def _get_descendants_recursive(self, compass_id: int, hier_level: str = None, hier_num: int = None) -> dict:
-        if hier_num:
+        """Recursively get all children from given unit ID and level name/number, with caching"""
+        if hier_num is not None:
             level_numeric = hier_num
-        elif hier_level:
+        elif hier_level is not None:
             level_numeric = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["parent_level"] == hier_level, "level"].min()
             if not level_numeric:
                 raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {CompassHierarchy.hierarchy_levels['parent_level'].drop_duplicates().to_list()}")
         else:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
 
-        decedents_data = self.get_units_from_numeric_level(compass_id, level_numeric, )
+        descendant_data = self.get_descendants_from_numeric_level(compass_id, level_numeric, )
 
-        for key, value in decedents_data.items():
+        for key, value in descendant_data.items():
             if key == "child" and value is not None:
                 for child in value:
-                    child.update(self._get_descendants_recursive(child["id"], hier_num=level_numeric + 1, ))
+                    grandchildren = self._get_descendants_recursive(child["id"], hier_num=level_numeric + 1, )
+                    child.update(grandchildren)
 
-        out = {"id": compass_id, **decedents_data}
+        return descendant_data
 
-        return out
-
-    def get_units_from_numeric_level(self, parent_id: int, num_level: int, ) -> dict:
+    # See recurseRetrieve in PGS\Needle
+    def get_descendants_from_numeric_level(self, parent_id: int, level_number: int, ) -> dict:
         print(f"getting data for unit {parent_id}")
-        level_children = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["level"] == num_level]
-        parent_level = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["level"] == num_level, "parent_level"].drop_duplicates().str.cat()
+        mask = CompassHierarchy.hierarchy_levels["level"] == level_number
+        level_children = CompassHierarchy.hierarchy_levels.loc[mask, ["has_children", "type"]]
+        parent_level = CompassHierarchy.hierarchy_levels.loc[mask, "parent_level"].drop_duplicates().str.cat()
 
         # All to handle as Group doesn't have grand-children
         sections_list = level_children.loc[~level_children["has_children"], "type"].to_list()
         has_children = level_children.loc[level_children["has_children"], "type"].to_list()
-        return {
+        children_and_sections = {
+            "id": parent_id,
             "level": parent_level,
             "child": self._scraper.get_units_from_hierarchy(parent_id, has_children[0], ) if has_children else None,
             "sections": self._scraper.get_units_from_hierarchy(parent_id, sections_list[0], ),
         }
+
+        return children_and_sections
+
+    def hierarchy_to_dataframe(self, hierarchy_dict):
+        flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
+        dataframe = pd.DataFrame(flat_hierarchy)
+        for field, dtype in dataframe.dtypes.items():
+            if dtype.name == "float64":
+                dataframe[field] = dataframe[field].astype("Int64")
+        return dataframe
 
     @staticmethod
     def _flatten_hierarchy_dict(hierarchy_dict: dict):
@@ -191,13 +221,10 @@ class CompassHierarchy:
         flatten(hierarchy_dict, {})
         return flat
 
-    def hierarchy_to_dataframe(self, hierarchy_dict):
-        flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
-        dataframe = pd.DataFrame(flat_hierarchy)
-        for field, dtype in dataframe.dtypes.items():
-            if dtype.name == "float64":
-                dataframe[field] = dataframe[field].astype("Int64")
-        return dataframe
+    def get_all_members_table(self, parent_id: int, compass_ids: pd.Series) -> pd.DataFrame:
+        members = self._get_all_members_in_hierarchy(parent_id, compass_ids)
+        flat_members = [{"compass_id": compass, **member_dict} for compass, member_list in members.items() for member_dict in member_list]
+        return pd.DataFrame(flat_members)
 
     def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: pd.Series) -> dict:
         try:
@@ -213,11 +240,8 @@ class CompassHierarchy:
         for compass_id in compass_ids.drop_duplicates().to_list():
             print(f"Getting members for {compass_id}")
             all_members[compass_id] = self._scraper.get_members_with_roles_in_unit(compass_id)
+
         with open(f"all-members-{parent_id}.json", 'w', encoding='utf-8') as f:
             json.dump(all_members, f, ensure_ascii=False, indent=4)
-        return all_members
 
-    def get_all_members_table(self, parent_id: int, compass_ids: pd.Series) -> pd.DataFrame:
-        members = self._get_all_members_in_hierarchy(parent_id, compass_ids)
-        flat_members = [{"compass_id": compass, **member_dict} for compass, member_list in members.items() for member_dict in member_list]
-        return pd.DataFrame(flat_members)
+        return all_members
