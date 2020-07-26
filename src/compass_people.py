@@ -1,3 +1,4 @@
+import ast
 import datetime
 import re
 import time
@@ -10,6 +11,17 @@ from src.utility import CompassSettings
 from src.utility import safe_xpath
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
+
+
+def cast(value):
+    try:
+        value = int(value)
+    except (ValueError, TypeError):
+        try:
+            value = ast.literal_eval(str(value)) if value else value
+        except (ValueError, TypeError, SyntaxError):
+            pass
+    return value
 
 
 class CompassPeopleScraper:
@@ -97,14 +109,14 @@ class CompassPeopleScraper:
             "role_number": role_number,
             "organisation_level": form.fields.get("ctl00$workarea$cbo_p1_level"),
             "dob": form.inputs["ctl00$workarea$txt_p1_membername"].get("data-dob"),
-            "member_number": int(form.fields.get("ctl00$workarea$txt_p1_memberno")),
+            "member_number": cast(form.fields.get("ctl00$workarea$txt_p1_memberno")),
             "member_name": member_string.split(" ", maxsplit=1)[1],
             "role_title": form.fields.get("ctl00$workarea$txt_p1_alt_title"),
             "start_date": form.fields.get("ctl00$workarea$txt_p1_startdate"),
             # Role Status
             "status": form.fields.get("ctl00$workarea$txt_p2_status"),
             # Line Manager
-            "line_manager_number": form.fields.get("ctl00$workarea$cbo_p2_linemaneger"),
+            "line_manager_number": cast(form.fields.get("ctl00$workarea$cbo_p2_linemaneger")),
             "line_manager": form.inputs["ctl00$workarea$cbo_p2_linemaneger"].xpath("string(*[@selected])"),
             # Review Date
             "review_date": form.fields.get("ctl00$workarea$txt_p2_review"),
@@ -135,7 +147,8 @@ class CompassPeopleScraper:
                     "validated": module.xpath("./td[3]/input/@value")[0],     # Save module validation date
                     "validated_by": module.xpath("./td/input[2]/@value")[0],  # Save who validated the module
                 }
-                mod_code = module.xpath("./td[3]/input/@data-ng_value")[0]
+                mod_code = cast(module.xpath("./td[3]/input/@data-ng_value")[0])
+                mod_code = {"M03": 3}.get(mod_code, mod_code)
                 modules_output[mod_code] = info
 
         # Filter null values
@@ -281,8 +294,8 @@ class CompassPeople:
         tree = html.fromstring(response.get("content"))
 
         rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
-        roles = [row for row in rows if "msTR" in row.get("class")]
-        personal_learning_plans = [row for row in rows if "trPLP" in row.get("class")]
+        roles = [row for row in rows if "msTR" in row.classes]
+        personal_learning_plans = [row for row in rows if "trPLP" in row.classes]
 
         training_roles = {}
         for role in roles:
@@ -322,11 +335,11 @@ class CompassPeople:
             for module_row in content_rows:
                 module_data = {}
                 child_nodes = module_row.getchildren()
-                module_data["pk"] = int(module_row.get("data-pk"))
-                module_data["module_id"] = child_nodes[0].get("id")[4:]
+                module_data["pk"] = cast(module_row.get("data-pk"))
+                module_data["module_id"] = cast(child_nodes[0].get("id")[4:])
                 matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
                 if matches:
-                    module_data["code"] = matches[0]
+                    module_data["code"] = cast(matches[0])
                     module_data["name"] = matches[1]
 
                 module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
@@ -339,7 +352,7 @@ class CompassPeople:
 
                 validated_by_string = child_nodes[4].text_content()
                 validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-                module_data["validated_membership_number"] = validated_by_data[0]
+                module_data["validated_membership_number"] = cast(validated_by_data[0])
                 module_data["validated_name"] = validated_by_data[1]
                 try:
                     module_data["validated_date"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
