@@ -25,6 +25,7 @@ def hash_code(text: str) -> int:
 
 
 def compass_restify(data: dict) -> list:
+    # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
     return [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
 

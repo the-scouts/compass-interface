@@ -113,7 +113,7 @@ class CompassLogon:
     def create_roles_dict(form_tree: html.FormElement):
         """Dict comprehension to generate role name: role number mapping"""
         roles_selector: html.SelectElement = form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles']  # get roles from compass page (list of option tags)
-        return {role.get("value").strip: role.text for role in roles_selector.iter("option")}
+        return {role.text.strip(): role.get("value").strip() for role in roles_selector.iter("option")}
 
     @staticmethod
     def get_selected_role_number(form_tree: html.FormElement):
@@ -151,6 +151,7 @@ class CompassLogon:
             raise Exception("Compass Authentication failed to update")
 
         # TODO is this get role bit needed given that we change the role?
-        print(f"All good! Using Role: {roles_dict[self.mrn]}")
+        role_name = {v: k for k,v in roles_dict.items()}.get(self.mrn)
+        print(f"All good! Using Role: {role_name}")
 
         return compass_dict, roles_dict
