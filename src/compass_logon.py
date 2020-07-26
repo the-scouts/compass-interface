@@ -14,6 +14,9 @@ class CompassLogon:
         self.credentials: list = credentials
         self.role_to_use: str = role_to_use
 
+        self.current_role: str = ""
+        self.roles_dict: dict = {}
+
         self.session: requests.sessions.Session = self.do_logon(credentials, role_to_use)
 
     @property
@@ -139,6 +142,7 @@ class CompassLogon:
 
         compass_dict = self.create_compass_dict(form)
         roles_dict = self.create_roles_dict(form)
+        self.roles_dict = roles_dict
 
         # Set auth headers for new role
         auth_headers = {
@@ -153,5 +157,6 @@ class CompassLogon:
         # TODO is this get role bit needed given that we change the role?
         role_name = {v: k for k,v in roles_dict.items()}.get(self.mrn)
         print(f"All good! Using Role: {role_name}")
+        self.current_role = role_name
 
         return compass_dict, roles_dict
