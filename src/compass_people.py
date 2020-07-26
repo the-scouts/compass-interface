@@ -122,8 +122,122 @@ class CompassPeopleScraper:
             roles_data = filtered_data
         return roles_data
 
-    def get_training_tab(self, membership_num: int):
-        return self._get_member_profile_tab(membership_num, "Training")
+    def get_training_tab(self, membership_num: int) -> dict:
+        """
+        Gets training tab data for a given member
+
+        :param membership_num: Compass ID
+        :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
+        :return:
+        """
+        response = self._get_member_profile_tab(membership_num, "Training")
+        tree = html.fromstring(response.get("content"))
+
+        rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
+        roles = [row for row in rows if "msTR" in row.classes]
+        personal_learning_plans = [row for row in rows if "trPLP" in row.classes]
+
+        training_roles = {}
+        for role in roles:
+            child_nodes = role.getchildren()
+
+            info = {}
+
+            info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
+            info["title"] = child_nodes[0].text_content()
+            info["start_date"] = datetime.datetime.strptime(child_nodes[1].text_content(), "%d %B %Y")
+            info["status"] = child_nodes[2].text_content()
+            info["location"] = child_nodes[3].text_content()
+
+            training_advisor_string = child_nodes[4].text_content()
+            info["ta_data"] = training_advisor_string
+            training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+            info["ta_number"] = training_advisor_data[0]
+            info["ta_name"] = training_advisor_data[1]
+
+            completion_string = child_nodes[5].text_content()
+            info["completion"] = completion_string
+            if completion_string:
+                parts = completion_string.split(':')
+                info["completion_type"] = parts[0].strip()
+                info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
+                info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
+            info["wood_badge_number"] = child_nodes[5].get("id")
+
+            training_roles[info["role_number"]] = info
+
+        training_plps = {}
+        training_gdpr = []
+        for plp in personal_learning_plans:
+            plp_table = plp.getchildren()[0].getchildren()[0]
+            plp_data = []
+            content_rows = [row for row in plp_table.getchildren() if "msTR trMTMN" == row.get("class")]
+            for module_row in content_rows:
+                module_data = {}
+                child_nodes = module_row.getchildren()
+                module_data["pk"] = cast(module_row.get("data-pk"))
+                module_data["module_id"] = cast(child_nodes[0].get("id")[4:])
+                matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
+                if matches:
+                    module_data["code"] = cast(matches[0])
+                    module_data["name"] = matches[1]
+
+                module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
+                module_data["learning_method"] = child_nodes[2].text_content()
+                module_data["learning_completed"] = child_nodes[3].text_content()
+                try:
+                    module_data["learning_date"] = datetime.datetime.strptime(child_nodes[3].text_content(), "%d %B %Y")
+                except ValueError:
+                    pass
+
+                validated_by_string = child_nodes[4].text_content()
+                validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                module_data["validated_membership_number"] = cast(validated_by_data[0])
+                module_data["validated_name"] = validated_by_data[1]
+                try:
+                    module_data["validated_date"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
+                except ValueError:
+                    pass
+
+                plp_data.append(module_data)
+
+                # Save GDPR validations
+                if str(module_data.get("code")).upper() == "GDPR":
+                    training_gdpr.append(module_data.get("validated_date"))
+
+            training_plps[int(plp_table.get("data-pk"))] = plp_data
+
+        training_ogl = {}
+        ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
+        for ongoing_learning in ongoing_learning_rows:
+            ogl_data = {}
+            ogl_data["code"] = ongoing_learning.get("data-ng_code")
+            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning.getchildren()}
+            cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
+
+            ogl_data["name"] = cell_text.get(None)
+            ogl_data["completed_date"] = cell_text.get("tdLastComplete")
+            ogl_data["renewal_date"] = cell_text.get("tdRenewal")
+
+            training_ogl[ogl_data["code"]] = ogl_data
+            # TODO missing data-pk from cell.getchildren()[0].tag == "input", and module names/codes. Are these important?
+
+        # Handle GDPR
+        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.datetime)], reverse=True)
+        gdpr_date = sorted_gdpr[0] if sorted_gdpr else datetime.datetime(1900, 1, 1)
+        training_ogl["GDPR"] = {
+            "code": "GDPR",
+            "name": "GDPR Training",
+            "completed_date": gdpr_date
+        }
+
+        training_data = {
+            "roles": training_roles,
+            "plps": training_plps,
+            "mandatory": training_ogl
+        }
+
+        return training_data
 
     def get_permits_tab(self, membership_num: int):
         response = self._get_member_profile_tab(membership_num, "Permits")
@@ -330,112 +444,11 @@ class CompassPeople:
         :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
         :return:
         """
-        response = self._scraper.get_training_tab(membership_num)
-        tree = html.fromstring(response.get("content"))
+        training_data = self._scraper.get_training_tab(membership_num)
 
-        rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
-        roles = [row for row in rows if "msTR" in row.classes]
-        personal_learning_plans = [row for row in rows if "trPLP" in row.classes]
+        training_roles = training_data["roles"]
+        training_ogl = training_data["mandatory"]
 
-        training_roles = {}
-        for role in roles:
-            child_nodes = role.getchildren()
-
-            info = {}
-
-            info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
-            info["title"] = child_nodes[0].text_content()
-            info["start_date"] = datetime.datetime.strptime(child_nodes[1].text_content(), "%d %B %Y")
-            info["status"] = child_nodes[2].text_content()
-            info["location"] = child_nodes[3].text_content()
-
-            training_advisor_string = child_nodes[4].text_content()
-            info["ta_data"] = training_advisor_string
-            training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-            info["ta_number"] = training_advisor_data[0]
-            info["ta_name"] = training_advisor_data[1]
-
-            completion_string = child_nodes[5].text_content()
-            info["completion"] = completion_string
-            if completion_string:
-                parts = completion_string.split(':')
-                info["completion_type"] = parts[0].strip()
-                info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
-                info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
-            info["wood_badge_number"] = child_nodes[5].get("id")
-
-            training_roles[info["role_number"]] = info
-
-        training_plps = {}
-        training_gdpr = []
-        for plp in personal_learning_plans:
-            plp_table = plp.getchildren()[0].getchildren()[0]
-            plp_data = []
-            content_rows = [row for row in plp_table.getchildren() if "msTR trMTMN" == row.get("class")]
-            for module_row in content_rows:
-                module_data = {}
-                child_nodes = module_row.getchildren()
-                module_data["pk"] = cast(module_row.get("data-pk"))
-                module_data["module_id"] = cast(child_nodes[0].get("id")[4:])
-                matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
-                if matches:
-                    module_data["code"] = cast(matches[0])
-                    module_data["name"] = matches[1]
-
-                module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
-                module_data["learning_method"] = child_nodes[2].text_content()
-                module_data["learning_completed"] = child_nodes[3].text_content()
-                try:
-                    module_data["learning_date"] = datetime.datetime.strptime(child_nodes[3].text_content(), "%d %B %Y")
-                except ValueError:
-                    pass
-
-                validated_by_string = child_nodes[4].text_content()
-                validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-                module_data["validated_membership_number"] = cast(validated_by_data[0])
-                module_data["validated_name"] = validated_by_data[1]
-                try:
-                    module_data["validated_date"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
-                except ValueError:
-                    pass
-
-                plp_data.append(module_data)
-
-                # Save GDPR validations
-                if str(module_data.get("code")).upper() == "GDPR":
-                    training_gdpr.append(module_data.get("validated_date"))
-
-            training_plps[int(plp_table.get("data-pk"))] = plp_data
-
-        training_ogl = {}
-        ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
-        for ongoing_learning in ongoing_learning_rows:
-            ogl_data = {}
-            ogl_data["code"] = ongoing_learning.get("data-ng_code")
-            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning.getchildren()}
-            cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
-
-            ogl_data["name"] = cell_text.get(None)
-            ogl_data["completed_date"] = cell_text.get("tdLastComplete")
-            ogl_data["renewal_date"] = cell_text.get("tdRenewal")
-
-            training_ogl[ogl_data["code"]] = ogl_data
-            # TODO missing data-pk from cell.getchildren()[0].tag == "input", and module names/codes. Are these important?
-
-        # Handle GDPR
-        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.datetime)], reverse=True)
-        gdpr_date = sorted_gdpr[0] if sorted_gdpr else datetime.datetime(1900, 1, 1)
-        training_ogl["GDPR"] = {
-            "code": "GDPR",
-            "name": "GDPR Training",
-            "completed_date": gdpr_date
-        }
-
-        training_data = {
-            "roles": training_roles,
-            "plps": training_plps,
-            "mandatory": training_ogl
-        }
         if return_frame:
             if training_roles:
                 training_frame = pd.DataFrame(training_roles).set_index(["role_number"])
