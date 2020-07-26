@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.7
+  - python>=3.8
 
   # Scraping
   - requests
@@ -13,8 +13,10 @@ dependencies:
   - pandas
 
   # Development requirements:
-  - pytest
-  - hypothesis
-  - pytest-cov
-  - pre-commit
+#  - pytest
+#  - hypothesis
+#  - pytest-cov
+#  - pre-commit
   - black
+  - ipython
+  - dtale
