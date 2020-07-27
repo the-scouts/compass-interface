@@ -14,11 +14,6 @@ if TYPE_CHECKING:
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def safe_xpath(tree, path: str):
-    array = tree.xpath(path)
-    return array[0] if len(array) else None
-
-
 # https://stackoverflow.com/a/8831937
 def hash_code(text: str) -> int:
     """Implements Java's hashCode in python"""
