@@ -28,7 +28,7 @@ class CompassPeopleScraper:
     def __init__(self, session: requests.sessions.Session):
         self.s = session
 
-    def get(self, url, **kwargs):
+    def get(self, url, **kwargs) -> requests.models.Response:
         CompassSettings.total_requests += 1
         return self.s.get(url, **kwargs)
 
@@ -239,7 +239,7 @@ class CompassPeopleScraper:
 
         return training_data
 
-    def get_permits_tab(self, membership_num: int):
+    def get_permits_tab(self, membership_num: int) -> list:
         response = self._get_member_profile_tab(membership_num, "Permits")
         tree = html.fromstring(response.get("content"))
 
@@ -262,7 +262,7 @@ class CompassPeopleScraper:
         return permits
 
     # See getAppointment in PGS\Needle
-    def get_roles_detail(self, role_number: int):
+    def get_roles_detail(self, role_number: int) -> dict:
         renamed_levels = {
             'County / Area / Scottish Region / Overseas Branch': 'County',
         }
@@ -358,7 +358,7 @@ class CompassPeople:
     def __init__(self, session: requests.sessions.Session):
         self._scraper = CompassPeopleScraper(session)
 
-    def get_member_data(self, membership_num: int):
+    def get_member_data(self, membership_num: int) -> pd.DataFrame:
         """
         Gets Compliance Report data for a specified member
 
@@ -376,7 +376,7 @@ class CompassPeople:
             'WoodBadgeReceived', 'SafetyTraining', 'SafeguardingTraining', 'FirstAidTraining'
         ]
 
-        roles_data = self._roles_tab(membership_num)
+        roles_data = self._roles_tab(membership_num, return_frame=True)
         if roles_data.empty:
             return pd.DataFrame(columns=compliance_columns)
 
@@ -462,7 +462,7 @@ class CompassPeople:
 
         return training_data
 
-    def _permits_tab(self, membership_num: int):
+    def _permits_tab(self, membership_num: int) -> list:
         return self._scraper.get_permits_tab(membership_num)
 
     def get_roles_from_members(self, compass_unit_id: int, member_numbers: pd.Series):
@@ -478,7 +478,7 @@ class CompassPeople:
         roles_list = []
         for member_number in member_numbers:
             try:
-                roles_list.append(self._roles_tab(member_number))
+                roles_list.append(self._roles_tab(member_number, return_frame=True))
             except Exception as e:
                 with open("error_roles.txt", 'a') as f:
                     f.write(f"Member Number: {member_number}\n")
