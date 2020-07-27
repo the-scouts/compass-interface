@@ -374,9 +374,10 @@ class CompassPeople:
         training_data = self._training_tab(membership_num, return_frame=True)  # TODO rename completion date to WoodBadgeReceived
 
         compliance_data = pd.DataFrame(roles_detail_array)
+        compliance_data = pd.concat([compliance_data[col].apply(pd.Series) for col in compliance_data], axis=1)
         compliance_data = compliance_data.set_index(["role_number"])
         compliance_data = compliance_data.join(roles_data)
-        compliance_data = compliance_data.join(training_data)
+        compliance_data = compliance_data.merge(training_data, how="left", left_index=True, right_index=True)
         compliance_data = compliance_data.reindex(columns=compliance_columns)
         compliance_data.columns = compliance_data.columns.str.replace(normalise_cols, r"_\1\2", regex=True).str.lower()
 
@@ -439,10 +440,10 @@ class CompassPeople:
 
         if return_frame:
             if training_roles:
-                training_frame = pd.DataFrame(training_roles).set_index(["role_number"])
-                training_frame["SafetyTraining"] = training_ogl["SA"]["renewal_date"]
-                training_frame["SafeguardingTraining"] = training_ogl["SG"]["renewal_date"]
-                training_frame["FirstAidTraining"] = training_ogl["FA"]["renewal_date"]
+                training_frame = pd.DataFrame(training_roles).T
+                training_frame["SafetyTraining"] = training_ogl.get("SA", {"renewal_date": None})["renewal_date"]
+                training_frame["SafeguardingTraining"] = training_ogl.get("SG", {"renewal_date": None})["renewal_date"]
+                training_frame["FirstAidTraining"] = training_ogl.get("FA", {"renewal_date": None})["renewal_date"]
 
                 return training_frame
             else:
