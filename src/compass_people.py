@@ -7,7 +7,6 @@ import requests
 from lxml import html
 
 from src.utility import CompassSettings
-from src.utility import safe_xpath
 from src.utility import cast
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
@@ -42,7 +41,7 @@ class CompassPeopleScraper:
         first_name = names[0]
         last_names = ' '.join(names[1:])
         known_as = tree.xpath("//*[@id='divProfile0']/table//table/tr[2]/td[2]/label/text()")[0]
-        email = safe_xpath(tree, './/label/b[contains(text(),"Email")]/../../../td[3]//text()')
+        email = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
         return {
             "membership_number": membership_num,
