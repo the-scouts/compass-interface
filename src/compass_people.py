@@ -1,4 +1,3 @@
-import ast
 import datetime
 import re
 import time
@@ -9,19 +8,9 @@ from lxml import html
 
 from src.utility import CompassSettings
 from src.utility import safe_xpath
+from src.utility import cast
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
-
-
-def cast(value):
-    try:
-        value = int(value)
-    except (ValueError, TypeError):
-        try:
-            value = ast.literal_eval(str(value)) if value else value
-        except (ValueError, TypeError, SyntaxError):
-            pass
-    return value
 
 
 class CompassPeopleScraper:
