@@ -1,4 +1,5 @@
 from __future__ import annotations
+import ast
 import ctypes
 import functools
 import time
@@ -36,6 +37,17 @@ def jk_hash(logon: CompassLogon):
     data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
     logon.post(f"{CompassSettings.base_url}/System/Preflight", json=data, verify=False)
     return key_hash
+
+
+def cast(value):
+    try:
+        value = int(value)
+    except (ValueError, TypeError):
+        try:
+            value = ast.literal_eval(str(value)) if value else value
+        except (ValueError, TypeError, SyntaxError):
+            pass
+    return value
 
 
 class CompassSettings:
