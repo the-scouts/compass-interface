@@ -9,6 +9,8 @@ from src.compass_people import CompassPeopleScraper
 from src.utility import CompassSettings
 from src.utility import jk_hash
 from typing import Tuple
+import unicodedata
+
 
 def get_report_token(logon: CompassLogon, report_number: int):
     web_service_path = "/JSon.svc"
@@ -67,9 +69,24 @@ def get_report(logon: CompassLogon):
     tree = html.fromstring(report_page.content)
     form: html.FormElement = tree.forms[0]
 
-    form_data = {el.name: el.value for el in form.inputs if el.get("type") not in {'checkbox', 'image'}}
-    form_data["ReportViewer1$ctl04$ctl05$txtValue"] = "Regional Roles"
-    form_data["ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices"] = "0"
+    districts = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl07_divDropDown']//label/text()")
+    numbered_districts = {str(i): unicodedata.normalize("NFKD", d) for i, d in enumerate(districts[1:])}
+    all_districts = ", ".join(numbered_districts.values())
+    all_districts_indices = ",".join(numbered_districts.keys())
+
+    elements = {el.name: el.value for el in form.inputs if el.get("type") not in {'checkbox', 'image'}}
+
+    # form_data = {
+    #     "__VIEWSTATE": elements["__VIEWSTATE"],
+    #     "ReportViewer1$ctl04$ctl05$txtValue": "Regional Roles",
+    #     "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": "0",
+    # }
+
+    form_data = {
+        "__VIEWSTATE": elements["__VIEWSTATE"],
+        "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
+        "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
+    }
 
     # Including MSFTAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
     # In reality we don't care about the output of this POST, just that it doesn't fail
@@ -87,8 +104,6 @@ def get_report(logon: CompassLogon):
     print(len(csv_export.content))
     print('Report Saved')
     print()
-
-    # All works, but no control over what exported, currently using default settings.
 
 
 def compass_read(auth: list or tuple):
