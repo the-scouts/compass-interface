@@ -5,13 +5,30 @@ import functools
 import time
 from typing import TYPE_CHECKING
 
+import certifi
+from pathlib import Path
 import urllib3
 
 if TYPE_CHECKING:
     from src.compass.logon import CompassLogon
 
+PROJECT_ROOT = Path().parent.parent
+CERTIFICATES_ROOT = PROJECT_ROOT / "certs"
+
 # Disable requests' warnings about insecure requests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def cert_setup():
+    cert_file = Path(certifi.where())
+    cert_text = cert_file.read_text("UTF-8")
+    cert_one = "2020-07-29 compass.scouts.org.uk 1" not in cert_text
+    cert_two = "2020-07-29 compass.scouts.org.uk 2" not in cert_text
+    with cert_file.open("a", encoding="utf-8") as f:
+        if cert_one:
+            f.write(CERTIFICATES_ROOT.joinpath("compass_cert_one.pem").read_text())
+        if cert_two:
+            f.write(CERTIFICATES_ROOT.joinpath("compass_cert_two.pem").read_text())
 
 
 # https://stackoverflow.com/a/8831937
@@ -49,3 +66,5 @@ class CompassSettings:
     base_url = "https://compass.scouts.org.uk"
     org_number = 10000001
     total_requests = 0
+
+cert_setup()
