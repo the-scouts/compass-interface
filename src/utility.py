@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import urllib3
 
 if TYPE_CHECKING:
-    from src.compass_logon import CompassLogon
+    from src.compass.logon import CompassLogon
 
 # Disable requests' warnings about insecure requests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

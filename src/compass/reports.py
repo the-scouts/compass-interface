@@ -6,32 +6,47 @@ import requests
 import unicodedata
 from lxml import html
 
-from src.compass_logon import CompassLogon
+from src.compass.logon import CompassLogon
 from src.utility import CompassSettings
 from src.utility import jk_hash
 
+WEB_SERVICE_PATH = "/JSon.svc"
 
-def get_report_token(logon: CompassLogon, report_number: int):
-    web_service_path = "/JSon.svc"
+report_types = {
+    'Region Member Directory': 37,
+    'Region Appointments Report': 52,
+    'Region Permit Report': 72,
+    'Region Disclosure Report': 76,
+    'Region Disclosure Management Report': 100
+}
+
+
+def get_report_token(logon: CompassLogon, report_number: int) -> str:
     headers = {
         'Auth': jk_hash(logon)
     }
+
     params = {
         "pReportNumber": report_number,
         "pMemberRoleNumber": f"{logon.mrn}",
-        # "__": "~",  # This is in the JS source but seems unnecessary
         "x1": f"{logon.cn}",
         "x2": f"{logon.jk}",
         "x3": f"{logon.mrn}",
     }
     print('Getting report token')
-    response = logon.get(f"{CompassSettings.base_url}{web_service_path}/ReportToken", headers=headers, params=params)
+    response = logon.get(f"{CompassSettings.base_url}{WEB_SERVICE_PATH}/ReportToken", headers=headers, params=params)
 
-    response.raise_for_status()  # TODO json result could be -1 to -4 as well, check for those
+    response.raise_for_status()
     report_token_uri = response.json().get('d')
 
-    if report_token_uri == "-4":
-        raise PermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
+    if report_token_uri in ["-1", "-2", "-3", "-4"]:
+        msg = ""
+        if report_token_uri in ["-2", "-3"]:
+            msg = "Report No Longer Available"
+        elif report_token_uri == "-4":
+            msg = "USER DOES NOT HAVE PERMISSION"
+
+        raise PermissionError(f"Report aborted: {msg}")
 
     return report_token_uri
 
@@ -41,26 +56,23 @@ def get_report_export_url(report_page: str) -> Tuple[str, dict]:
     export_url_path = full_url.split("?")[0][1:]
     report_export_url_data = dict(param.split('=') for param in full_url.split("?")[1].split('&'))
     report_export_url_data["Format"] = "CSV"
+    report_export_url_data["FileName"] = "https%253A%252F%252Fxkcd.com%252F327%252F.csv.csv.exe"
 
     return export_url_path, report_export_url_data
 
 
-def get_report(logon: CompassLogon):
-    reports = {
-        'Member Directory': 37,
-        'Appointments Report': 52,
-        'Permit Report': 72,
-        'Disclosure Report': 76,
-        'Disclosure Management Report': 100
-    }
-
+def get_report(logon: CompassLogon, report_type: str):
     # GET Report Page
     # POST Location Update
     # GET CSV data
 
-    run_report_url = get_report_token(logon, reports["Appointments Report"])
+    if report_type not in report_types:
+        raise ValueError(f"{report_type} is not a valid report type. Existing report types are {', '.join(report_types)}")
 
-    logon.session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"})
+    run_report_url = get_report_token(logon, report_types[report_type])
+
+    # Compass does user-agent sniffing in reports!!!
+    logon.session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
     print('Generating report')
     run_report = f"{CompassSettings.base_url}/{run_report_url}"
@@ -87,17 +99,17 @@ def get_report(logon: CompassLogon):
     # ReportViewer1_ctl04_ctl09_divDropDown - Role Types
     # ReportViewer1_ctl04_ctl15_divDropDown - Columns
 
-    # form_data = {
-    #     "__VIEWSTATE": elements["__VIEWSTATE"],
-    #     "ReportViewer1$ctl04$ctl05$txtValue": "Regional Roles",
-    #     "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": "0",
-    # }
-
     form_data = {
         "__VIEWSTATE": elements["__VIEWSTATE"],
-        "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
-        "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
+        "ReportViewer1$ctl04$ctl05$txtValue": "Regional Roles",
+        "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": "0",
     }
+
+    # form_data = {
+    #     "__VIEWSTATE": elements["__VIEWSTATE"],
+    #     "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
+    #     "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
+    # }
 
     # Including MSFTAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
     # In reality we don't care about the output of this POST, just that it doesn't fail
