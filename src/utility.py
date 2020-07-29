@@ -47,7 +47,7 @@ def jk_hash(logon: CompassLogon):
     member_no = logon.cn
     key_hash = f"{time.time() * 1000:.0f}{logon.jk}{logon.mrn}{member_no}"  # JK, MRN & CN are all required.
     data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
-    logon.post(f"{CompassSettings.base_url}/System/Preflight", json=data, verify=False)
+    logon.post(f"{CompassSettings.base_url}/System/Preflight", json=data)
     return key_hash
 
 

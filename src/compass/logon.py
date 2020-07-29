@@ -59,7 +59,7 @@ class CompassLogon:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
         session = requests.session()
 
-        session.head(f"{CompassSettings.base_url}/", verify=False)  # use .head() as only headers needed to grab session cookie
+        session.head(f"{CompassSettings.base_url}/")  # use .head() as only headers needed to grab session cookie
         CompassSettings.total_requests += 1
 
         if not session.cookies:
@@ -81,7 +81,7 @@ class CompassLogon:
 
         # log in
         print("Logging in")
-        response = self.post(f'{CompassSettings.base_url}/Login.ashx', headers=headers, data=credentials, verify=False)
+        response = self.post(f'{CompassSettings.base_url}/Login.ashx', headers=headers, data=credentials)
         return response
 
     def _change_role(self, new_role: str, roles_dict: dict) -> int:
@@ -89,7 +89,7 @@ class CompassLogon:
         member_role_number = roles_dict[new_role]
 
         # Change role to the specified role
-        self.post(f"{CompassSettings.base_url}/API/ChangeRole", json={"MRN": member_role_number}, verify=False)
+        self.post(f"{CompassSettings.base_url}/API/ChangeRole", json={"MRN": member_role_number})
 
         return member_role_number
 
@@ -124,7 +124,7 @@ class CompassLogon:
 
     def confirm_success_and_update(self, session: requests.sessions.Session, check_url: bool = False, check_role_number: int = 0) -> Tuple[dict, dict]:
         portal_url = f"{CompassSettings.base_url}/ScoutsPortal.aspx"
-        response = self.get(portal_url, verify=False)
+        response = self.get(portal_url)
 
         # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
         # if int(post_response.headers.get("content-length", 901)) > 900:

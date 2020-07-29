@@ -25,10 +25,10 @@ class CompassPeopleScraper:
         tabs = ["ROLES", "PERMITS", "TRAINING", "AWARDS", "EMERGENCY", "COMMS", "VISIBILITY", "DISCLOSURES"]
         url = f"{CompassSettings.base_url}/MemberProfile.aspx?CN={membership_num}"
         if profile_tab == "PERSONAL":
-            response = self.get(url, verify=False, )
+            response = self.get(url)
         elif profile_tab in tabs:
             url += f"&Page={profile_tab}&TAB"
-            response = self.get(url, verify=False, )
+            response = self.get(url)
         else:
             raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs.append('PERSONAL')}")
 
@@ -272,7 +272,7 @@ class CompassPeopleScraper:
         }
 
         start_time = time.time()
-        response = self.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}", verify=False, )
+        response = self.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
         print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
 
         tree = html.fromstring(response.content)
