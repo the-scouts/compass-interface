@@ -76,6 +76,18 @@ def get_report(logon: CompassLogon):
 
     elements = {el.name: el.value for el in form.inputs if el.get("type") not in {'checkbox', 'image'}}
 
+    # Table Controls: table#ParametersGridReportViewer1_ctl04
+    # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label
+    # ReportViewer1$ctl04$ctl05$txtValue - County Label
+    # ReportViewer1$ctl04$ctl07$txtValue - District Label
+    # ReportViewer1$ctl04$ctl09$txtValue - Role Types (Status)
+    # ReportViewer1$ctl04$ctl15$txtValue - Columns Label
+
+    # ReportViewer1_ctl04_ctl07_divDropDown - Districts
+    # ReportViewer1_ctl04_ctl05_divDropDown - Counties
+    # ReportViewer1_ctl04_ctl09_divDropDown - Role Types
+    # ReportViewer1_ctl04_ctl15_divDropDown - Columns
+
     # form_data = {
     #     "__VIEWSTATE": elements["__VIEWSTATE"],
     #     "ReportViewer1$ctl04$ctl05$txtValue": "Regional Roles",
@@ -100,7 +112,7 @@ def get_report(logon: CompassLogon):
     export_url_path, export_url_params = get_report_export_url(report_page.text)
     csv_export = logon.get(f"{CompassSettings.base_url}/{export_url_path}", params=export_url_params)
     print('Saving report')
-    Path("export_report all 2.csv").write_bytes(csv_export.content)
+    Path("export_report all 3.csv").write_bytes(csv_export.content)
     print(len(csv_export.content))
     print('Report Saved')
     print()
