@@ -1,7 +1,7 @@
-from src.compass_hierarchy import CompassHierarchy
-from src.compass_logon import CompassLogon
-from src.compass_people import CompassPeople
-from src.compass_reports import get_report
+from src.compass.hierarchy import CompassHierarchy
+from src.compass.logon import CompassLogon
+from src.compass.people import CompassPeople
+from src.compass.reports import get_report
 from src.interface import compass_read
 
 
