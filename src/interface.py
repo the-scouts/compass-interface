@@ -1,5 +1,5 @@
-from compass_logon import CompassLogon
-from compass_people import CompassPeopleScraper
+from src.compass.logon import CompassLogon
+from src.compass.people import CompassPeopleScraper
 
 
 def compass_read(auth: list or tuple):
