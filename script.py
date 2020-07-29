@@ -1,17 +1,8 @@
-import re
-from pathlib import Path
-import requests
-from lxml import html
 from src.compass_hierarchy import CompassHierarchy
 from src.compass_logon import CompassLogon
 from src.compass_people import CompassPeople
-from src.compass_people import CompassPeopleScraper
-from src.utility import CompassSettings
-from src.utility import jk_hash
-from typing import Tuple
-import unicodedata
-from src.interface import compass_read
 from src.compass_reports import get_report
+from src.interface import compass_read
 
 
 if __name__ == '__main__':
