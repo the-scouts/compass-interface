@@ -45,8 +45,8 @@ def create_hierarchy_levels() -> pd.DataFrame:
 
 
 class CompassHierarchyScraper:
-    def __init__(self, session: requests.sessions.Session):
-        self.s: requests.sessions.Session = session
+    def __init__(self, session: requests.Session):
+        self.s: requests.Session = session
 
     def get(self, url, **kwargs):
         CompassSettings.total_requests += 1
@@ -131,7 +131,7 @@ class CompassHierarchyScraper:
 class CompassHierarchy:
     hierarchy_levels = create_hierarchy_levels()
 
-    def __init__(self, session: requests.sessions.Session):
+    def __init__(self, session: requests.Session):
         self._scraper = CompassHierarchyScraper(session)
 
     # See recurseRetrieve in PGS\Needle
