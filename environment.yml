@@ -13,6 +13,11 @@ dependencies:
   # Transforming
   - pandas
 
+  # API
+  - fastapi
+  - uvicorn
+  - sqlalchemy
+
   # Development requirements:
 #  - pytest
 #  - hypothesis
