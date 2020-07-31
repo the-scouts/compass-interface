@@ -1,8 +1,8 @@
+import datetime
 import re
 from pathlib import Path
 from typing import Tuple
 
-import requests
 import unicodedata
 from lxml import html
 
@@ -12,6 +12,7 @@ from src.utility import jk_hash
 
 WEB_SERVICE_PATH = "/JSon.svc"
 
+# TODO Enum???
 report_types = {
     'Region Member Directory': 37,
     'Region Appointments Report': 52,
@@ -19,6 +20,14 @@ report_types = {
     'Region Disclosure Report': 76,
     'Region Disclosure Management Report': 100
 }
+
+
+class CompassReportError(Exception):
+    pass
+
+
+class CompassReportPermissionError(PermissionError, Exception):
+    pass
 
 
 def get_report_token(logon: CompassLogon, report_number: int) -> str:
@@ -46,28 +55,29 @@ def get_report_token(logon: CompassLogon, report_number: int) -> str:
         elif report_token_uri == "-4":
             msg = "USER DOES NOT HAVE PERMISSION"
 
-        raise PermissionError(f"Report aborted: {msg}")
+        raise CompassReportError(f"Report aborted: {msg}")
 
     return report_token_uri
 
 
-def get_report_export_url(report_page: str) -> Tuple[str, dict]:
+def get_report_export_url(report_page: str, filename: str = None) -> Tuple[str, dict]:
     full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
     export_url_path = full_url.split("?")[0][1:]
     report_export_url_data = dict(param.split('=') for param in full_url.split("?")[1].split('&'))
     report_export_url_data["Format"] = "CSV"
-    report_export_url_data["FileName"] = "https%253A%252F%252Fxkcd.com%252F327%252F.csv.csv.exe"
+    if filename:
+        report_export_url_data["FileName"] = filename
 
     return export_url_path, report_export_url_data
 
 
-def get_report(logon: CompassLogon, report_type: str):
+def get_report(logon: CompassLogon, report_type: str) -> bytes:
     # GET Report Page
     # POST Location Update
     # GET CSV data
 
     if report_type not in report_types:
-        raise ValueError(f"{report_type} is not a valid report type. Existing report types are {', '.join(report_types)}")
+        raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {', '.join(report_types)}")
 
     run_report_url = get_report_token(logon, report_types[report_type])
 
@@ -79,11 +89,6 @@ def get_report(logon: CompassLogon, report_type: str):
     report_page = logon.get(run_report)
     tree = html.fromstring(report_page.content)
     form: html.FormElement = tree.forms[0]
-
-    districts = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl07_divDropDown']//label/text()")
-    numbered_districts = {str(i): unicodedata.normalize("NFKD", d) for i, d in enumerate(districts[1:])}
-    all_districts = ", ".join(numbered_districts.values())
-    all_districts_indices = ",".join(numbered_districts.keys())
 
     elements = {el.name: el.value for el in form.inputs if el.get("type") not in {'checkbox', 'image'}}
 
@@ -105,25 +110,36 @@ def get_report(logon: CompassLogon, report_type: str):
         "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": "0",
     }
 
+    # districts = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl07_divDropDown']//label/text()")
+    # numbered_districts = {str(i): unicodedata.normalize("NFKD", d) for i, d in enumerate(districts[1:])}
+    # all_districts = ", ".join(numbered_districts.values())
+    # all_districts_indices = ",".join(numbered_districts.keys())
+    #
     # form_data = {
     #     "__VIEWSTATE": elements["__VIEWSTATE"],
     #     "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
     #     "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
     # }
 
-    # Including MSFTAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
+    # Including MicrosoftAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
     # In reality we don't care about the output of this POST, just that it doesn't fail
     report = logon.post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
     report.raise_for_status()
 
     if "compass.scouts.org.uk%2fError.aspx|" in report.text:
-        raise requests.HTTPError("Compass Error!")
+        raise CompassReportError("Compass Error!")
 
     print('Exporting report')
     export_url_path, export_url_params = get_report_export_url(report_page.text)
     csv_export = logon.get(f"{CompassSettings.base_url}/{export_url_path}", params=export_url_params)
+
+    # TODO Debug check
     print('Saving report')
-    Path("export_report all 3.csv").write_bytes(csv_export.content)
+    time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
+    filename = f"{time_string} - {logon.cn} ({logon.current_role}).csv"
+    Path(filename).write_bytes(csv_export.content)  # TODO Debug check
+
     print(len(csv_export.content))
     print('Report Saved')
-    print()
+
+    return csv_export.content
