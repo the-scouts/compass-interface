@@ -17,7 +17,7 @@ router = APIRouter()
 @router.get("/", response_model=List[member.Member])
 def get_members(skip: int = 0, limit: int = 100, df: pd.DataFrame = Depends(get_df)):
     print("!!")
-    users = interface.get_users(df, skip=skip, limit=limit)
+    users = interface.get_members(df, skip=skip, limit=limit)
     return users
 
 
@@ -31,15 +31,15 @@ def get_current_user():
 def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     """Gets profile details for given member
 
-    :param db:
+    :param df:
     :param compass_id:
     :return:
     """
-    db_user = None
     try:
         db_user = interface.get_member(df, user_id=compass_id)
     except (Exception, ) as err:
         print(type(err))
+        db_user = None
 
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -47,9 +47,16 @@ def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
 
 
 @router.get('/{compass_id}/roles')
-def get_roles(compass_id: int):
-    print("!!")
-    pass
+def get_roles(compass_id: int, df: pd.DataFrame = Depends(get_df)):
+    try:
+        db_user = interface.get_member_roles(df, user_id=compass_id)
+    except (Exception, ) as err:
+        print(type(err))
+        db_user = None
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
 
 
 @router.get('/{compass_id}/permits')
