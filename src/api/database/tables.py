@@ -1,5 +1,6 @@
 import enum
 
+
 class MemberFields(str, enum.Enum):
     Membership_Number = "membership_number"
     Forenames = "forenames"
