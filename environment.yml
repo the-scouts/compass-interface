@@ -11,12 +11,14 @@ dependencies:
   - lxml
 
   # Transforming
+  - numba
   - pandas
+  - pyarrow
 
   # API
   - fastapi
   - uvicorn
-  - sqlalchemy
+#  - sqlalchemy
 
   # Development requirements:
 #  - pytest
