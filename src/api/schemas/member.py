@@ -62,8 +62,8 @@ class Member(MemberBase):
     join_date: opt_date = None
     occupation: opt_str = None
 
-    address: opt_str = None
-    main_phone: opt_int = None
+    postcode: opt_str = None
+    main_phone: opt_str = None
     main_email: opt_str = None  # EmailStr?
 
     # class Config:
