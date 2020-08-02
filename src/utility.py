@@ -12,7 +12,7 @@ import urllib3
 if TYPE_CHECKING:
     from src.compass.logon import CompassLogon
 
-PROJECT_ROOT = Path().parent.parent
+PROJECT_ROOT = Path(".").absolute().parent.parent
 CERTIFICATES_ROOT = PROJECT_ROOT / "certs"
 
 # Disable requests' warnings about insecure requests
