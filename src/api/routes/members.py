@@ -60,10 +60,10 @@ def get_followed(compass_id: int):
     pass
 
 
-@router.get('/{compass_id}/ongoing-training', )
+@router.get('/{compass_id}/ongoing-training', response_model=member.MemberOngoing)
 def get_ongoing(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     try:
-        ongoing = interface.get_member_roles(df, user_id=compass_id)
+        ongoing = interface.get_member_ongoing(df, user_id=compass_id)
     except (Exception, ) as err:
         print(type(err))
         ongoing = None

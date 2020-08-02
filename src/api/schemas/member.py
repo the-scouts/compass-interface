@@ -115,3 +115,10 @@ class MemberPermit(MemberBase):
     restrictions: str
     expires: datetime.date
     status: bool
+
+
+class MemberOngoing(MemberBase):
+    safety: datetime.date = None
+    safeguarding: datetime.date = None
+    first_aid: datetime.date = None
+    gdpr: datetime.date = None

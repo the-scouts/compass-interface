@@ -83,6 +83,18 @@ def get_member_roles(df: pd.DataFrame, user_id: int):
     return [{key: val for key, val in role.items() if val not in ["None", -1]} for role in row.to_dict("records")]
 
 
+def get_member_ongoing(df: pd.DataFrame, user_id: int):
+    date_cols = ['safety', 'safeguarding', 'first_aid', 'gdpr']
+    columns = ['membership_number'] + date_cols
+    try:
+        rows = df.loc[df["membership_number"].to_numpy() == user_id].reindex(columns=columns)
+        rows[date_cols] = rows[date_cols].astype("datetime64[D]")
+        row = rows.max()
+    except KeyError:
+        return dict()
+
+    return {k: v.to_pydatetime() if k in date_cols else v for k, v in row.to_dict().items() if v is not pd.NaT}
+
 # def create_user(db: Session, user: member.UserCreate) -> tables.User:
 #     serialised = base64.b64encode(bytes(user.password, "UTF-8")).decode("UTF-8")
 #     db_user = tables.User(username=user.username, auth=serialised)
