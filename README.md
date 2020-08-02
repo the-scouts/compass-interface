@@ -1,6 +1,28 @@
 # compass-interface
 Interface to Compass
 
+## Installing dependencies
+
+You can install the dependencies through either `pip` or `conda`.
+
+```
+# conda
+conda env create -n compass-interface
+conda activate compass-interface
+conda env update 
+```
+
+If installing dependencies from  PyPI, please *strongly* consider
+[using a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
+to isolate your packages. 
+
+```
+# PyPI
+pip install -r requirements.txt 
+```
+
+
+
 ## Running the API
 
 To run the FastAPI API either run `uvicorn src.api.app:app --reload` in the
@@ -47,3 +69,7 @@ Used in development:
 ## Licence
 
 This project is licensed under the terms of the MIT license.
+
+[tt]: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment
+
+[]: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment
