@@ -13,7 +13,7 @@ normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 
 
 class CompassPeopleScraper:
-    def __init__(self, session: requests.sessions.Session):
+    def __init__(self, session: requests.Session):
         self.s = session
 
     def get(self, url, **kwargs) -> requests.models.Response:
@@ -343,7 +343,7 @@ class CompassPeopleScraper:
 
 
 class CompassPeople:
-    def __init__(self, session: requests.sessions.Session):
+    def __init__(self, session: requests.Session):
         self._scraper = CompassPeopleScraper(session)
 
     def get_member_data(self, membership_num: int) -> pd.DataFrame:
