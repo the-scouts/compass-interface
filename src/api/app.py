@@ -10,7 +10,7 @@ version_one = APIRouter()
 version_one.include_router(
     members.router,
     prefix="/members",
-    tags=["members"],
+    tags=["Members"],
     dependencies=[],
     responses={404: {"description": "Not found!"}}
 )
@@ -21,16 +21,23 @@ app.include_router(
     dependencies=[]
 )
 
+# Appointments report - role details (except M01Ex, M04), ongoing details (except M01Ex imputing), disclosures
+# Member Directory - emergency contact details
+# Permit Report - permits
+# Training Report - training
+
+
 # base = api.compass.cys.org.uk
 # /v1/
 #    /members/me
 #    /members/{memberNumber}
-#            /XXX/ - default is profile
-#                /roles
+#            /XXX/ - default is profile ✔
+#                /roles ✔
+#                /ongoing-training ✔
+#                /disclosures
 #                /training
 #                /permits
 #                /awards
-#                /disclosures
 #                /emergency_details          ??
 #                /communication_preferences  ??
 #                /visibility                 ??
