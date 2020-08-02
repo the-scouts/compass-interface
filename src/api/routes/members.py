@@ -43,7 +43,7 @@ def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
 
 
 @router.get('/{compass_id}/roles', response_model=List[member.MemberRole])
-def get_roles(compass_id: int, df: pd.DataFrame = Depends(get_df)):
+def get_member_roles(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     try:
         roles_list = interface.get_member_roles(df, user_id=compass_id)
     except (Exception, ) as err:
@@ -56,12 +56,12 @@ def get_roles(compass_id: int, df: pd.DataFrame = Depends(get_df)):
 
 
 @router.get('/{compass_id}/permits')
-def get_followed(compass_id: int):
+def get_member_permits(compass_id: int):
     pass
 
 
 @router.get('/{compass_id}/ongoing-training', response_model=member.MemberOngoing)
-def get_ongoing(compass_id: int, df: pd.DataFrame = Depends(get_df)):
+def get_ongoing_training(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     try:
         ongoing = interface.get_member_ongoing(df, user_id=compass_id)
     except (Exception, ) as err:
