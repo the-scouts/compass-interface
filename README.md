@@ -12,7 +12,7 @@ conda activate compass-interface
 conda env update 
 ```
 
-If installing dependencies from  PyPI, please *strongly* consider
+If installing dependencies from  PyPI, please **strongly** consider
 [using a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 to isolate your packages. 
 
