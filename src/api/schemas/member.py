@@ -50,8 +50,8 @@ class MemberBase(BaseModel):
 class Member(MemberBase):
     name: str
     known_as: str
-    forenames: str = None
-    surname: str = None
+    forenames: opt_str = None
+    surname: opt_str = None
 
     birth_date: opt_date = None
     sex: TYPES_SEX = None
@@ -75,37 +75,37 @@ class MemberRole(MemberBase):
 
     # Role details
     role_start: str
-    role_end: str
+    role_end: opt_str = None
     role_status: str
 
     # Manager information
-    line_manager_number: int
-    line_manager: str
-    review_date: str
+    line_manager_number: opt_int = None
+    line_manager: opt_str = None
+    review_date: opt_str = None
 
     # Role location
     organisation: str
-    country: str
-    region: str
-    county: str
-    district: str
-    scout_group: str
-    section: str
+    country: opt_str = None
+    region: opt_str = None
+    county: opt_str = None
+    district: opt_str = None
+    group: opt_str = None
+    section: opt_str = None
 
     # Approval information
-    ce_check: str
-    appointment_panel_approval: str
-    commissioner_approval: str
-    committee_approval: str
-    references: str
+    ce_check: opt_str = None
+    appointment_panel_approval: opt_str = None
+    commissioner_approval: opt_str = None
+    committee_approval: opt_str = None
+    references: opt_str = None
 
     # Training
-    module_01: str
-    module_02: str
-    module_03: str
-    module_04: str
-    gdpr: str
-    training_completion_date: str
+    module_01: opt_str = None
+    module_02: opt_str = None
+    module_03: opt_str = None
+    module_04: opt_str = None
+    gdpr: opt_str = None
+    training_completion_date: opt_str = None
 
 
 class MemberPermit(MemberBase):
