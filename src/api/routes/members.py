@@ -24,7 +24,6 @@ def get_members(skip: int = 0, limit: int = 100, df: pd.DataFrame = Depends(get_
 def get_current_user(logon: CompassLogon = Depends(get_current_user)):
     return {
         "compass_dict": logon.compass_dict,
-        "credentials": logon.credentials,
         "role_to_use": logon.role_to_use,
         "current_role": logon.current_role,
         "roles_dict": logon.roles_dict,

@@ -16,7 +16,6 @@ class CompassLogon:
         self._member_role_number = 0
         self.compass_dict = {}
 
-        self.credentials: list = credentials
         self.role_to_use: str = role_to_use
 
         self.current_role: str = ""
