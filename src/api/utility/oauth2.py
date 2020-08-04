@@ -64,7 +64,7 @@ def create_access_token(subject: str, expires_delta: Optional[timedelta] = None)
 async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = Depends(depends_redis)) -> CompassLogon:
     credentials_exception = custom_bearer_auth_exception("Could not validate credentials")
     try:
-        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         raise credentials_exception
 
@@ -75,7 +75,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
     try:
         user_dict = json.loads(user_json)
         logon = CompassLogon(user_dict.get("auth", ["", ""]))
-    except CompassError:
+        if int(payload.get("sub")) != int(logon.cn):
+            raise CompassError()
+    except (CompassError, ValueError):
         raise credentials_exception from None
 
     return logon
