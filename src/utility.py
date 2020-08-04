@@ -2,7 +2,7 @@ from __future__ import annotations
 import ast
 import ctypes
 import functools
-import time
+import threading
 from typing import TYPE_CHECKING
 
 import certifi
@@ -63,8 +63,32 @@ def cast(value):
 
 
 class CompassSettings:
+    web_service_path = "/JSon.svc"
     base_url = "https://compass.scouts.org.uk"
     org_number = 10000001
     total_requests = 0
+
+
+class PeriodicTimer:
+    def __init__(self, interval, callback):
+        self.thread = None
+        self.interval = interval
+
+        @functools.wraps(callback)
+        def wrapper(*args, **kwargs):
+            result = callback(*args, **kwargs)
+            if result is not None:
+                self.thread = threading.Timer(self.interval, self.callback)
+                self.thread.start()
+
+        self.callback = wrapper
+
+    def start(self):
+        self.thread = threading.Thread(target=self.callback)
+        self.thread.start()
+
+    def cancel(self):
+        self.thread.cancel()
+
 
 cert_setup()
