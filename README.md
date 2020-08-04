@@ -7,9 +7,8 @@ You can install the dependencies through either `pip` or `conda`.
 
 ```
 # conda
-conda env create -n compass-interface
+conda env create
 conda activate compass-interface
-conda env update 
 ```
 
 If installing dependencies from  PyPI, please **strongly** consider
