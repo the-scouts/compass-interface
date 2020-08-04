@@ -10,6 +10,7 @@ from src.api.utility import reports_interface
 from src.api.utility.oauth2 import get_current_user
 from src.api.utility.reports_interface import get_df
 from src.compass.logon import CompassLogon
+from src.compass.people import CompassPeople, CompassPeopleScraper
 
 router = APIRouter()
 
@@ -20,14 +21,11 @@ def get_members(skip: int = 0, limit: int = 100, df: pd.DataFrame = Depends(get_
     return users
 
 
-@router.get('/me')
-def get_current_user(logon: CompassLogon = Depends(get_current_user)):
-    return {
-        "compass_dict": logon.compass_dict,
-        "role_to_use": logon.role_to_use,
-        "current_role": logon.current_role,
-        "roles_dict": logon.roles_dict,
-    }
+@router.get('/me', response_model=member.Member)
+def get_current_member(logon: CompassLogon = Depends(get_current_user)):
+    people_scraper = CompassPeopleScraper(logon.session)
+    personal_data = people_scraper.get_personal_tab(logon.cn)
+    return personal_data
 
 
 @router.get('/{compass_id}', response_model=member.Member)
