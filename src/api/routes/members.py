@@ -35,6 +35,16 @@ def get_my_roles(logon: CompassLogon = Depends(get_current_user), volunteer_only
     return roles_list
 
 
+@router.get('/me/permits', response_model=List[member.MemberPermit])
+def get_my_permits(logon: CompassLogon = Depends(get_current_user)):
+    people_scraper = CompassPeopleScraper(logon.session)
+    permits = people_scraper.get_permits_tab(logon.cn)
+
+    if not permits:
+        raise HTTPException(status_code=404, detail="Permit data were not found")
+    return permits
+
+
 @router.get('/{compass_id}', response_model=member.Member)
 def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     """Gets profile details for given member
