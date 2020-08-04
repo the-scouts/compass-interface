@@ -18,6 +18,8 @@ dependencies:
   # API
   - fastapi
   - uvicorn
+  - python-jose
+  - aioredis
 
   # Testing:
 #  - pytest
