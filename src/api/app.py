@@ -84,3 +84,14 @@ async def on_shutdown() -> None:
 if __name__ == '__main__':
     uvicorn.run("app:app", host='0.0.0.0', port=8000)
     print()
+
+
+# Redis config:
+# sudo apt update && sudo apt upgrade
+# sudo apt-get install redis-server
+# sudo systemctl enable redis-server.service
+# sudo service redis-server start
+# redis-cli
+# config set appendonly yes
+# config set appendfsync everysec
+# config rewrite
