@@ -28,6 +28,13 @@ def get_current_member(logon: CompassLogon = Depends(get_current_user)):
     return personal_data
 
 
+@router.get('/me/roles', response_model=List[member.MemberRole])
+def get_my_roles(logon: CompassLogon = Depends(get_current_user), volunteer_only: bool = False):
+    people = CompassPeople(logon.session)
+    roles_list = people.get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
+    return roles_list
+
+
 @router.get('/{compass_id}', response_model=member.Member)
 def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     """Gets profile details for given member
