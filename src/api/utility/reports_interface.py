@@ -6,10 +6,18 @@ import numba
 import pandas as pd
 
 from script import auth_keys
-from src.api.database import tables
+from src.api.utility import tables
 from src.compass.logon import CompassLogon
 from src.compass.reports import get_report
 from src import utility
+
+
+def get_df():
+    df = pd.read_feather(utility.PROJECT_ROOT / "all-region.feather")
+    try:
+        yield df
+    finally:
+        del df
 
 
 @numba.njit
@@ -94,15 +102,6 @@ def get_member_ongoing(df: pd.DataFrame, user_id: int):
         return dict()
 
     return {k: v.to_pydatetime() if k in date_cols else v for k, v in row.to_dict().items() if v is not pd.NaT}
-
-# def create_user(db: Session, user: member.UserCreate) -> tables.User:
-#     serialised = base64.b64encode(bytes(user.password, "UTF-8")).decode("UTF-8")
-#     db_user = tables.User(username=user.username, auth=serialised)
-#     db.add(db_user)
-#     db.commit()
-#     db.refresh(db_user)
-#     print(type(db_user))
-#     return db_user
 
 
 if __name__ == '__main__':
