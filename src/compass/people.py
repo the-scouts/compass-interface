@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import requests
 from lxml import html
+from dateutil.parser import parse
 
 from src.utility import CompassSettings
 from src.utility import cast
@@ -37,19 +38,31 @@ class CompassPeopleScraper:
     def get_personal_tab(self, membership_num: int) -> dict:
         response = self._get_member_profile_tab(membership_num, "Personal")
         tree = html.fromstring(response.get("content"))
-        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
-        first_name = names[0]
-        last_names = ' '.join(names[1:])
-        known_as = tree.xpath("//*[@id='divProfile0']/table//table/tr[2]/td[2]/label/text()")[0]
-        email = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
-        return {
-            "membership_number": membership_num,
-            "forenames": first_name,
-            "surname": last_names,
-            "known_as": known_as,
-            "email": email,
-        }
+        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
+
+        details = dict(
+            membership_number=membership_num,
+            main_phone=tree.xpath('string(//*[text()="Phone"]/../../../td[3])'),
+            emain_email=tree.xpath('string(//*[text()="Email"]/../../../td[3])'),
+            forenames=names[0],
+            surname=' '.join(names[1:]),
+
+            # Positional
+            name=tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)"),
+            known_as=tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)"),
+            join_date=parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")),
+
+            # Position Varies
+            birth_date=parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])")),
+            sex=tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])"),
+            nationality=tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])").strip(),
+            ethnicity=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])"),
+            religion=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])"),
+            occupation=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])"),
+        )
+
+        return {k: v for k, v in details.items() if v}
 
     def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict:
         """
@@ -250,10 +263,14 @@ class CompassPeopleScraper:
         return permits
 
     # See getAppointment in PGS\Needle
-    def get_roles_detail(self, role_number: int) -> dict:
+    def get_roles_detail(self, role_number: int, response: str = None) -> dict:
         renamed_levels = {
             'County / Area / Scottish Region / Overseas Branch': 'County',
         }
+        renamed_modules = {
+            1: "module_01", 2: "module_02", "M03": "module_03", 4: "module_04"
+        }
+        unset_vals = {'--- Not Selected ---', '--- No Items Available ---', '--- No Line Manager ---'}
 
         module_names = {
             'Essential Information': "M01",
@@ -272,10 +289,14 @@ class CompassPeopleScraper:
         }
 
         start_time = time.time()
-        response = self.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
-        print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
+        if response is None:
+            response = self.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
+            print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
 
-        tree = html.fromstring(response.content)
+        if isinstance(response, str):
+            tree = html.fromstring(response)
+        else:
+            tree = html.fromstring(response.content)
         form = tree.forms[0]
 
         member_string = form.fields.get("ctl00$workarea$txt_p1_membername")
@@ -311,6 +332,10 @@ class CompassPeopleScraper:
             "committee_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|CCA']//*[@selected])"),
         }
 
+        line_manager_number = role_details["line_manager_number"]
+        if line_manager_number in unset_vals:
+            role_details["line_manager_number"] = None
+
         # Getting Started
         modules_output = {}
         getting_started_modules = tree.xpath("//tr[@class='trTrain trTrainData']")
@@ -325,8 +350,7 @@ class CompassPeopleScraper:
                     "validated_by": module.xpath("./td/input[2]/@value")[0],  # Save who validated the module
                 }
                 mod_code = cast(module.xpath("./td[3]/input/@data-ng_value")[0])
-                mod_code = {"M03": 3}.get(mod_code, mod_code)
-                modules_output[mod_code] = info
+                modules_output[renamed_modules.get(mod_code, mod_code)] = info
 
         # Filter null values
         role_details = {k: v for k, v in role_details.items() if v is not None}
@@ -334,8 +358,8 @@ class CompassPeopleScraper:
         # Get all levels of the org hierarchy and select those that will have information
         org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]  # Get all inputs with location data
         all_locations = {row.get("title"): row.findtext("./option") for row in org_levels}
-        unset_vals = ['--- Not Selected ---', '--- No Items Available ---']
-        clipped_locations = {renamed_levels.get(key, key): value for key, value in all_locations.items() if value not in unset_vals}
+
+        clipped_locations = {renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals}
 
         # TODO data-ng_id?, data-rtrn_id?
         # return {**clipped_locations, **role_details, **modules_output}
@@ -345,6 +369,41 @@ class CompassPeopleScraper:
 class CompassPeople:
     def __init__(self, session: requests.Session):
         self._scraper = CompassPeopleScraper(session)
+
+    def get_roles(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> list:
+        response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
+
+        role_list = []
+        for role_number, role_dict in response.items():
+            role_detail = self._scraper.get_roles_detail(role_number)
+            details = role_detail["details"]
+            hierarchy = role_detail["hierarchy"]
+            data = {
+                "membership_number": membership_num,
+                "role_name": role_dict.get("role_name"),
+                "role_start": role_dict.get("role_start_date"),
+                "role_end": role_dict.get("role_end_date"),
+                "role_status": role_dict.get("role_status"),
+                "line_manager_number": cast(details.get("line_manager_number")),
+                "line_manager": details.get("line_manager"),
+                "review_date": details.get("review_date"),
+                "organisation": hierarchy.get("organisation"),
+                "region": hierarchy.get("region"),
+                "county": hierarchy.get("county"),
+                "district": hierarchy.get("district"),
+                "group": hierarchy.get("group"),
+                "section": hierarchy.get("section"),
+                "ce_check": details.get("ce_check"),
+                "appointment_panel_approval": details.get("appointment_panel_approval"),
+                "commissioner_approval": details.get("commissioner_approval"),
+                "committee_approval": details.get("committee_approval"),
+                "references": details.get("references"),
+                ** role_detail["getting_started"],
+                "training_completion_date": None,
+            }
+            role_list.append({k: v for k, v in data.items() if v})
+
+        return role_list
 
     def get_member_data(self, membership_num: int) -> pd.DataFrame:
         """
