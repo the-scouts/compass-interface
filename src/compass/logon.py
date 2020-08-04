@@ -1,9 +1,14 @@
-from typing import Tuple
+import datetime
+import time
+from typing import Tuple, Literal
 
 import requests
 from lxml import html
 
 from src.utility import CompassSettings
+from src.utility import compass_restify
+from src.utility import PeriodicTimer
+from src.compass.errors import CompassError, CompassAuthenticationError
 
 
 class CompassLogon:
@@ -55,7 +60,7 @@ class CompassLogon:
 
         return session
 
-    def create_session(self) -> requests.sessions.Session:
+    def create_session(self) -> requests.Session:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
         session = requests.session()
 
@@ -63,7 +68,7 @@ class CompassLogon:
         CompassSettings.total_requests += 1
 
         if not session.cookies:
-            raise Exception("No cookie found, terminating.")
+            raise CompassError("No cookie found, terminating.")
 
         self.session = session
         return session
@@ -93,7 +98,7 @@ class CompassLogon:
 
         return member_role_number
 
-    def change_role(self, session: requests.sessions.Session, new_role: str, roles_dict: dict):
+    def change_role(self, session: requests.Session, new_role: str, roles_dict: dict):
         print("Changing role")
         new_role = new_role.strip()
 
@@ -122,15 +127,15 @@ class CompassLogon:
     def get_selected_role_number(form_tree: html.FormElement):
         return form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles'].value
 
-    def confirm_success_and_update(self, session: requests.sessions.Session, check_url: bool = False, check_role_number: int = 0) -> Tuple[dict, dict]:
+    def confirm_success_and_update(self, session: requests.Session, check_url: bool = False, check_role_number: int = 0) -> Tuple[dict, dict]:
         portal_url = f"{CompassSettings.base_url}/ScoutsPortal.aspx"
         response = self.get(portal_url)
 
         # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
         # if int(post_response.headers.get("content-length", 901)) > 900:
-        #     raise Exception("Login has failed")
+        #     raise CompassAuthenticationError("Login has failed")
         if check_url and response.url != portal_url:
-            raise Exception("Login has failed")
+            raise CompassAuthenticationError("Login has failed")
 
         form: html.FormElement = html.fromstring(response.content).forms[0]
 
@@ -138,7 +143,7 @@ class CompassLogon:
             print("Confirming role has been changed")
             # Check that the role has been changed to the desired role. If not, raise exception.
             if self.get_selected_role_number(form) != check_role_number:
-                raise Exception("Role failed to update in Compass")
+                raise CompassError("Role failed to update in Compass")
 
         compass_dict = self.create_compass_dict(form)
         roles_dict = self.create_roles_dict(form)
@@ -152,7 +157,7 @@ class CompassLogon:
         session.headers.update(auth_headers)
 
         if check_role_number and check_role_number != self.mrn:
-            raise Exception("Compass Authentication failed to update")
+            raise CompassAuthenticationError("Compass Authentication failed to update")
 
         # TODO is this get role bit needed given that we change the role?
         role_name = {v: k for k,v in roles_dict.items()}.get(self.mrn)
