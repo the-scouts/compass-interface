@@ -123,7 +123,7 @@ class CompassPeopleScraper:
             roles_data = filtered_data
         return roles_data
 
-    def get_training_tab(self, membership_num: int) -> dict:
+    def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> dict:
         """
         Gets training tab data for a given member
 
@@ -136,36 +136,8 @@ class CompassPeopleScraper:
 
         rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
         roles = [row for row in rows if "msTR" in row.classes]
+
         personal_learning_plans = [row for row in rows if "trPLP" in row.classes]
-
-        training_roles = {}
-        for role in roles:
-            child_nodes = role.getchildren()
-
-            info = {}
-
-            info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
-            info["title"] = child_nodes[0].text_content()
-            info["start_date"] = datetime.datetime.strptime(child_nodes[1].text_content(), "%d %B %Y")
-            info["status"] = child_nodes[2].text_content()
-            info["location"] = child_nodes[3].text_content()
-
-            training_advisor_string = child_nodes[4].text_content()
-            info["ta_data"] = training_advisor_string
-            training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-            info["ta_number"] = training_advisor_data[0]
-            info["ta_name"] = training_advisor_data[1]
-
-            completion_string = child_nodes[5].text_content()
-            info["completion"] = completion_string
-            if completion_string:
-                parts = completion_string.split(':')
-                info["completion_type"] = parts[0].strip()
-                info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
-                info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
-            info["wood_badge_number"] = child_nodes[5].get("id")
-
-            training_roles[info["role_number"]] = info
 
         training_plps = {}
         training_gdpr = []
@@ -182,6 +154,11 @@ class CompassPeopleScraper:
                 if matches:
                     module_data["code"] = cast(matches[0])
                     module_data["name"] = matches[1]
+
+                    # Skip processing if we only want ongoing learning data and the module
+                    # is not GDPR.
+                    if ongoing_only and "gdpr" not in str(module_data["code"]).lower():
+                        continue
 
                 module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
                 module_data["learning_method"] = child_nodes[2].text_content()
@@ -217,20 +194,54 @@ class CompassPeopleScraper:
             cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
 
             ogl_data["name"] = cell_text.get(None)
-            ogl_data["completed_date"] = cell_text.get("tdLastComplete")
-            ogl_data["renewal_date"] = cell_text.get("tdRenewal")
+            ogl_data["completed_date"] = datetime.datetime.strptime(cell_text.get("tdLastComplete"), "%d %B %Y")
+            ogl_data["renewal_date"] = datetime.datetime.strptime(cell_text.get("tdRenewal"), "%d %B %Y")
 
             training_ogl[ogl_data["code"]] = ogl_data
             # TODO missing data-pk from cell.getchildren()[0].tag == "input", and module names/codes. Are these important?
 
         # Handle GDPR
+        date_zero = datetime.date(1900, 1, 1)
         sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.datetime)], reverse=True)
-        gdpr_date = sorted_gdpr[0] if sorted_gdpr else datetime.datetime(1900, 1, 1)
+        gdpr_date = sorted_gdpr[0] if sorted_gdpr else date_zero
         training_ogl["GDPR"] = {
             "code": "GDPR",
-            "name": "GDPR Training",
+            "name": "GDPR",
             "completed_date": gdpr_date
         }
+
+        if ongoing_only:
+            ongoing_only_data = {ogl.get("name", "").lower(): ogl.get("completed_date", date_zero) for ogl in training_ogl.values()}
+            return {"membership_number": membership_num, **ongoing_only_data}
+
+        training_roles = {}
+        for role in roles:
+            child_nodes = role.getchildren()
+
+            info = {}
+
+            info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
+            info["title"] = child_nodes[0].text_content()
+            info["start_date"] = datetime.datetime.strptime(child_nodes[1].text_content(), "%d %B %Y")
+            info["status"] = child_nodes[2].text_content()
+            info["location"] = child_nodes[3].text_content()
+
+            training_advisor_string = child_nodes[4].text_content()
+            info["ta_data"] = training_advisor_string
+            training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+            info["ta_number"] = training_advisor_data[0]
+            info["ta_name"] = training_advisor_data[1]
+
+            completion_string = child_nodes[5].text_content()
+            info["completion"] = completion_string
+            if completion_string:
+                parts = completion_string.split(':')
+                info["completion_type"] = parts[0].strip()
+                info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
+                info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
+            info["wood_badge_number"] = child_nodes[5].get("id")
+
+            training_roles[info["role_number"]] = info
 
         training_data = {
             "roles": training_roles,
