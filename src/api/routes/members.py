@@ -45,6 +45,16 @@ def get_my_permits(logon: CompassLogon = Depends(get_current_user)):
     return permits
 
 
+@router.get('/me/ongoing-training', response_model=member.MemberOngoing)
+def get_ongoing_training(logon: CompassLogon = Depends(get_current_user)):
+    people_scraper = CompassPeopleScraper(logon.session)
+    ongoing = people_scraper.get_training_tab(logon.cn, ongoing_only=True)
+
+    if not ongoing:
+        raise HTTPException(status_code=404, detail="Ongoing training data were not found")
+    return ongoing
+
+
 @router.get('/{compass_id}', response_model=member.Member)
 def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     """Gets profile details for given member
