@@ -7,6 +7,7 @@ from fastapi import HTTPException
 
 from src.api.schemas import member
 from src.api.utility import reports_interface
+from src.api.utility.compass_people_interface import get_ongoing_learning_scraper
 from src.api.utility.oauth2 import get_current_user
 from src.api.utility.reports_interface import get_df
 from src.compass.logon import CompassLogon
@@ -29,14 +30,14 @@ def get_current_member(logon: CompassLogon = Depends(get_current_user)):
 
 
 @router.get('/me/roles', response_model=List[member.MemberRole])
-def get_my_roles(logon: CompassLogon = Depends(get_current_user), volunteer_only: bool = False):
+def get_current_member_roles(logon: CompassLogon = Depends(get_current_user), volunteer_only: bool = False):
     people = CompassPeople(logon.session)
     roles_list = people.get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
     return roles_list
 
 
 @router.get('/me/permits', response_model=List[member.MemberPermit])
-def get_my_permits(logon: CompassLogon = Depends(get_current_user)):
+def get_current_member_permits(logon: CompassLogon = Depends(get_current_user)):
     people_scraper = CompassPeopleScraper(logon.session)
     permits = people_scraper.get_permits_tab(logon.cn)
 
@@ -46,9 +47,8 @@ def get_my_permits(logon: CompassLogon = Depends(get_current_user)):
 
 
 @router.get('/me/ongoing-training', response_model=member.MemberOngoing)
-def get_ongoing_training(logon: CompassLogon = Depends(get_current_user)):
-    people_scraper = CompassPeopleScraper(logon.session)
-    ongoing = people_scraper.get_training_tab(logon.cn, ongoing_only=True)
+def get_current_member_ongoing_training(logon: CompassLogon = Depends(get_current_user)):
+    ongoing = get_ongoing_learning_scraper(logon)
 
     if not ongoing:
         raise HTTPException(status_code=404, detail="Ongoing training data were not found")
