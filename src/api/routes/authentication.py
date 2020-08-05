@@ -11,7 +11,7 @@ from src.api.utility.oauth2 import authenticate_user, custom_bearer_auth_excepti
 router = APIRouter()
 
 
-@router.post("/token", response_model=Token)
+@router.post("/", response_model=Token)
 async def login_for_access_token(store: Redis = Depends(depends_redis), form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         user = authenticate_user(form_data.username, form_data.password)
