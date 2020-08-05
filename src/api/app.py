@@ -3,7 +3,7 @@ from fastapi import FastAPI, APIRouter
 
 from src.api.routes import members
 from src.api.routes import authentication
-from src.api.plugins import redis
+from src.api.utility import redis_handler
 
 app = FastAPI()
 
@@ -13,7 +13,7 @@ version_one.include_router(
     members.router,
     prefix="/members",
     tags=["Members"],
-    dependencies=[],
+    dependencies=[],  # can't currently put auth here as we want the logon object directly...
     responses={404: {"description": "Not found!"}}
 )
 version_one.include_router(
@@ -28,21 +28,10 @@ app.include_router(
 )
 
 
-class RedisConfig(redis.RedisSettings):
-    pass
-
-
-redis_plugin = redis.RedisPlugin(app, config=RedisConfig())
-
-
 @app.on_event('startup')
 async def on_startup() -> None:
-    await redis_plugin.init()
+    await redis_handler.on_startup(app)
 
-
-@app.on_event('shutdown')
-async def on_shutdown() -> None:
-    await redis_plugin.terminate()
 
 # Appointments report - role details (except M01Ex, M04), ongoing details (except M01Ex imputing), disclosures
 # Member Directory - emergency contact details

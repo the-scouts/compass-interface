@@ -36,19 +36,23 @@ class RedisSettings(BaseSettings):
 class RedisPlugin:
     def __init__(self, app: FastAPI = None, config: BaseSettings = None):
         self.redis: Optional[Redis] = None
-        if app:
-            self.config = config or RedisSettings()
+        self.config = config or RedisSettings()
 
-            if self.config is None:
-                raise RedisError("Redis configuration is not initialized")
-            elif not isinstance(self.config, RedisSettings):
-                raise RedisError("Redis configuration is invalid")
+        if self.config is None:
+            raise RedisError("Redis configuration is not initialized")
+        elif not isinstance(self.config, RedisSettings):
+            raise RedisError("Redis configuration is invalid")
+
+        if app:
             app.state.REDIS = self
 
     async def __call__(self) -> Any:
         if self.redis is None:
             raise RedisError("Redis is not initialized")
         return self.redis
+
+    async def setup(self, app: FastAPI):
+        app.state.REDIS = self
 
     async def init(self):
         if self.redis is not None:
