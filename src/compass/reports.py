@@ -9,7 +9,7 @@ import unicodedata
 from lxml import html
 
 from src.compass.logon import CompassLogon
-from src.utility import CompassSettings
+from compass.settings import Settings
 from src.utility import PeriodicTimer
 
 # TODO Enum???
@@ -37,7 +37,7 @@ def get_report_token(logon: CompassLogon, report_number: int) -> str:
         "pMemberRoleNumber": f"{logon.mrn}",
     }
     print('Getting report token')
-    response = logon.get(f"{CompassSettings.base_url}{CompassSettings.web_service_path}/ReportToken", auth_header=True, params=params)
+    response = logon.get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
     response.raise_for_status()
     report_token_uri = response.json().get('d')
@@ -79,7 +79,7 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
     logon.session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
     print('Generating report')
-    run_report = f"{CompassSettings.base_url}/{run_report_url}"
+    run_report = f"{Settings.base_url}/{run_report_url}"
     report_page = logon.get(run_report)
     tree = html.fromstring(report_page.content)
     form: html.FormElement = tree.forms[0]

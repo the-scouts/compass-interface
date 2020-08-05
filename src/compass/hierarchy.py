@@ -6,7 +6,7 @@ import pandas as pd
 import requests
 from lxml import html
 
-from src.utility import CompassSettings
+from compass.settings import Settings
 from src.utility import compass_restify
 
 
@@ -49,11 +49,11 @@ class CompassHierarchyScraper:
         self.s: requests.Session = session
 
     def get(self, url, **kwargs):
-        CompassSettings.total_requests += 1
+        Settings.total_requests += 1
         return self.s.get(url, **kwargs)
 
     def post(self, url, **kwargs):
-        CompassSettings.total_requests += 1
+        Settings.total_requests += 1
         data = kwargs.pop("data", None)
         json_ = kwargs.pop("json", None)
         return self.s.post(url, data=data, json=json_, **kwargs)
@@ -70,7 +70,7 @@ class CompassHierarchyScraper:
         level_endpoint = CompassHierarchy.hierarchy_levels.loc[CompassHierarchy.hierarchy_levels["type"] == level, "endpoint"].str.cat()
 
         # TODO PGS\Needle has `extra` bool in func signature to turn LiveData on/off
-        result = self.post(f"{CompassSettings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
+        result = self.post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
 
         # Handle unauthorised access
@@ -105,10 +105,10 @@ class CompassHierarchyScraper:
 
         # Execute search
         # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
-        self.post(f"{CompassSettings.base_url}/Search/Members", json=compass_restify(data))
+        self.post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
 
         # Fetch results from Compass
-        search_results = self.get(f"{CompassSettings.base_url}/SearchResults.aspx")
+        search_results = self.get(f"{Settings.base_url}/SearchResults.aspx")
 
         # Gets the compass form from the returned document
         form = html.fromstring(search_results.content).forms[0]

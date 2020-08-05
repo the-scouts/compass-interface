@@ -1,16 +1,11 @@
-from __future__ import annotations
 import ast
 import ctypes
 import functools
 import threading
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import certifi
-from pathlib import Path
 import urllib3
-
-if TYPE_CHECKING:
-    from src.compass.logon import CompassLogon
 
 PROJECT_ROOT = Path(".").absolute().parent.parent
 CERTIFICATES_ROOT = PROJECT_ROOT / "certificates"
@@ -51,13 +46,6 @@ def cast(value):
         except (ValueError, TypeError, SyntaxError):
             pass
     return value
-
-
-class CompassSettings:
-    web_service_path = "/JSon.svc"
-    base_url = "https://compass.scouts.org.uk"
-    org_number = 10000001
-    total_requests = 0
 
 
 class PeriodicTimer:
