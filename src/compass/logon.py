@@ -21,7 +21,7 @@ class CompassLogon:
         self.current_role: str = ""
         self.roles_dict: dict = {}
 
-        self.session: requests.sessions.Session = self.do_logon(credentials, role_to_use)
+        self.session: requests.Session = self.do_logon(credentials, role_to_use)
 
     @property
     def mrn(self) -> int:
@@ -35,8 +35,18 @@ class CompassLogon:
     def jk(self) -> int:
         return self.compass_dict["Master.User.JK"]  # ???? Key?
 
-    def get(self, url, **kwargs):
+    def get(self, url, auth_header: bool = False, **kwargs):
         CompassSettings.total_requests += 1
+        if auth_header:
+            headers = {"Auth": self._jk_hash()}
+            params = {
+                "x1": f"{self.cn}",
+                "x2": f"{self.jk}",
+                "x3": f"{self.mrn}",
+            }
+            kwargs["headers"] = {**kwargs.get("headers", {}), **headers}
+            kwargs["params"] = {**kwargs.get("params", {}), **params}
+
         return self.session.get(url, **kwargs)
 
     def post(self, url, **kwargs):
