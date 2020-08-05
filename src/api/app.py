@@ -5,7 +5,21 @@ from src.api.routes import members
 from src.api.routes import authentication
 from src.api.utility import redis_handler
 
-app = FastAPI()
+
+app = FastAPI(
+    title="Compass Interface — the unofficial Compass API",
+    description="The ***Compass Interface*** project aims to provide a unified and well-documented API to "
+                "the Scouts' national membership system, *[Compass](https://compass.scouts.org.uk)*. \n\n"
+                "The project aims to: "
+                "\n - increase flexibility and simplicity when developing applications that interface with *Compass* data, "
+                "\n - provide  stability and abstract complexities of *Compass*, and "
+                "\n - enable greater support to our adult  volunteers and "
+                "members. \n\n"
+                "***Compass Interface*** is [open source](https://github.com/the-scouts/compass-interface) and licensed "
+                "under the **[MIT license](https://choosealicense.com/licenses/mit/)**.",
+    version="0.8.7",
+    on_shutdown=[redis_handler.on_shutdown],
+)
 
 version_one = APIRouter()
 
