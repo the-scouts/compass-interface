@@ -8,8 +8,8 @@ The project aims to:
  - enable greater support to our adult  volunteers and 
 members. 
 
-***Compass Interface*** is [open source](https://github.com/the-scouts/compass-interface) and licensed 
-under the **[MIT license](https://choosealicense.com/licenses/mit/)**.,
+***Compass Interface*** is naturally [open source](https://github.com/the-scouts/compass-interface) 
+and is licensed under the **[MIT license](https://choosealicense.com/licenses/mit/)**.
 
 ## Installing dependencies
 
