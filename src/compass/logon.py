@@ -45,7 +45,16 @@ class CompassLogon:
         json_ = kwargs.pop("json", None)
         return self.session.post(url, data=data, json=json_, **kwargs)
 
-    def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.sessions.Session:
+    def _jk_hash(self):
+        # hash_code(f"{time.time() * 1000:.0f}")
+        member_no = self.cn
+        key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
+        data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
+        print(f"Sending preflight data {datetime.datetime.now()}")
+        self.post(f"{CompassSettings.base_url}/System/Preflight", json=data)
+        return key_hash
+
+    def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.Session:
         """Log in to Compass, change role and confirm success."""
         session = self.create_session()
 
