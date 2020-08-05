@@ -188,14 +188,15 @@ class CompassPeopleScraper:
         training_ogl = {}
         ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
         for ongoing_learning in ongoing_learning_rows:
-            ogl_data = {}
-            ogl_data["code"] = ongoing_learning.get("data-ng_code")
             cell_text = {c.get("id"): c.text_content() for c in ongoing_learning.getchildren()}
             cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
 
-            ogl_data["name"] = cell_text.get(None)
-            ogl_data["completed_date"] = datetime.datetime.strptime(cell_text.get("tdLastComplete"), "%d %B %Y")
-            ogl_data["renewal_date"] = datetime.datetime.strptime(cell_text.get("tdRenewal"), "%d %B %Y")
+            ogl_data = {
+                "code": ongoing_learning.get("data-ng_code"),
+                "name": cell_text.get(None),
+                "completed_date": datetime.datetime.strptime(cell_text.get("tdLastComplete"), "%d %B %Y"),
+                "renewal_date": datetime.datetime.strptime(cell_text.get("tdRenewal"), "%d %B %Y"),
+            }
 
             training_ogl[ogl_data["code"]] = ogl_data
             # TODO missing data-pk from cell.getchildren()[0].tag == "input", and module names/codes. Are these important?
@@ -211,8 +212,7 @@ class CompassPeopleScraper:
         }
 
         if ongoing_only:
-            ongoing_only_data = {ogl.get("name", "").lower(): ogl.get("completed_date", date_zero) for ogl in training_ogl.values()}
-            return {"membership_number": membership_num, **ongoing_only_data}
+            return training_ogl
 
         training_roles = {}
         for role in roles:
