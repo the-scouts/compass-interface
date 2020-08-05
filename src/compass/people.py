@@ -7,7 +7,7 @@ import requests
 from lxml import html
 from dateutil.parser import parse
 
-from src.utility import CompassSettings
+from compass.settings import Settings
 from src.utility import cast
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
@@ -18,13 +18,13 @@ class CompassPeopleScraper:
         self.s = session
 
     def get(self, url, **kwargs) -> requests.models.Response:
-        CompassSettings.total_requests += 1
+        Settings.total_requests += 1
         return self.s.get(url, **kwargs)
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: str) -> dict:
         profile_tab = profile_tab.upper()
         tabs = ["ROLES", "PERMITS", "TRAINING", "AWARDS", "EMERGENCY", "COMMS", "VISIBILITY", "DISCLOSURES"]
-        url = f"{CompassSettings.base_url}/MemberProfile.aspx?CN={membership_num}"
+        url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_num}"
         if profile_tab == "PERSONAL":
             response = self.get(url)
         elif profile_tab in tabs:
@@ -301,7 +301,7 @@ class CompassPeopleScraper:
 
         start_time = time.time()
         if response is None:
-            response = self.get(f"{CompassSettings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
+            response = self.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
             print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
 
         if isinstance(response, str):

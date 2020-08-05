@@ -5,7 +5,7 @@ from typing import Tuple, Literal
 import requests
 from lxml import html
 
-from src.utility import CompassSettings
+from compass.settings import Settings
 from src.utility import compass_restify
 from src.utility import PeriodicTimer
 from src.compass.errors import CompassError, CompassAuthenticationError
@@ -36,7 +36,7 @@ class CompassLogon:
         return self.compass_dict["Master.User.JK"]  # ???? Key?
 
     def get(self, url, auth_header: bool = False, **kwargs):
-        CompassSettings.total_requests += 1
+        Settings.total_requests += 1
         if auth_header:
             headers = {"Auth": self._jk_hash()}
             params = {
@@ -50,7 +50,7 @@ class CompassLogon:
         return self.session.get(url, **kwargs)
 
     def post(self, url, **kwargs):
-        CompassSettings.total_requests += 1
+        Settings.total_requests += 1
         data = kwargs.pop("data", None)
         json_ = kwargs.pop("json", None)
         return self.session.post(url, data=data, json=json_, **kwargs)
@@ -61,7 +61,7 @@ class CompassLogon:
         key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
         data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
         print(f"Sending preflight data {datetime.datetime.now()}")
-        self.post(f"{CompassSettings.base_url}/System/Preflight", json=data)
+        self.post(f"{Settings.base_url}/System/Preflight", json=data)
         return key_hash
 
     def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.Session:
@@ -82,8 +82,8 @@ class CompassLogon:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
         session = requests.session()
 
-        session.head(f"{CompassSettings.base_url}/")  # use .head() as only headers needed to grab session cookie
-        CompassSettings.total_requests += 1
+        session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
+        Settings.total_requests += 1
 
         if not session.cookies:
             raise CompassError("No cookie found, terminating.")
@@ -93,18 +93,18 @@ class CompassLogon:
 
     def _logon(self, auth: list) -> requests.models.Response:
         # Referer is genuinely needed otherwise login doesn't work
-        headers = {'Referer': f'{CompassSettings.base_url}/login/User/Login'}
+        headers = {'Referer': f'{Settings.base_url}/login/User/Login'}
 
         username, password = auth
         credentials = {
             'EM': f"{username}",  # assume email?
             'PW': f"{password}",  # password
-            'ON': f'{CompassSettings.org_number}'  # organisation number
+            'ON': f'{Settings.org_number}'  # organisation number
         }
 
         # log in
         print("Logging in")
-        response = self.post(f'{CompassSettings.base_url}/Login.ashx', headers=headers, data=credentials)
+        response = self.post(f'{Settings.base_url}/Login.ashx', headers=headers, data=credentials)
         return response
 
     def _change_role(self, new_role: str, roles_dict: dict) -> int:
@@ -112,7 +112,7 @@ class CompassLogon:
         member_role_number = roles_dict[new_role]
 
         # Change role to the specified role
-        self.post(f"{CompassSettings.base_url}/API/ChangeRole", json={"MRN": member_role_number})
+        self.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})
 
         return member_role_number
 
@@ -146,7 +146,7 @@ class CompassLogon:
         return form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles'].value
 
     def confirm_success_and_update(self, session: requests.Session, check_url: bool = False, check_role_number: int = 0) -> Tuple[dict, dict]:
-        portal_url = f"{CompassSettings.base_url}/ScoutsPortal.aspx"
+        portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"
         response = self.get(portal_url)
 
         # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
