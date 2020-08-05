@@ -5,6 +5,17 @@ from src.api.routes import members
 from src.api.routes import authentication
 from src.api.utility import redis_handler
 
+open_api_tag_metadata = [
+    {
+        "name": "Members",
+        "description": "Operations with member data. The `/me` magic ID refers to the currently authenticated user.",
+    },
+    {
+        "name": "Authentication",
+        "description": "OAuth2 **authentication** operations."
+    }
+]
+
 
 app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
@@ -19,6 +30,7 @@ app = FastAPI(
                 "under the **[MIT license](https://choosealicense.com/licenses/mit/)**.",
     version="0.8.7",
     on_shutdown=[redis_handler.on_shutdown],
+    openapi_tags=open_api_tag_metadata,
 )
 
 version_one = APIRouter()
@@ -32,6 +44,8 @@ version_one.include_router(
 )
 version_one.include_router(
     authentication.router,
+    prefix="/token",
+    tags=["Authentication"],
     responses={404: {"description": "Not found!"}}
 )
 
