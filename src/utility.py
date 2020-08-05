@@ -42,15 +42,6 @@ def compass_restify(data: dict) -> list:
     return [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
 
-def jk_hash(logon: CompassLogon):
-    # hash_code(f"{time.time() * 1000:.0f}")
-    member_no = logon.cn
-    key_hash = f"{time.time() * 1000:.0f}{logon.jk}{logon.mrn}{member_no}"  # JK, MRN & CN are all required.
-    data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
-    logon.post(f"{CompassSettings.base_url}/System/Preflight", json=data)
-    return key_hash
-
-
 def cast(value):
     try:
         value = int(value)
