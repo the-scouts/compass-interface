@@ -1,16 +1,16 @@
 import datetime
 import re
+import time
 from pathlib import Path
 from typing import Tuple
 
+import requests
 import unicodedata
 from lxml import html
 
 from src.compass.logon import CompassLogon
 from src.utility import CompassSettings
-from src.utility import jk_hash
-
-WEB_SERVICE_PATH = "/JSon.svc"
+from src.utility import PeriodicTimer
 
 # TODO Enum???
 report_types = {
@@ -18,6 +18,7 @@ report_types = {
     'Region Appointments Report': 52,
     'Region Permit Report': 72,
     'Region Disclosure Report': 76,
+    'Region Training Report': 84,
     'Region Disclosure Management Report': 100
 }
 
@@ -31,19 +32,12 @@ class CompassReportPermissionError(PermissionError, Exception):
 
 
 def get_report_token(logon: CompassLogon, report_number: int) -> str:
-    headers = {
-        'Auth': jk_hash(logon)
-    }
-
     params = {
         "pReportNumber": report_number,
         "pMemberRoleNumber": f"{logon.mrn}",
-        "x1": f"{logon.cn}",
-        "x2": f"{logon.jk}",
-        "x3": f"{logon.mrn}",
     }
     print('Getting report token')
-    response = logon.get(f"{CompassSettings.base_url}{WEB_SERVICE_PATH}/ReportToken", headers=headers, params=params)
+    response = logon.get(f"{CompassSettings.base_url}{CompassSettings.web_service_path}/ReportToken", auth_header=True, params=params)
 
     response.raise_for_status()
     report_token_uri = response.json().get('d')
