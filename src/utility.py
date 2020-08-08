@@ -7,7 +7,7 @@ from pathlib import Path
 import certifi
 import urllib3
 
-PROJECT_ROOT = Path(".").absolute().parent.parent
+PROJECT_ROOT = Path(__file__).absolute().parent.parent
 CERTIFICATES_ROOT = PROJECT_ROOT / "certificates"
 
 # Disable requests' warnings about insecure requests

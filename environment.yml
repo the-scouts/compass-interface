@@ -18,9 +18,13 @@ dependencies:
 
   # API
   - fastapi
-  - uvicorn
   - python-jose
   - aioredis
+  - python-multipart
+
+  # Deployment
+  - uvicorn
+  - gunicorn
 
   # Testing:
 #  - pytest
