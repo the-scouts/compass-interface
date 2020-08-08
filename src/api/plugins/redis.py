@@ -1,3 +1,4 @@
+import os
 from typing import Optional, Any
 
 from aioredis import Redis, create_redis_pool
@@ -16,9 +17,9 @@ class RedisSettings(BaseSettings):
     redis_type: str = REDIS_TYPE
 
     redis_url: str = None
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-    redis_password: str = None
+    redis_host: str = os.getenv("REDIS_HOST", "localhost")
+    redis_port: int = os.getenv("REDIS_PORT", 6379)
+    redis_password: str = os.getenv("REDIS_PASS", None)
     redis_db: int = 0
     redis_connection_timeout: int = 2
 

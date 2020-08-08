@@ -38,6 +38,8 @@ To run the FastAPI API either run `uvicorn src.api.app:app --reload` in the
 root directory, or run the app.py file in the `/src/api/` directory. This
 second method also enables interactive debugging.
 
+Alternativley, use [Docker](#Docker)
+
 ## Running the Compass Interface files directly
 
 To run the Compass Interface files directly the top-level script.py file
@@ -79,6 +81,14 @@ Used in development:
 
 This project is licensed under the terms of the MIT license.
 
-[tt]: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment
+## Docker
+To start docker compose, run `docker-compose up -d`.  
+To stop docker, run `docker-compose down`.  
+To rebuild the app, run `docker-compose build --no-cache backend`.  
+To access an interative shell, run `docker run -it backend bash`.  
 
-[]: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment
+When the containers are running, Redis Insight is available at 
+[localhost:8001](http://localhost:8001), the FastAPI app is reached at
+[localhost:8888](http://localhost:8888), and the Traefik reverse proxy is 
+[localhost:80](http://localhost:80) for the app proxy and 
+[localhost:8080](http://localhost:8080) for Traefik's dashboard.
