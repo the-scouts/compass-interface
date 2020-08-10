@@ -29,7 +29,7 @@ services:
       # Enable the Dashboard and API
       - --api
       # Enable the Dashboard and API in insecure mode for local development
-      - --api.insecure=true
+      - --api.insecure=${INSECURE_TRAEFIK_API-false}
     labels:
       - traefik.enable=true
       - traefik.http.routers.${STACK_NAME?Variable not set}-traefik-public-http.rule=Host(`${DOMAIN?Variable not set}`)
@@ -82,7 +82,6 @@ services:
     container_name: redis-cont
     image: "redis:alpine"
     environment:
-      - REDIS_PASSWORD=ubuntu
       - REDIS_REPLICATION_MODE=master
     ports:
       - "6379:6379"
@@ -90,10 +89,11 @@ services:
       # save redisearch data to your current working directory
       - ./redis-data:/data
     command:
-      # Save if 100 keys are added in every 10 seconds
-      - "--save 10 100"
       # Set password
-      - "--requirepass ubuntu"
+      - "--requirepass ${REDIS_PASSWORD}"
+      # Enable persistence
+      - "--appendonly yes"
+      - "--appendfsync everysec"
 
   redisinsight: # redis db visualization dashboard
     container_name: redisinsight-cont
@@ -104,11 +104,12 @@ services:
       - redisinsight:/db
 
   backend:
+    container_name: backend-cont
     ports:
       - "8888:8888"
     volumes:
       - ./src:/app/src
-    image: 'backend:latest'
+    image: 'scouts/compass-interface-backend'
     depends_on:
       - redis
     env_file:
@@ -126,13 +127,13 @@ services:
     labels:
       - traefik.enable=true
       - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
-      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`/v1`) || PathPrefix(`/docs`) || PathPrefix(`/redoc`) || PathPrefix(`/openapi.json`)
+      - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`/v`, `/docs`, `/redoc`, `/openapi.json`)  # /v handles all version prefixes
       - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=8888
 #    deploy:
 #      labels:
 #        - traefik.enable=true
 #        - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
-#        - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`/v1`) || PathPrefix(`/docs`) || PathPrefix(`/redoc`) || PathPrefix(`/openapi.json`)
+#        - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`/v1`, `/docs`, `/redoc`, `/openapi.json`)
 #        - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=8888
 
 
