@@ -4,14 +4,14 @@ import time
 
 import pandas as pd
 import requests
+
 from lxml import html
 from dateutil.parser import parse
 
 from compass.settings import Settings
-from src.utility import cast
+from compass.utils.utility import cast
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
-
 
 class CompassPeopleScraper:
     def __init__(self, session: requests.Session):
@@ -41,26 +41,30 @@ class CompassPeopleScraper:
 
         names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
 
-        details = dict(
-            membership_number=membership_num,
-            main_phone=tree.xpath('string(//*[text()="Phone"]/../../../td[3])'),
-            emain_email=tree.xpath('string(//*[text()="Email"]/../../../td[3])'),
-            forenames=names[0],
-            surname=' '.join(names[1:]),
+        details = dict()
+
+        try:
+            details['membership_number']=membership_num
+            details['main_phone']=tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
+            details['emain_email']=tree.xpath('string(//*[text()="Email"]/../../../td[3])')
+            details['forenames']=names[0]
+            details['surname']=' '.join(names[1:])
 
             # Positional
-            name=tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)"),
-            known_as=tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)"),
-            join_date=parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")),
+            details['name']=tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
+            details['known_as']=tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
+            details['join_date']=parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
 
             # Position Varies
-            birth_date=parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])")),
-            sex=tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])"),
-            nationality=tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])").strip(),
-            ethnicity=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])"),
-            religion=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])"),
-            occupation=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])"),
-        )
+            details['sex']=tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
+            details['birth_date']=parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
+            details['nationality']=tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])").strip()
+            details['ethnicity']=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
+            details['religion']=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
+            details['occupation']=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
+
+        except:
+            print("Error parsing some personal details - likely permissions releated")
 
         return {k: v for k, v in details.items() if v}
 

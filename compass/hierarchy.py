@@ -1,14 +1,15 @@
 import datetime
 import json
+
 from pathlib import Path
 
 import pandas as pd
 import requests
+
 from lxml import html
 
 from compass.settings import Settings
-from src.utility import compass_restify
-
+from compass.utils.utility import compass_restify
 
 def create_hierarchy_levels() -> pd.DataFrame:
     data = pd.DataFrame(
@@ -86,11 +87,15 @@ class CompassHierarchyScraper:
                 "parent_id": unit_dict["Parent"],
             }
             if unit_dict["Tag"]:
-                tag = json.loads(unit_dict["Tag"])
-                parsed["status"] = tag[0]["org_status"]
-                parsed["address"] = tag[0]["address"]
-                parsed["member_count"] = tag[0]["Members"]
-                parsed["section_type"] = tag[0]["SectionTypeDesc"]
+
+                try:
+                    tag = json.loads(unit_dict["Tag"])
+                    parsed["status"] = tag[0]["org_status"]
+                    parsed["address"] = tag[0]["address"]
+                    parsed["member_count"] = tag[0]["Members"]
+                    parsed["section_type"] = tag[0]["SectionTypeDesc"]
+                except:
+                    pass
 
             result_units.append(parsed)
 

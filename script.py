@@ -1,45 +1,55 @@
-from src.compass.hierarchy import CompassHierarchy
-from src.compass.logon import CompassLogon
-from src.compass.people import CompassPeople
-from src.compass.reports import get_report
-from src.interface import compass_read
+from compass.hierarchy import CompassHierarchy
+from compass.logon import CompassLogon
+from compass.people import CompassPeople
+from compass.reports import get_report
+# from interface import compass_read
 
 
 if __name__ == '__main__':
+
     auth_keys = ['user', 'pass']
-    compass_role_to_use = 'Regional Administrator'
+    compass_role_to_use = 'County Communications Manager - Member Communications Manager'
+
+
     # compass_role_to_use = 'HQ Committee Member - Scout Grants Committee'
     # compass_role_to_use = 'Country Scout Active Support Member'
     # compass_role_to_use = 'County Executive Committee Member'
     # compass_read(auth_keys)
-    c_logon = CompassLogon(auth_keys, compass_role_to_use)
-    # hierarchy = CompassHierarchy(c_logon.session)
-    # people = CompassPeople(c_logon.session)
-    # b = people.get_member_data(12047820)
-    # a = people._scraper.get_roles_detail(2155910)
-    # a = people._scraper.get_roles_detail(760357)
-    # a = people.get_member_data(760357)
 
-    get_report(c_logon)
+    c_logon = CompassLogon(auth_keys, compass_role_to_use)
+
+    hierarchy = CompassHierarchy(c_logon.session)
+    people = CompassPeople(c_logon.session)
+
+
+    # b = people._roles_tab(733004, True)
+    # a = people._scraper.get_personal_tab(733004)
+    # a = people.get_member_data(733004)
+
+    #get_report(c_logon)
+
+    print(people._scraper.get_personal_tab(662069))
+    # print(hierarchy._get_all_members_in_hierarchy(10000114, ['10000114']))
+    # print(hierarchy._scraper.get_members_with_roles_in_unit(10000114))
 
     # SCRATCH #
-    leah_sier_id = 11861706
-    # a = people._roles_tab(leah_sier_id)
-    # b = people.get_member_data(leah_sier_id)
-    print()
+    # print(a)
+    # print(b)
 
     # Get all units within a given OU
     # print("Compliance for Cook Meth")
     # cook_meth_compliance = create_compliance_data_for_unit(10013849)
     # cook_meth_compliance.to_csv("cmsg.csv", index=False, encoding="utf-8-sig")
-    surrey_county_id = 10000115
-    banstead_district_id = 10001222
-    cook_meth_id = 10013849
-    # surrey_county_id = 10000115
-    # cook_meth_id = 10013849
-    # surrey_hierarchy = hierarchy.get_hierarchy(cook_meth_id, "Group")
-    # table_surrey = hierarchy.hierarchy_to_dataframe(surrey_hierarchy)
-    # print(table_surrey)
+
+
+    # suffolk_county_id = 10000114
+    # suffolk_hierarchy = hierarchy.get_hierarchy(suffolk_county_id, "County")
+
+    # table_suffolk = hierarchy.hierarchy_to_dataframe(suffolk_hierarchy)
+
+    # print(hierarchy._get_all_members_in_hierarchy(10000114, table_suffolk['compass']))
+
+    # print(table_suffolk)
 
     # Get all members within that OU  (5020s ~= 1.5 hours for FULL ORG)
     # surrey_members = hierarchy.get_all_members_table(cook_meth_id, table_surrey["compass"])

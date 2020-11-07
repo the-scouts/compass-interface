@@ -7,12 +7,11 @@ from pathlib import Path
 import certifi
 import urllib3
 
-PROJECT_ROOT = Path(__file__).absolute().parent.parent
+PROJECT_ROOT = Path(__file__).absolute().parent
 CERTIFICATES_ROOT = PROJECT_ROOT / "certificates"
 
 # Disable requests' warnings about insecure requests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 
 def cert_setup():
     cert_file = Path(certifi.where())
@@ -24,7 +23,6 @@ def cert_setup():
             f.write(CERTIFICATES_ROOT.joinpath("compass_cert_one.pem").read_text())
         if cert_two:
             f.write(CERTIFICATES_ROOT.joinpath("compass_cert_two.pem").read_text())
-
 
 # https://stackoverflow.com/a/8831937
 def hash_code(text: str) -> int:

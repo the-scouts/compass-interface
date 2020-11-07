@@ -1,14 +1,17 @@
 import datetime
 import time
-from typing import Tuple, Literal
-
 import requests
+
+from typing import Tuple
+from typing_extensions import Literal
+
 from lxml import html
 
 from compass.settings import Settings
-from src.utility import compass_restify
-from src.utility import PeriodicTimer
-from src.compass.errors import CompassError, CompassAuthenticationError
+from compass.errors import CompassError, CompassAuthenticationError
+
+from compass.utils.utility import compass_restify
+from compass.utils.utility import PeriodicTimer
 
 
 class CompassLogon:

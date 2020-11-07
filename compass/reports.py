@@ -1,16 +1,17 @@
 import datetime
 import re
 import time
+import requests
+import unicodedata
+
 from pathlib import Path
 from typing import Tuple
 
-import requests
-import unicodedata
 from lxml import html
 
-from src.compass.logon import CompassLogon
+from compass.logon import CompassLogon
 from compass.settings import Settings
-from src.utility import PeriodicTimer
+from compass.utils.utility import PeriodicTimer
 
 # TODO Enum???
 report_types = {
