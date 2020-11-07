@@ -80,3 +80,4 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+authTest.py

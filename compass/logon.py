@@ -1,6 +1,7 @@
 import datetime
 import time
 import requests
+import certifi
 
 from typing import Tuple
 from typing_extensions import Literal
@@ -59,16 +60,18 @@ class CompassLogon:
         return self.session.post(url, data=data, json=json_, **kwargs)
 
     def _jk_hash(self):
+
         # hash_code(f"{time.time() * 1000:.0f}")
         member_no = self.cn
         key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
         data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
         print(f"Sending preflight data {datetime.datetime.now()}")
         self.post(f"{Settings.base_url}/System/Preflight", json=data)
+
         return key_hash
 
     def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.Session:
-        """Log in to Compass, change role and confirm success."""
+        # Log in to Compass, change role and confirm success.
         session = self.create_session()
 
         self._logon(credentials)
@@ -83,16 +86,19 @@ class CompassLogon:
 
     def create_session(self) -> requests.Session:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
-        session = requests.session()
+        s = requests.session()
 
-        session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
+        # Setup SSL
+        s.verify = certifi.where()
+
+        s.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
         Settings.total_requests += 1
 
-        if not session.cookies:
+        if not s.cookies:
             raise CompassError("No cookie found, terminating.")
 
-        self.session = session
-        return session
+        self.session = s
+        return s
 
     def _logon(self, auth: list) -> requests.models.Response:
         # Referer is genuinely needed otherwise login doesn't work
