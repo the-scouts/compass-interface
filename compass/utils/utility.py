@@ -4,27 +4,6 @@ import functools
 import threading
 from pathlib import Path
 
-# import certifi
-# import urllib3
-
-# PROJECT_ROOT = Path(__file__).absolute().parent
-# CERTIFICATES_ROOT = PROJECT_ROOT / "certificates"
-
-# Disable requests' warnings about insecure requests - NO BAD
-# urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# def cert_setup():
-#     cert_file = Path(certifi.where())
-#     cert_text = cert_file.read_text("UTF-8")
-#     cert_one = "2020-07-29 compass.scouts.org.uk 1" not in cert_text
-#     cert_two = "2020-07-29 compass.scouts.org.uk 2" not in cert_text
-#     with cert_file.open("a", encoding="utf-8") as f:
-#         if cert_one:
-#             f.write(CERTIFICATES_ROOT.joinpath("compass_cert_one.pem").read_text())
-#         if cert_two:
-#             f.write(CERTIFICATES_ROOT.joinpath("compass_cert_two.pem").read_text())
-
-
 # https://stackoverflow.com/a/8831937
 def hash_code(text: str) -> int:
     """Implements Java's hashCode in python"""
