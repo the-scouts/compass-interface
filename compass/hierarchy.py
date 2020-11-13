@@ -9,7 +9,7 @@ import requests
 from lxml import html
 
 from compass.settings import Settings
-from compass.utils.utility import compass_restify
+from compass.utility import compass_restify
 
 def create_hierarchy_levels() -> pd.DataFrame:
     data = pd.DataFrame(

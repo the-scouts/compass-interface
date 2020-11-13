@@ -11,12 +11,12 @@ from lxml import html
 from compass.settings import Settings
 from compass.errors import CompassError, CompassAuthenticationError
 
-from compass.utils.utility import compass_restify
-from compass.utils.utility import PeriodicTimer
+from compass.utility import compass_restify
+from compass.utility import PeriodicTimer
 
 
 class CompassLogon:
-    
+
     def __init__(self, credentials: list, role_to_use: str = None):
         self._member_role_number = 0
         self.compass_dict = {}

@@ -11,7 +11,7 @@ from lxml import html
 
 from compass.logon import CompassLogon
 from compass.settings import Settings
-from compass.utils.utility import PeriodicTimer
+from compass.utility import PeriodicTimer
 
 # TODO Enum???
 report_types = {

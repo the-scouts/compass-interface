@@ -9,7 +9,7 @@ from lxml import html
 from dateutil.parser import parse
 
 from compass.settings import Settings
-from compass.utils.utility import cast
+from compass.utility import cast
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 

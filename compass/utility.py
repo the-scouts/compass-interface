@@ -2,6 +2,7 @@ import ast
 import ctypes
 import functools
 import threading
+
 from pathlib import Path
 
 # https://stackoverflow.com/a/8831937
@@ -46,6 +47,3 @@ class PeriodicTimer:
 
     def cancel(self):
         self.thread.cancel()
-
-
-# cert_setup()
