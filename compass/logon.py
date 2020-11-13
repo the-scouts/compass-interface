@@ -16,6 +16,7 @@ from compass.utils.utility import PeriodicTimer
 
 
 class CompassLogon:
+    
     def __init__(self, credentials: list, role_to_use: str = None):
         self._member_role_number = 0
         self.compass_dict = {}
