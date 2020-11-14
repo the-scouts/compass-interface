@@ -13,6 +13,7 @@ from compass.errors import CompassError, CompassAuthenticationError
 
 from compass.utility import compass_restify
 from compass.utility import PeriodicTimer
+from compass.utility import setup_tls_certs
 
 
 class CompassLogon:
@@ -89,7 +90,8 @@ class CompassLogon:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
         s = requests.session()
 
-        # Setup SSL
+        # Setup SSL - see utility for reasoning
+        setup_tls_certs()
         s.verify = certifi.where()
 
         s.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
