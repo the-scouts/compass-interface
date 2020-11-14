@@ -37,36 +37,68 @@ class CompassPeopleScraper:
 
     def get_personal_tab(self, membership_num: int) -> dict:
         response = self._get_member_profile_tab(membership_num, "Personal")
+
         tree = html.fromstring(response.get("content"))
-
-        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
-
         details = dict()
 
-        try:
-            details['membership_number']=membership_num
-            details['main_phone']=tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
-            details['emain_email']=tree.xpath('string(//*[text()="Email"]/../../../td[3])')
-            details['forenames']=names[0]
-            details['surname']=' '.join(names[1:])
+        #### Extractors ####
+        details['membership_number']=membership_num
 
-            # Positional
-            details['name']=tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
-            details['known_as']=tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
-            details['join_date']=parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
+        #Name(s)
+        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
+        details['forenames']=names[0]
+        details['surname']=' '.join(names[1:])
 
-            # Position Varies
-            details['sex']=tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
-            details['birth_date']=parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
-            details['nationality']=tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])").strip()
-            details['ethnicity']=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
-            details['religion']=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
-            details['occupation']=tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
+        # Full Name
+        self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[1]/td[2]/label)", 'name', details)
+        # Known As
+        self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[2]/td[2]/label)", 'known_as', details)
 
-        except:
-            print("Error parsing some personal details - likely permissions releated")
+        # Main Phone
+        self.__extract_details(tree, 'string(//*[text()="Phone"]/../../../td[3])', 'main_phone', details)
+        # Main Email
+        self.__extract_details(tree, 'string(//*[text()="Email"]/../../../td[3])', 'main_email', details)
+        
+        # Join Date
+        self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[4]/td[2]/label)", 'join_date', details)
+
+        # Position Varies
+
+        # Gender
+        self.__extract_details(tree, "string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])", 'sex', details)
+        # DOB
+        self.__extract_details(tree, "string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])", 'birth_date', details)
+        # Nationality
+        self.__extract_details(tree, "string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])", 'nationality', details)
+        # Ethnicity
+        self.__extract_details(tree, "normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])", 'ethnicity', details)
+        # Religion
+        self.__extract_details(tree, "normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])", 'religion', details)
+        # Occupation
+        self.__extract_details(tree, "normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])", 'occupation', details)
 
         return {k: v for k, v in details.items() if v}
+
+    
+    def __extract_details(self, html, xpath: str, item_key: str, item_store: dict):
+        """
+        Extracts a value from the HTML given using the xpath query passed.
+
+        If found, the value is put into the given item store with the provided key. If the item is not found, the store is untouched.
+
+        """
+
+        try:
+
+            value = html.xpath(xpath)
+
+            if value and len(value) > 0:
+                item_store[item_key] = value
+
+        except:
+            pass # Don't do anythng, leave the store intact.
+
+    
 
     def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict:
         """
