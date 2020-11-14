@@ -12,17 +12,16 @@ from shutil import rmtree
 from setuptools import find_packages, setup, Command
 
 # Package meta-data.
-NAME = 'compass-interface'
+NAME = 'compass-interface-core'
 DESCRIPTION = 'The unofficial API to the TSA Compass membership database'
 URL = 'https://github.com/the-scouts/compass-interface'
 EMAIL = 'me@example.com'
 AUTHOR = 'Adam Turner & rglss'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    # 'requests', 'maya', 'records',
     'certifi', 'lxml', 'pandas', 'python-dateutil', 'requests', 'typing_extensions'
 ]
 
