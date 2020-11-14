@@ -54,6 +54,9 @@ class CompassPeopleScraper:
         # Known As
         self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[2]/td[2]/label)", 'known_as', details)
 
+        # Address
+        self.__extract_details(tree, 'string(//*[text()="Address"]/../../../td[3])', 'address', details)
+
         # Main Phone
         self.__extract_details(tree, 'string(//*[text()="Phone"]/../../../td[3])', 'main_phone', details)
         # Main Email
