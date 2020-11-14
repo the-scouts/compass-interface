@@ -102,10 +102,12 @@ class CompassLogon:
         return s
 
     def _logon(self, auth: list) -> requests.models.Response:
+
         # Referer is genuinely needed otherwise login doesn't work
-        headers = {'Referer': f'{Settings.base_url}/login/User/Login'}
+        headers = { 'Referer': f'{Settings.base_url}/login/User/Login' }
 
         username, password = auth
+        
         credentials = {
             'EM': f"{username}",  # assume email?
             'PW': f"{password}",  # password
