@@ -1,0 +1,21 @@
+name: compass-interface-core
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python>=3.8
+  - pip
+
+  # For web requests & certificates
+  - requests
+  - certifi
+
+  # For parsing results
+  - lxml
+  - python-dateutil
+
+  # Data arrangement
+  - pandas
+
+#  - pip:
+#    -
