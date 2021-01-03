@@ -10,12 +10,12 @@ from compass.settings import Settings
 
 # TODO Enum???
 report_types = {
-    'Region Member Directory': 37,
-    'Region Appointments Report': 52,
-    'Region Permit Report': 72,
-    'Region Disclosure Report': 76,
-    'Region Training Report': 84,
-    'Region Disclosure Management Report': 100
+    "Region Member Directory": 37,
+    "Region Appointments Report": 52,
+    "Region Permit Report": 72,
+    "Region Disclosure Report": 76,
+    "Region Training Report": 84,
+    "Region Disclosure Management Report": 100,
 }
 
 
@@ -32,11 +32,11 @@ def get_report_token(logon: CompassLogon, report_number: int) -> str:
         "pReportNumber": report_number,
         "pMemberRoleNumber": f"{logon.mrn}",
     }
-    print('Getting report token')
+    print("Getting report token")
     response = logon.get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
     response.raise_for_status()
-    report_token_uri = response.json().get('d')
+    report_token_uri = response.json().get("d")
 
     if report_token_uri in ["-1", "-2", "-3", "-4"]:
         msg = ""
@@ -53,7 +53,7 @@ def get_report_token(logon: CompassLogon, report_number: int) -> str:
 def get_report_export_url(report_page: str, filename: str = None) -> Tuple[str, dict]:
     full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
     export_url_path = full_url.split("?")[0][1:]
-    report_export_url_data = dict(param.split('=') for param in full_url.split("?")[1].split('&'))
+    report_export_url_data = dict(param.split("=") for param in full_url.split("?")[1].split("&"))
     report_export_url_data["Format"] = "CSV"
     if filename:
         report_export_url_data["FileName"] = filename
@@ -72,15 +72,15 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
     run_report_url = get_report_token(logon, report_types[report_type])
 
     # Compass does user-agent sniffing in reports!!!
-    logon.session.headers.update({'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    logon.session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-    print('Generating report')
+    print("Generating report")
     run_report = f"{Settings.base_url}/{run_report_url}"
     report_page = logon.get(run_report)
     tree = html.fromstring(report_page.content)
     form: html.FormElement = tree.forms[0]
 
-    elements = {el.name: el.value for el in form.inputs if el.get("type") not in {'checkbox', 'image'}}
+    elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
     # Table Controls: table#ParametersGridReportViewer1_ctl04
     # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label
@@ -119,17 +119,17 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
     if "compass.scouts.org.uk%2fError.aspx|" in report.text:
         raise CompassReportError("Compass Error!")
 
-    print('Exporting report')
+    print("Exporting report")
     export_url_path, export_url_params = get_report_export_url(report_page.text)
     csv_export = logon.get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
 
     # TODO Debug check
-    print('Saving report')
+    print("Saving report")
     time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
     filename = f"{time_string} - {logon.cn} ({logon.current_role}).csv"
     Path(filename).write_bytes(csv_export.content)  # TODO Debug check
 
     print(len(csv_export.content))
-    print('Report Saved')
+    print("Report Saved")
 
     return csv_export.content

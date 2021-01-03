@@ -1,6 +1,7 @@
 import datetime
 import time
 from typing import Tuple
+
 # from typing import Literal
 
 import requests
@@ -104,18 +105,18 @@ class CompassLogon:
 
     def _logon(self, auth: list) -> requests.models.Response:
         # Referer is genuinely needed otherwise login doesn't work
-        headers = {'Referer': f'{Settings.base_url}/login/User/Login'}
+        headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
 
         username, password = auth
         credentials = {
-            'EM': f"{username}",  # assume email?
-            'PW': f"{password}",  # password
-            'ON': f'{Settings.org_number}'  # organisation number
+            "EM": f"{username}",  # assume email?
+            "PW": f"{password}",  # password
+            "ON": f"{Settings.org_number}",  # organisation number
         }
 
         # log in
         print("Logging in")
-        response = self.post(f'{Settings.base_url}/Login.ashx', headers=headers, data=credentials)
+        response = self.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
         return response
 
     def _change_role(self, new_role: str, roles_dict: dict) -> int:
@@ -139,8 +140,8 @@ class CompassLogon:
     def create_compass_dict(self, form_tree: html.FormElement) -> dict:
         compass_dict = {}
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
-        for pair in compass_vars.split('~'):
-            key, value, *_ = pair.split('#')
+        for pair in compass_vars.split("~"):
+            key, value, *_ = pair.split("#")
             compass_dict[key] = value
 
         self.compass_dict = compass_dict
@@ -149,14 +150,16 @@ class CompassLogon:
     @staticmethod
     def create_roles_dict(form_tree: html.FormElement):
         """Dict comprehension to generate role name: role number mapping"""
-        roles_selector: html.SelectElement = form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles']  # get roles from compass page (list of option tags)
+        roles_selector = form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles']  # get roles from compass page (list of option tags)
         return {role.text.strip(): role.get("value").strip() for role in roles_selector.iter("option")}
 
     @staticmethod
     def get_selected_role_number(form_tree: html.FormElement):
-        return form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles'].value
+        return form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"].value
 
-    def confirm_success_and_update(self, session: requests.Session, check_url: bool = False, check_role_number: int = 0) -> Tuple[dict, dict]:
+    def confirm_success_and_update(
+        self, session: requests.Session, check_url: bool = False, check_role_number: int = 0
+    ) -> Tuple[dict, dict]:
         portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"
         response = self.get(portal_url)
 
@@ -181,7 +184,7 @@ class CompassLogon:
         # Set auth headers for new role
         auth_headers = {
             "Authorization": f'{self.cn}~{self.mrn}',
-            "SID": compass_dict["Master.Sys.SessionID"]  # Session ID
+            "SID": compass_dict["Master.Sys.SessionID"],  # Session ID
         }
         session.headers.update(auth_headers)
 
@@ -189,7 +192,7 @@ class CompassLogon:
             raise CompassAuthenticationError("Compass Authentication failed to update")
 
         # TODO is this get role bit needed given that we change the role?
-        role_name = {v: k for k,v in roles_dict.items()}.get(self.mrn)
+        role_name = {v: k for k, v in roles_dict.items()}.get(self.mrn)
         print(f"All good! Using Role: {role_name}")
         self.current_role = role_name
 
