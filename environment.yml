@@ -20,5 +20,9 @@ dependencies:
   # Style
   - black
 
+  # Build
+  - pep517
+  - twine
+
 #  - pip:
 #    -
