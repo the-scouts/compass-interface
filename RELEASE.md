@@ -22,8 +22,8 @@ conda env update
 conda activate compass-interface-core
 rm -rf dist
 git clean -xdf
-python -m pep517.build .
-#python -m setup sdist bdist_wheel --universal ??
+#python -m pep517.build .  # Other PEP517 builders?
+python -m setup sdist bdist_wheel --universal
 ```
 
 4. If happy, push the tag
