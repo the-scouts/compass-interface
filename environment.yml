@@ -1,7 +1,7 @@
 name: compass-interface-core
 channels:
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - python>=3.8
   - pip
@@ -16,6 +16,9 @@ dependencies:
 
   # Data arrangement
   - pandas
+
+  # Style
+  - black
 
 #  - pip:
 #    -
