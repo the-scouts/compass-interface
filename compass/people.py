@@ -10,6 +10,8 @@ from dateutil.parser import parse
 from compass.settings import Settings
 from compass.utility import cast
 
+from typing import Union
+
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 
 
@@ -40,7 +42,7 @@ class CompassPeopleScraper:
 
         tree = html.fromstring(response.get("content"))
 
-        if tree.forms[0].action == './ScoutsPortal.aspx?Invalid=AccessCN':
+        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
         details = dict()
@@ -48,45 +50,45 @@ class CompassPeopleScraper:
         ### Extractors ###
         ## Core:
 
-        details['membership_number'] = membership_num
+        details["membership_number"] = membership_num
 
         # Name(s)
         names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
-        details['forenames'] = names[0]
-        details['surname'] = ' '.join(names[1:])
+        details["forenames"] = names[0]
+        details["surname"] = " ".join(names[1:])
 
         # Main Phone
-        details['main_phone'] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
+        details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
         # details['main_phone'] = self._extract_details(tree, 'string(//*[text()="Phone"]/../../../td[3])')
 
         # Main Email
-        details['main_email'] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
+        details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
         ## Core - Positional:
 
         # Full Name
-        details['name'] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
+        details["name"] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
         # Known As
-        details['known_as'] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
+        details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
         # Join Date
-        details['join_date'] = parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
+        details["join_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
 
         ## Position Varies:
 
         # Gender
-        details['sex'] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
+        details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
         # DOB
-        details['birth_date'] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
+        details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
         # Nationality
-        details['nationality'] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
+        details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
         # Ethnicity
-        details['ethnicity'] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
+        details["ethnicity"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
         # Religion
-        details['religion'] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
+        details["religion"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
         # Occupation
-        details['occupation'] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
+        details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
         # Address
-        details['address'] = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
+        details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
 
         # Filter out keys with no value.
         return {k: v for k, v in details.items() if v}
@@ -105,7 +107,7 @@ class CompassPeopleScraper:
         response = self._get_member_profile_tab(membership_num, "Roles")
         tree = html.fromstring(response.get("content"))
 
-        if tree.forms[0].action == './ScoutsPortal.aspx?Invalid=AccessCN':
+        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
         roles_data = {}
@@ -118,8 +120,10 @@ class CompassPeopleScraper:
                 "membership_number": membership_num,
                 "role_name": cells[0].text_content().strip(),
                 "role_class": cells[1].text_content().strip(),
-                "role_type": [*row.xpath("./td[1]/*/@title"), None][0],  # only if access to System Admin tab
-                "location_id": cast([*row.xpath("./td[3]/*/@data-ng_id"), None][0]),  # only if role in your hierarchy AND location still exists
+                # role_type only visible if access to System Admin tab
+                "role_type": [*row.xpath("./td[1]/*/@title"), None][0],  
+                # location_id only visible if role is in hierarchy AND location still exists
+                "location_id": cast([*row.xpath("./td[3]/*/@data-ng_id"), None][0]),  
                 "location_name": cells[2].text_content().strip(),
                 "role_start_date": cells[3].text_content().strip(),
                 "role_end_date": cells[4].text_content().strip(),
@@ -155,7 +159,7 @@ class CompassPeopleScraper:
         Gets training tab data for a given member
 
         :param membership_num: Compass ID
-        :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
+        :param ongoing_only: Return a dataframe of role training & OGL info? Otherwise returns all data
         :return:
         """
         response = self._get_member_profile_tab(membership_num, "Training")
@@ -235,7 +239,7 @@ class CompassPeopleScraper:
         training_ogl["GDPR"] = {
             "code": "GDPR",
             "name": "GDPR",
-            "completed_date": gdpr_date
+            "completed_date": gdpr_date,
         }
 
         if ongoing_only:
@@ -262,7 +266,7 @@ class CompassPeopleScraper:
             completion_string = child_nodes[5].text_content()
             info["completion"] = completion_string
             if completion_string:
-                parts = completion_string.split(':')
+                parts = completion_string.split(":")
                 info["completion_type"] = parts[0].strip()
                 info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
                 info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
@@ -273,7 +277,7 @@ class CompassPeopleScraper:
         training_data = {
             "roles": training_roles,
             "plps": training_plps,
-            "mandatory": training_ogl
+            "mandatory": training_ogl,
         }
 
         return training_data
@@ -303,19 +307,19 @@ class CompassPeopleScraper:
     # See getAppointment in PGS\Needle
     def get_roles_detail(self, role_number: int, response: str = None) -> dict:
         renamed_levels = {
-            'County / Area / Scottish Region / Overseas Branch': 'County',
+            "County / Area / Scottish Region / Overseas Branch": "County",
         }
         renamed_modules = {
-            1: "module_01", 2: "module_02", "M03": "module_03", 4: "module_04"
+            1: "module_01", 2: "module_02", "M03": "module_03", 4: "module_04",
         }
         unset_vals = {'--- Not Selected ---', '--- No Items Available ---', '--- No Line Manager ---'}
 
         module_names = {
-            'Essential Information': "M01",
+            "Essential Information": "M01",
             "PersonalLearningPlan": "M02",
-            'Tools for the Role (Section Leaders)': "M03",
-            'Tools for the Role (Managers and Supporters)': "M04",
-            'General Data Protection Regulations': "GDPR",
+            "Tools for the Role (Section Leaders)": "M03",
+            "Tools for the Role (Managers and Supporters)": "M04",
+            "General Data Protection Regulations": "GDPR",
         }
 
         references_codes = {
@@ -384,7 +388,7 @@ class CompassPeopleScraper:
                 short_name = module_names[module_name]
                 info = {
                     "name": short_name,
-                    "validated": module.xpath("./td[3]/input/@value")[0],     # Save module validation date
+                    "validated": module.xpath("./td[3]/input/@value")[0],  # Save module validation date
                     "validated_by": module.xpath("./td/input[2]/@value")[0],  # Save who validated the module
                 }
                 mod_code = cast(module.xpath("./td[3]/input/@data-ng_value")[0])
@@ -393,11 +397,17 @@ class CompassPeopleScraper:
         # Filter null values
         role_details = {k: v for k, v in role_details.items() if v is not None}
 
-        # Get all levels of the org hierarchy and select those that will have information
-        org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]  # Get all inputs with location data
+        # Get all levels of the org hierarchy and select those that will have information:
+        # Get all inputs with location data
+        org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]  
+        # TODO
         all_locations = {row.get("title"): row.findtext("./option") for row in org_levels}
 
-        clipped_locations = {renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals}
+        clipped_locations = {
+            renamed_levels.get(key, key).lower(): value 
+            for key, value in all_locations.items() 
+            if value not in unset_vals
+        }
 
         # TODO data-ng_id?, data-rtrn_id?
         # return {**clipped_locations, **role_details, **modules_output}
@@ -436,7 +446,7 @@ class CompassPeople:
                 "commissioner_approval": details.get("commissioner_approval"),
                 "committee_approval": details.get("committee_approval"),
                 "references": details.get("references"),
-                ** role_detail["getting_started"],
+                **role_detail["getting_started"],
                 "training_completion_date": None,
             }
             role_list.append({k: v for k, v in data.items() if v})
@@ -452,14 +462,16 @@ class CompassPeople:
         """
 
         # Columns for the compliance report in order
+        # fmt: off
         compliance_columns = [
-            'Membership_Number', 'Forenames', 'Surname', 'Known_As', 'Email',
-            'Role', 'Role_Start_Date', 'Role_End_Date', 'RoleStatus', 'Review_date',
-            'Country', 'Region', 'County', 'District', 'ScoutGroup', "DOB",
-            'CE_Check', 'AppAdvComm_Approval', 'Commissioner_Approval', 'Committee_Approval', 'References',
-            'Essential_Info', 'PersonalLearningPlan', 'Tools4Role', 'GDPR',
-            'WoodBadgeReceived', 'SafetyTraining', 'SafeguardingTraining', 'FirstAidTraining'
+            "Membership_Number", "Forenames", "Surname", "Known_As", "Email",
+            "Role", "Role_Start_Date", "Role_End_Date", "RoleStatus", "Review_date",
+            "Country", "Region", "County", "District", "ScoutGroup", "DOB",
+            "CE_Check", "AppAdvComm_Approval", "Commissioner_Approval", "Committee_Approval", "References",
+            "Essential_Info", "PersonalLearningPlan", "Tools4Role", "GDPR",
+            "WoodBadgeReceived", "SafetyTraining", "SafeguardingTraining", "FirstAidTraining"
         ]
+        # fmt: on
 
         roles_data = self._roles_tab(membership_num, return_frame=True)
         if roles_data.empty:
@@ -478,7 +490,7 @@ class CompassPeople:
         compliance_data = compliance_data.reindex(columns=compliance_columns)
         compliance_data.columns = compliance_data.columns.str.replace(normalise_cols, r"_\1\2", regex=True).str.lower()
 
-        compliance_data['membership_number'] = membership_num
+        compliance_data["membership_number"] = membership_num
 
         personal_details = self._scraper.get_personal_tab(membership_num)
         for key, value in personal_details.items():
@@ -507,8 +519,10 @@ class CompassPeople:
 
         return compliance_data
 
+    RTRT = Union[pd.DataFrame, dict]  # Roles Tab Return Type
+
     # See getRole in PGS\Needle
-    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False, return_frame: bool = False) -> pd.DataFrame or dict:
+    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False, return_frame: bool = False) -> RTRT:
         """
         Gets the data from the Role tab in Compass for the specified member.
 
@@ -566,7 +580,7 @@ class CompassPeople:
             try:
                 roles_list.append(self._roles_tab(member_number, return_frame=True))
             except Exception as e:
-                with open("error_roles.txt", 'a') as f:
+                with open("error_roles.txt", "a") as f:
                     f.write(f"Member Number: {member_number}\n")
                     f.write(f"Exception: {e}\n\n")
         roles_table = pd.concat(roles_list, sort=False)
