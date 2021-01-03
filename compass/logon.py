@@ -1,10 +1,10 @@
 import datetime
 import time
+from typing import Tuple
+# from typing import Literal
+
 import requests
 import certifi
-
-from typing import Tuple
-from typing_extensions import Literal
 
 from lxml import html
 
@@ -12,12 +12,10 @@ from compass.settings import Settings
 from compass.errors import CompassError, CompassAuthenticationError
 
 from compass.utility import compass_restify
-from compass.utility import PeriodicTimer
 from compass.utility import setup_tls_certs
 
 
 class CompassLogon:
-
     def __init__(self, credentials: list, role_to_use: str = None):
         self._member_role_number = 0
         self.compass_dict = {}
@@ -62,18 +60,16 @@ class CompassLogon:
         return self.session.post(url, data=data, json=json_, **kwargs)
 
     def _jk_hash(self):
-
         # hash_code(f"{time.time() * 1000:.0f}")
         member_no = self.cn
         key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
         data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
         print(f"Sending preflight data {datetime.datetime.now()}")
         self.post(f"{Settings.base_url}/System/Preflight", json=data)
-
         return key_hash
 
     def do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.Session:
-        # Log in to Compass, change role and confirm success.
+        """Log in to Compass, change role and confirm success."""
         session = self.create_session()
 
         self._logon(credentials)
@@ -88,11 +84,14 @@ class CompassLogon:
 
     def create_session(self) -> requests.Session:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
-        s = requests.session()
+        s = requests.Session()
 
         # Setup SSL - see utility for reasoning
         setup_tls_certs()
-        s.verify = certifi.where()
+        if certifi.where():
+            s.verify = True
+        else:
+            raise RuntimeError("Certificates not loaded")
 
         s.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
         Settings.total_requests += 1
@@ -104,12 +103,10 @@ class CompassLogon:
         return s
 
     def _logon(self, auth: list) -> requests.models.Response:
-
         # Referer is genuinely needed otherwise login doesn't work
-        headers = { 'Referer': f'{Settings.base_url}/login/User/Login' }
+        headers = {'Referer': f'{Settings.base_url}/login/User/Login'}
 
         username, password = auth
-        
         credentials = {
             'EM': f"{username}",  # assume email?
             'PW': f"{password}",  # password

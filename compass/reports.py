@@ -1,9 +1,5 @@
 import datetime
 import re
-import time
-import requests
-import unicodedata
-
 from pathlib import Path
 from typing import Tuple
 
@@ -11,7 +7,6 @@ from lxml import html
 
 from compass.logon import CompassLogon
 from compass.settings import Settings
-from compass.utility import PeriodicTimer
 
 # TODO Enum???
 report_types = {
@@ -126,7 +121,7 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
 
     print('Exporting report')
     export_url_path, export_url_params = get_report_export_url(report_page.text)
-    csv_export = logon.get(f"{CompassSettings.base_url}/{export_url_path}", params=export_url_params)
+    csv_export = logon.get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
 
     # TODO Debug check
     print('Saving report')

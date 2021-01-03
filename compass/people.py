@@ -4,7 +4,6 @@ import time
 
 import pandas as pd
 import requests
-
 from lxml import html
 from dateutil.parser import parse
 
@@ -12,6 +11,7 @@ from compass.settings import Settings
 from compass.utility import cast
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
+
 
 class CompassPeopleScraper:
     def __init__(self, session: requests.Session):
@@ -39,69 +39,57 @@ class CompassPeopleScraper:
         response = self._get_member_profile_tab(membership_num, "Personal")
 
         tree = html.fromstring(response.get("content"))
+
+        if tree.forms[0].action == './ScoutsPortal.aspx?Invalid=AccessCN':
+            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+
         details = dict()
 
-        #### Extractors ####
-        details['membership_number']=membership_num
+        ### Extractors ###
+        ## Core:
 
-        #Name(s)
+        details['membership_number'] = membership_num
+
+        # Name(s)
         names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
-        details['forenames']=names[0]
-        details['surname']=' '.join(names[1:])
-
-        # Full Name
-        self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[1]/td[2]/label)", 'name', details)
-        # Known As
-        self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[2]/td[2]/label)", 'known_as', details)
-
-        # Address
-        self.__extract_details(tree, 'string(//*[text()="Address"]/../../../td[3])', 'address', details)
+        details['forenames'] = names[0]
+        details['surname'] = ' '.join(names[1:])
 
         # Main Phone
-        self.__extract_details(tree, 'string(//*[text()="Phone"]/../../../td[3])', 'main_phone', details)
-        # Main Email
-        self.__extract_details(tree, 'string(//*[text()="Email"]/../../../td[3])', 'main_email', details)
-        
-        # Join Date
-        self.__extract_details(tree, "string(//*[@id='divProfile0']//tr[4]/td[2]/label)", 'join_date', details)
+        details['main_phone'] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
+        # details['main_phone'] = self._extract_details(tree, 'string(//*[text()="Phone"]/../../../td[3])')
 
-        # Position Varies
+        # Main Email
+        details['main_email'] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
+
+        ## Core - Positional:
+
+        # Full Name
+        details['name'] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
+        # Known As
+        details['known_as'] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
+        # Join Date
+        details['join_date'] = parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
+
+        ## Position Varies:
 
         # Gender
-        self.__extract_details(tree, "string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])", 'sex', details)
+        details['sex'] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
         # DOB
-        self.__extract_details(tree, "string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])", 'birth_date', details)
+        details['birth_date'] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
         # Nationality
-        self.__extract_details(tree, "string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])", 'nationality', details)
+        details['nationality'] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
         # Ethnicity
-        self.__extract_details(tree, "normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])", 'ethnicity', details)
+        details['ethnicity'] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
         # Religion
-        self.__extract_details(tree, "normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])", 'religion', details)
+        details['religion'] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
         # Occupation
-        self.__extract_details(tree, "normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])", 'occupation', details)
+        details['occupation'] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
+        # Address
+        details['address'] = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
 
+        # Filter out keys with no value.
         return {k: v for k, v in details.items() if v}
-
-    
-    def __extract_details(self, html, xpath: str, item_key: str, item_store: dict):
-        """
-        Extracts a value from the HTML given using the xpath query passed.
-
-        If found, the value is put into the given item store with the provided key. If the item is not found, the store is untouched.
-
-        """
-
-        try:
-
-            value = html.xpath(xpath)
-
-            if value and len(value) > 0:
-                item_store[item_key] = value
-
-        except:
-            pass # Don't do anythng, leave the store intact.
-
-    
 
     def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict:
         """
