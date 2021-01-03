@@ -1,0 +1,3 @@
+[tool.black]
+line-length = 132  # 120*1.1
+target-version = ['py38']  # Remember to change this if we change pins from Python 3.8!
