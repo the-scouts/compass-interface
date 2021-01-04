@@ -17,8 +17,13 @@ dependencies:
   # Data arrangement
   - pandas
 
-  # Style
+  # Style, Linting
   - black
+  - pre-commit
+  - virtualenv==20.0.33  # Solve regression, see
+      # https://github.com/ContinuumIO/anaconda-issues/issues/12094
+      # https://github.com/pypa/virtualenv/issues/1986
+      # https://github.com/pre-commit/pre-commit/issues/1675
 
   # Build
   - pep517
