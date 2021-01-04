@@ -150,7 +150,7 @@ class CompassLogon:
     @staticmethod
     def create_roles_dict(form_tree: html.FormElement):
         """Dict comprehension to generate role name: role number mapping"""
-        roles_selector = form_tree.inputs['ctl00$UserTitleMenu$cboUCRoles']  # get roles from compass page (list of option tags)
+        roles_selector = form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"]  # get roles from compass page (list of option tags)
         return {role.text.strip(): role.get("value").strip() for role in roles_selector.iter("option")}
 
     @staticmethod
@@ -183,7 +183,7 @@ class CompassLogon:
 
         # Set auth headers for new role
         auth_headers = {
-            "Authorization": f'{self.cn}~{self.mrn}',
+            "Authorization": f"{self.cn}~{self.mrn}",
             "SID": compass_dict["Master.Sys.SessionID"],  # Session ID
         }
         session.headers.update(auth_headers)
