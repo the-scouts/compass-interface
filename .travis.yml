@@ -9,14 +9,15 @@ cache:
 # run tests and linting separately
 matrix:
   include:
-    - name: "3.8 lint"
-      python: 3.8
-      env:
-        - TEST_CMD="pre-commit run --all-files"
-#    - name: "3.8 tests"
+#    - name: "3.8 lint"
 #      python: 3.8
 #      env:
+#        - TEST_CMD="pre-commit run --all-files"
+    - name: "3.8 tests"
+      python: 3.8
+      env:
 #        - TEST_CMD="pytest --cov=./"
+        - TEST_CMD="python -c 'import compass'"
 
 # command to install dependencies
 install:
