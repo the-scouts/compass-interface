@@ -166,7 +166,7 @@ class CompassHierarchy:
                 CompassHierarchy.hierarchy_levels["parent_level"] == hier_level, "level"
             ].min()
             if not level_numeric:
-                valid_values = CompassHierarchy.hierarchy_levels['parent_level'].drop_duplicates().to_list()
+                valid_values = CompassHierarchy.hierarchy_levels["parent_level"].drop_duplicates().to_list()
                 raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_values}")
         else:
             raise ValueError("A numeric or string hierarchy level needs to be passed")

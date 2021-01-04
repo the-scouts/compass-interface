@@ -121,9 +121,9 @@ class CompassPeopleScraper:
                 "role_name": cells[0].text_content().strip(),
                 "role_class": cells[1].text_content().strip(),
                 # role_type only visible if access to System Admin tab
-                "role_type": [*row.xpath("./td[1]/*/@title"), None][0],  
+                "role_type": [*row.xpath("./td[1]/*/@title"), None][0],
                 # location_id only visible if role is in hierarchy AND location still exists
-                "location_id": cast([*row.xpath("./td[3]/*/@data-ng_id"), None][0]),  
+                "location_id": cast([*row.xpath("./td[3]/*/@data-ng_id"), None][0]),
                 "location_name": cells[2].text_content().strip(),
                 "role_start_date": cells[3].text_content().strip(),
                 "role_end_date": cells[4].text_content().strip(),
@@ -310,9 +310,12 @@ class CompassPeopleScraper:
             "County / Area / Scottish Region / Overseas Branch": "County",
         }
         renamed_modules = {
-            1: "module_01", 2: "module_02", "M03": "module_03", 4: "module_04",
+            1: "module_01",
+            2: "module_02",
+            "M03": "module_03",
+            4: "module_04",
         }
-        unset_vals = {'--- Not Selected ---', '--- No Items Available ---', '--- No Line Manager ---'}
+        unset_vals = {"--- Not Selected ---", "--- No Items Available ---", "--- No Line Manager ---"}
 
         module_names = {
             "Essential Information": "M01",
@@ -399,14 +402,12 @@ class CompassPeopleScraper:
 
         # Get all levels of the org hierarchy and select those that will have information:
         # Get all inputs with location data
-        org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]  
+        org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]
         # TODO
         all_locations = {row.get("title"): row.findtext("./option") for row in org_levels}
 
         clipped_locations = {
-            renamed_levels.get(key, key).lower(): value 
-            for key, value in all_locations.items() 
-            if value not in unset_vals
+            renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals
         }
 
         # TODO data-ng_id?, data-rtrn_id?
