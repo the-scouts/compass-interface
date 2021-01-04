@@ -11,7 +11,7 @@ git checkout master
 git pull --ff-only origin master
 git clean -xdf
 git commit --allow-empty -m "🔖 RLS: vX.Y.Z"
-git tag -a "vX.Y.Z" -m "Version vX.Y.Z"
+git tag -a "vX.Y.Z" -m "Version X.Y.Z"
 ```
 
 3. Build the release
