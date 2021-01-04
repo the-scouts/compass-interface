@@ -29,5 +29,6 @@ dependencies:
   - pep517
   - twine
 
-#  - pip:
-#    -
+  - pip:
+    # PyPA build package (not on conda 04/01/21)
+    - build
