@@ -1,0 +1,28 @@
+default_language_version:
+  python: python3.8
+
+repos:
+    # Enforce code style
+  - repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+      - id: black
+
+    # Check markup files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0  # Use the ref you want to point at
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+
+#    # Enforce import ordering
+#  - repo: https://github.com/PyCQA/isort
+#    rev: stable
+#    hooks:
+#      - id: isort
+
+#    # Consistent setup.cfg formatting
+#  - repo: https://github.com/asottile/setup-cfg-fmt
+#    rev: stable
+#    hooks:
+#      - id: setup-cfg-fmt
