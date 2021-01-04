@@ -29,3 +29,28 @@ script:
 
 #after_success:
 #  - codecov
+
+before_deploy:
+#  # Install extra packages for build
+#  - pip install
+  # Generate sdist for PyPI and GH Releases
+  - python setup sdist
+
+deploy:
+  - provider: pypi
+    username: "__token__"
+    password:  $PYPI_API_TOKEN
+    skip_existing: true
+    skip_cleanup: true
+    on:
+      tags: true
+      distributions: bdist_wheel
+      repo: the-scouts/compass-interface-core
+  - provider: releases
+    api_key: $GH_API_TOKEN
+    file: "dist/compass-interface-core-*.tar.gz"
+    skip_cleanup: true
+    draft: true
+    on:
+      tags: true
+      repo: the-scouts/compass-interface-core
