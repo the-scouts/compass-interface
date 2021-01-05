@@ -9,6 +9,7 @@ import certifi
 
 from lxml import html
 
+from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
 from compass.errors import CompassError, CompassAuthenticationError
 
@@ -16,7 +17,7 @@ from compass.utility import compass_restify
 from compass.utility import setup_tls_certs
 
 
-class CompassLogon:
+class CompassLogon(CompassInterfaceBase):
     def __init__(self, credentials: list, role_to_use: str = None):
         self._member_role_number = 0
         self.compass_dict = {}
@@ -26,7 +27,7 @@ class CompassLogon:
         self.current_role: str = ""
         self.roles_dict: dict = {}
 
-        self.session: requests.Session = self.do_logon(credentials, role_to_use)
+        super().__init__(self.do_logon(credentials, role_to_use))
 
     @property
     def mrn(self) -> int:
@@ -41,7 +42,6 @@ class CompassLogon:
         return self.compass_dict["Master.User.JK"]  # ???? Key?
 
     def get(self, url, auth_header: bool = False, **kwargs):
-        Settings.total_requests += 1
         if auth_header:
             headers = {"Auth": self._jk_hash()}
             params = {
@@ -52,13 +52,7 @@ class CompassLogon:
             kwargs["headers"] = {**kwargs.get("headers", {}), **headers}
             kwargs["params"] = {**kwargs.get("params", {}), **params}
 
-        return self.session.get(url, **kwargs)
-
-    def post(self, url, **kwargs):
-        Settings.total_requests += 1
-        data = kwargs.pop("data", None)
-        json_ = kwargs.pop("json", None)
-        return self.session.post(url, data=data, json=json_, **kwargs)
+        return super(CompassLogon, self).get(url, **kwargs)
 
     def _jk_hash(self):
         # hash_code(f"{time.time() * 1000:.0f}")
@@ -77,7 +71,7 @@ class CompassLogon:
         compass_dict, roles_dict = self.confirm_success_and_update(session, check_url=True)
 
         if role_to_use:
-            self.change_role(session, role_to_use, roles_dict)
+            self.change_role(role_to_use, roles_dict, session=session)
         else:
             print("not changing role")
 
@@ -85,23 +79,21 @@ class CompassLogon:
 
     def create_session(self) -> requests.Session:
         # Create a session and get ASP.Net Session ID cookie from the compass server.
-        s = requests.Session()
+        session = requests.Session()
 
         # Setup SSL - see utility for reasoning
         setup_tls_certs()
         if certifi.where():
-            s.verify = True
+            session.verify = True
         else:
             raise RuntimeError("Certificates not loaded")
 
-        s.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
-        Settings.total_requests += 1
+        self.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
 
-        if not s.cookies:
+        if not session.cookies:
             raise CompassError("No cookie found, terminating.")
 
-        self.session = s
-        return s
+        return session
 
     def _logon(self, auth: list) -> requests.models.Response:
         # Referer is genuinely needed otherwise login doesn't work
@@ -128,7 +120,13 @@ class CompassLogon:
 
         return member_role_number
 
-    def change_role(self, session: requests.Session, new_role: str, roles_dict: dict):
+    def change_role(self, new_role: str, roles_dict: dict, session: Optional[requests.Session] = None):
+        if session is not None:
+            try:
+                session = self.s
+            except AttributeError as e:
+                raise ValueError("No session! session object must be passed or self.s set.") from None
+
         print("Changing role")
         new_role = new_role.strip()
 

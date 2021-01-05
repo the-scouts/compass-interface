@@ -8,6 +8,7 @@ import requests
 
 from lxml import html
 
+from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
 from compass.utility import compass_restify
 
@@ -46,19 +47,9 @@ def create_hierarchy_levels() -> pd.DataFrame:
     return data
 
 
-class CompassHierarchyScraper:
+class CompassHierarchyScraper(CompassInterfaceBase):
     def __init__(self, session: requests.Session):
-        self.s: requests.Session = session
-
-    def get(self, url, **kwargs):
-        Settings.total_requests += 1
-        return self.s.get(url, **kwargs)
-
-    def post(self, url, **kwargs):
-        Settings.total_requests += 1
-        data = kwargs.pop("data", None)
-        json_ = kwargs.pop("json", None)
-        return self.s.post(url, data=data, json=json_, **kwargs)
+        super().__init__(session)
 
     # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
     def get_units_from_hierarchy(self, parent_unit: int, level: str) -> list:
