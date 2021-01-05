@@ -33,10 +33,10 @@ def get_report_token(logon: CompassLogon, report_number: int) -> str:
         "pMemberRoleNumber": f"{logon.mrn}",
     }
     print("Getting report token")
-    response = logon.get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
+    response = logon._get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
     response.raise_for_status()
-    report_token_uri = response.json().get("d")
+    report_token_uri = response.json()._get("d")
 
     if report_token_uri in ["-1", "-2", "-3", "-4"]:
         msg = ""
@@ -72,15 +72,15 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
     run_report_url = get_report_token(logon, report_types[report_type])
 
     # Compass does user-agent sniffing in reports!!!
-    logon.update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    logon._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
     print("Generating report")
     run_report = f"{Settings.base_url}/{run_report_url}"
-    report_page = logon.get(run_report)
+    report_page = logon._get(run_report)
     tree = html.fromstring(report_page.content)
     form: html.FormElement = tree.forms[0]
 
-    elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
+    elements = {el.name: el.value for el in form.inputs if el._get("type") not in {"checkbox", "image"}}
 
     # Table Controls: table#ParametersGridReportViewer1_ctl04
     # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label
@@ -113,7 +113,7 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
 
     # Including MicrosoftAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
     # In reality we don't care about the output of this POST, just that it doesn't fail
-    report = logon.post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
+    report = logon._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
     report.raise_for_status()
 
     if "compass.scouts.org.uk%2fError.aspx|" in report.text:
@@ -121,7 +121,7 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
 
     print("Exporting report")
     export_url_path, export_url_params = get_report_export_url(report_page.text)
-    csv_export = logon.get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
+    csv_export = logon._get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
 
     # TODO Debug check
     print("Saving report")
