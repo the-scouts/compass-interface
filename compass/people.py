@@ -5,13 +5,19 @@ import time
 import pandas as pd
 import requests
 from lxml import html
+from dateutil.parser import parse
+from dateutil.parser import parserinfo as _parserinfo
 
 from compass.settings import Settings
-from compass.utility import cast, parse_datetime_safe
+from compass.utility import cast
 
-from typing import Union
+from typing import Union, Optional
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
+
+
+def _parse(timestr: str, parserinfo: Optional[_parserinfo] = None, **kwargs) -> Optional[datetime.datetime]:
+    return parse(timestr, parserinfo, **kwargs) if timestr else None
 
 
 class CompassPeopleScraper:
@@ -46,8 +52,8 @@ class CompassPeopleScraper:
 
         details = dict()
 
-        ### Extractors ###
-        ## Core:
+        # ### Extractors
+        # ## Core:
 
         details["membership_number"] = membership_num
 
@@ -63,23 +69,21 @@ class CompassPeopleScraper:
         # Main Email
         details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
-        ## Core - Positional:
+        # ## Core - Positional:
 
         # Full Name
         details["name"] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
         # Known As
         details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
         # Join Date
-        details["join_date"] = parse_datetime_safe(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
+        details["join_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
 
-        ## Position Varies:
+        # ## Position Varies:
 
         # Gender
         details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
         # DOB
-        details["birth_date"] = parse_datetime_safe(
-            tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])")
-        )
+        details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
         # Nationality
         details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
         # Ethnicity
@@ -114,7 +118,13 @@ class CompassPeopleScraper:
         roles_data = {}
         rows = tree.xpath("//tbody/tr")
         for row in rows:
-            cells = row.getchildren()
+            # Get children (cells in row)
+            cells = list(row)
+
+            # If current role allows seletion of role for editing, remove tickbox
+            if len(cells[0].xpath("./label")) < 1:
+                cells.pop(0)
+
             role_number = cast(row.get("data-pk"))
             roles_data[role_number] = {
                 "role_number": role_number,
@@ -126,8 +136,8 @@ class CompassPeopleScraper:
                 # location_id only visible if role is in hierarchy AND location still exists
                 "location_id": cast([*row.xpath("./td[3]/*/@data-ng_id"), None][0]),
                 "location_name": cells[2].text_content().strip(),
-                "role_start_date": cells[3].text_content().strip(),
-                "role_end_date": cells[4].text_content().strip(),
+                "role_start_date": _parse(cells[3].text_content().strip()),
+                "role_end_date": _parse(cells[4].text_content().strip()),
                 "role_status": cells[5].xpath("normalize-space(label)"),
             }
 
@@ -176,10 +186,10 @@ class CompassPeopleScraper:
         for plp in personal_learning_plans:
             plp_table = plp.getchildren()[0].getchildren()[0]
             plp_data = []
-            content_rows = [row for row in plp_table.getchildren() if "msTR trMTMN" == row.get("class")]
+            content_rows = [row for row in plp_table if "msTR trMTMN" == row.get("class")]
             for module_row in content_rows:
                 module_data = {}
-                child_nodes = module_row.getchildren()
+                child_nodes = list(module_row)
                 module_data["pk"] = cast(module_row.get("data-pk"))
                 module_data["module_id"] = cast(child_nodes[0].get("id")[4:])
                 matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
@@ -220,7 +230,7 @@ class CompassPeopleScraper:
         training_ogl = {}
         ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
         for ongoing_learning in ongoing_learning_rows:
-            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning.getchildren()}
+            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning}
             cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
 
             ogl_data = {
@@ -231,12 +241,11 @@ class CompassPeopleScraper:
             }
 
             training_ogl[ogl_data["code"]] = ogl_data
-            # TODO missing data-pk from cell.getchildren()[0].tag == "input", and module names/codes. Are these important?
+            # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
-        # Handle GDPR
-        date_zero = datetime.date(1900, 1, 1)
-        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.datetime)], reverse=True)
-        gdpr_date = sorted_gdpr[0] if sorted_gdpr else date_zero
+        # Handle GDPR:
+        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.date)], reverse=True)  # Get latest GDPR date
+        gdpr_date = sorted_gdpr[0] if sorted_gdpr else None
         training_ogl["GDPR"] = {
             "code": "GDPR",
             "name": "GDPR",
@@ -248,9 +257,9 @@ class CompassPeopleScraper:
 
         training_roles = {}
         for role in roles:
-            child_nodes = role.getchildren()
+            child_nodes = list(role)
 
-            info = {}
+            info = {}  # NoQA
 
             info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
             info["title"] = child_nodes[0].text_content()
@@ -293,7 +302,7 @@ class CompassPeopleScraper:
         permits = []
         for row in rows:
             permit = {}
-            child_nodes = row.getchildren()
+            child_nodes = list(row)
             permit["permit_type"] = child_nodes[1].text_content()
             permit["category"] = child_nodes[2].text_content()
             permit["type"] = child_nodes[3].text_content()

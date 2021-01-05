@@ -91,12 +91,12 @@ class CompassHierarchyScraper:
             }
 
             if unit_dict["Tag"]:
-                tag = json.loads(unit_dict["Tag"])[0]
-                if tag:
-                    parsed["status"] = tag.get("org_status")
-                    parsed["address"] = tag.get("address")
-                    parsed["member_count"] = tag.get("Members")
-                    parsed["section_type"] = tag.get("SectionTypeDesc")
+                tag = json.loads(unit_dict["Tag"])
+                parsed["status"] = tag[0]["org_status"]
+                parsed["address"] = tag[0]["address"]
+                parsed["member_count"] = tag[0]["Members"]
+                if "SectionTypeDesc" in tag[0]:
+                    parsed["section_type"] = tag[0]["SectionTypeDesc"]
 
             result_units.append(parsed)
 
