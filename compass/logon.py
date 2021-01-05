@@ -13,6 +13,7 @@ from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
 from compass.errors import CompassError, CompassAuthenticationError
 
+from compass.utility import cast
 from compass.utility import compass_restify
 from compass.utility import setup_tls_certs
 
@@ -121,7 +122,7 @@ class CompassLogon(CompassInterfaceBase):
 
     def change_role(self, new_role: Optional[str], session: Optional[requests.Session] = None) -> requests.Session:
         """Update role information"""
-        if session is not None:
+        if session is None:
             try:
                 session = self.s
             except AttributeError as _e:
@@ -132,8 +133,8 @@ class CompassLogon(CompassInterfaceBase):
             new_role = new_role.strip()
 
             # Change role to the specified role number
-            member_role_number = self.roles_dict[new_role]
-            session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})
+            member_role_number = {v: k for k, v in self.roles_dict.items()}[new_role]
+            session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": str(member_role_number)})
         else:
             print("not changing role")
             member_role_number = self.current_role_number
@@ -156,7 +157,7 @@ class CompassLogon(CompassInterfaceBase):
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
         for pair in compass_vars.split("~"):
             key, value, *_ = pair.split("#")
-            compass_dict[key] = value
+            compass_dict[key] = cast(value)
 
         return compass_dict
 
@@ -164,7 +165,7 @@ class CompassLogon(CompassInterfaceBase):
     def _create_roles_dict(form_tree: html.FormElement) -> dict:
         """Generate role number to role name mapping"""
         roles_selector = form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"]  # get roles from compass page (list of option tags)
-        return {int(role._get("value")): role.text.strip() for role in roles_selector}
+        return {int(role.get("value")): role.text.strip() for role in roles_selector}
 
     @staticmethod
     def _get_active_role_number(form_tree: html.FormElement) -> int:
@@ -181,6 +182,10 @@ class CompassLogon(CompassInterfaceBase):
         #     raise CompassAuthenticationError("Login has failed")
         if response.url != portal_url:
             raise CompassAuthenticationError("Login has failed")
+
+        form = html.fromstring(response.content).forms[0]
+        self._update_authorisation(form, session)
+
 
     def _confirm_role_change(self, session: requests.Session, check_role_number: int) -> html.FormElement:
         """Confirms success and updates authorisation"""
@@ -208,7 +213,7 @@ class CompassLogon(CompassInterfaceBase):
         session.headers.update(auth_headers)
 
         # TODO is this get role bit needed given that we change the role?
-        self.current_role = self.roles_dict[self.mrn]
+        self.current_role = self.roles_dict[int(self.mrn)]
         self.current_role_number = self._get_active_role_number(form)
         print(f"Using Role: {self.current_role}")
 
