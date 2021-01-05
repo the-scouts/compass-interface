@@ -36,7 +36,7 @@ def get_report_token(logon: CompassLogon, report_number: int) -> str:
     response = logon._get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
     response.raise_for_status()
-    report_token_uri = response.json()._get("d")
+    report_token_uri = response.json().get("d")
 
     if report_token_uri in ["-1", "-2", "-3", "-4"]:
         msg = ""
@@ -80,7 +80,7 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
     tree = html.fromstring(report_page.content)
     form: html.FormElement = tree.forms[0]
 
-    elements = {el.name: el.value for el in form.inputs if el._get("type") not in {"checkbox", "image"}}
+    elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
     # Table Controls: table#ParametersGridReportViewer1_ctl04
     # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label

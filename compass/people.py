@@ -122,7 +122,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
             if len(cells[0].xpath("./label")) < 1:
                 cells.pop(0)
 
-            role_number = cast(row._get("data-pk"))
+            role_number = cast(row.get("data-pk"))
             roles_data[role_number] = {
                 "role_number": role_number,
                 "membership_number": membership_num,
@@ -183,12 +183,12 @@ class CompassPeopleScraper(CompassInterfaceBase):
         for plp in personal_learning_plans:
             plp_table = plp.getchildren()[0].getchildren()[0]
             plp_data = []
-            content_rows = [row for row in plp_table if "msTR trMTMN" == row._get("class")]
+            content_rows = [row for row in plp_table if "msTR trMTMN" == row.get("class")]
             for module_row in content_rows:
                 module_data = {}
                 child_nodes = list(module_row)
-                module_data["pk"] = cast(module_row._get("data-pk"))
-                module_data["module_id"] = cast(child_nodes[0]._get("id")[4:])
+                module_data["pk"] = cast(module_row.get("data-pk"))
+                module_data["module_id"] = cast(child_nodes[0].get("id")[4:])
                 matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
                 if matches:
                     module_data["code"] = cast(matches[0])
@@ -222,16 +222,16 @@ class CompassPeopleScraper(CompassInterfaceBase):
                 if str(module_data.get("code")).upper() == "GDPR":
                     training_gdpr.append(module_data.get("validated_date"))
 
-            training_plps[int(plp_table._get("data-pk"))] = plp_data
+            training_plps[int(plp_table.get("data-pk"))] = plp_data
 
         training_ogl = {}
         ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
         for ongoing_learning in ongoing_learning_rows:
-            cell_text = {c._get("id"): c.text_content() for c in ongoing_learning}
+            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning}
             cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
 
             ogl_data = {
-                "code": ongoing_learning._get("data-ng_code"),
+                "code": ongoing_learning.get("data-ng_code"),
                 "name": cell_text.get(None),
                 "completed_date": datetime.datetime.strptime(cell_text.get("tdLastComplete"), "%d %B %Y"),
                 "renewal_date": datetime.datetime.strptime(cell_text.get("tdRenewal"), "%d %B %Y"),
@@ -277,7 +277,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
                 info["completion_type"] = parts[0].strip()
                 info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
                 info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
-            info["wood_badge_number"] = child_nodes[5]._get("id")
+            info["wood_badge_number"] = child_nodes[5].get("id")
 
             training_roles[info["role_number"]] = info
 
@@ -305,7 +305,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
             permit["type"] = child_nodes[3].text_content()
             permit["restrictions"] = child_nodes[4].text_content()
             permit["expires"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
-            permit["status"] = child_nodes[5]._get("class")
+            permit["status"] = child_nodes[5].get("class")
 
             permits.append(permit)
 
@@ -351,29 +351,29 @@ class CompassPeopleScraper(CompassInterfaceBase):
             tree = html.fromstring(response.content)
         form = tree.forms[0]
 
-        member_string = form.fields._get("ctl00$workarea$txt_p1_membername")
-        ref_code = form.fields._get("ctl00$workarea$cbo_p2_referee_status")
+        member_string = form.fields.get("ctl00$workarea$txt_p1_membername")
+        ref_code = form.fields.get("ctl00$workarea$cbo_p2_referee_status")
 
         # Approval and Role details
         role_details = {
             "role_number": role_number,
-            "organisation_level": form.fields._get("ctl00$workarea$cbo_p1_level"),
-            "dob": form.inputs["ctl00$workarea$txt_p1_membername"]._get("data-dob"),
-            "member_number": cast(form.fields._get("ctl00$workarea$txt_p1_memberno")),
+            "organisation_level": form.fields.get("ctl00$workarea$cbo_p1_level"),
+            "dob": form.inputs["ctl00$workarea$txt_p1_membername"].get("data-dob"),
+            "member_number": cast(form.fields.get("ctl00$workarea$txt_p1_memberno")),
             "member_name": member_string.split(" ", maxsplit=1)[1],
-            "role_title": form.fields._get("ctl00$workarea$txt_p1_alt_title"),
-            "start_date": form.fields._get("ctl00$workarea$txt_p1_startdate"),
+            "role_title": form.fields.get("ctl00$workarea$txt_p1_alt_title"),
+            "start_date": form.fields.get("ctl00$workarea$txt_p1_startdate"),
             # Role Status
-            "status": form.fields._get("ctl00$workarea$txt_p2_status"),
+            "status": form.fields.get("ctl00$workarea$txt_p2_status"),
             # Line Manager
-            "line_manager_number": cast(form.fields._get("ctl00$workarea$cbo_p2_linemaneger")),
+            "line_manager_number": cast(form.fields.get("ctl00$workarea$cbo_p2_linemaneger")),
             "line_manager": form.inputs["ctl00$workarea$cbo_p2_linemaneger"].xpath("string(*[@selected])"),
             # Review Date
-            "review_date": form.fields._get("ctl00$workarea$txt_p2_review"),
+            "review_date": form.fields.get("ctl00$workarea$txt_p2_review"),
             # CE (Confidential Enquiry) Check
-            "ce_check": form.fields._get("ctl00$workarea$txt_p2_cecheck"),  # TODO if CE check date != current date then is valid
+            "ce_check": form.fields.get("ctl00$workarea$txt_p2_cecheck"),  # TODO if CE check date != current date then is valid
             # Disclosure Check
-            "disclosure_check": form.fields._get("ctl00$workarea$txt_p2_disclosure"),
+            "disclosure_check": form.fields.get("ctl00$workarea$txt_p2_disclosure"),
             # References
             "references": references_codes.get(ref_code, ref_code),
             # Appointment Panel Approval
@@ -411,7 +411,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
         # Get all inputs with location data
         org_levels = [v for k, v in sorted(dict(form.inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]
         # TODO
-        all_locations = {row._get("title"): row.findtext("./option") for row in org_levels}
+        all_locations = {row.get("title"): row.findtext("./option") for row in org_levels}
 
         clipped_locations = {
             renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals
@@ -436,24 +436,24 @@ class CompassPeople:
             hierarchy = role_detail["hierarchy"]
             data = {
                 "membership_number": membership_num,
-                "role_name": role_dict._get("role_name"),
-                "role_start": role_dict._get("role_start_date"),
-                "role_end": role_dict._get("role_end_date"),
-                "role_status": role_dict._get("role_status"),
-                "line_manager_number": cast(details._get("line_manager_number")),
-                "line_manager": details._get("line_manager"),
-                "review_date": details._get("review_date"),
-                "organisation": hierarchy._get("organisation"),
-                "region": hierarchy._get("region"),
-                "county": hierarchy._get("county"),
-                "district": hierarchy._get("district"),
-                "group": hierarchy._get("group"),
-                "section": hierarchy._get("section"),
-                "ce_check": details._get("ce_check"),
-                "appointment_panel_approval": details._get("appointment_panel_approval"),
-                "commissioner_approval": details._get("commissioner_approval"),
-                "committee_approval": details._get("committee_approval"),
-                "references": details._get("references"),
+                "role_name": role_dict.get("role_name"),
+                "role_start": role_dict.get("role_start_date"),
+                "role_end": role_dict.get("role_end_date"),
+                "role_status": role_dict.get("role_status"),
+                "line_manager_number": cast(details.get("line_manager_number")),
+                "line_manager": details.get("line_manager"),
+                "review_date": details.get("review_date"),
+                "organisation": hierarchy.get("organisation"),
+                "region": hierarchy.get("region"),
+                "county": hierarchy.get("county"),
+                "district": hierarchy.get("district"),
+                "group": hierarchy.get("group"),
+                "section": hierarchy.get("section"),
+                "ce_check": details.get("ce_check"),
+                "appointment_panel_approval": details.get("appointment_panel_approval"),
+                "commissioner_approval": details.get("commissioner_approval"),
+                "committee_approval": details.get("committee_approval"),
+                "references": details.get("references"),
                 **role_detail["getting_started"],
                 "training_completion_date": None,
             }
@@ -560,9 +560,9 @@ class CompassPeople:
         if return_frame:
             if training_roles:
                 training_frame = pd.DataFrame(training_roles).T
-                training_frame["SafetyTraining"] = training_ogl._get("SA", {"renewal_date": None})["renewal_date"]
-                training_frame["SafeguardingTraining"] = training_ogl._get("SG", {"renewal_date": None})["renewal_date"]
-                training_frame["FirstAidTraining"] = training_ogl._get("FA", {"renewal_date": None})["renewal_date"]
+                training_frame["SafetyTraining"] = training_ogl.get("SA", {"renewal_date": None})["renewal_date"]
+                training_frame["SafeguardingTraining"] = training_ogl.get("SG", {"renewal_date": None})["renewal_date"]
+                training_frame["FirstAidTraining"] = training_ogl.get("FA", {"renewal_date": None})["renewal_date"]
 
                 return training_frame
             else:
