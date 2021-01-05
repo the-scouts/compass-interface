@@ -65,7 +65,7 @@ class CompassHierarchyScraper(CompassInterfaceBase):
         ].str.cat()
 
         # TODO PGS\Needle has `extra` bool in func signature to turn LiveData on/off
-        result = self.post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
+        result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
 
         # Handle unauthorised access
@@ -102,10 +102,10 @@ class CompassHierarchyScraper(CompassInterfaceBase):
 
         # Execute search
         # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
-        self.post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
+        self._post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
 
         # Fetch results from Compass
-        search_results = self.get(f"{Settings.base_url}/SearchResults.aspx")
+        search_results = self._get(f"{Settings.base_url}/SearchResults.aspx")
 
         # Gets the compass form from the returned document
         form = html.fromstring(search_results.content).forms[0]
