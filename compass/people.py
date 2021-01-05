@@ -8,6 +8,7 @@ from lxml import html
 from dateutil.parser import parse
 from dateutil.parser import parserinfo as _parserinfo
 
+from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
 from compass.utility import cast
 
@@ -20,13 +21,9 @@ def _parse(timestr: str, parserinfo: Optional[_parserinfo] = None, **kwargs) -> 
     return parse(timestr, parserinfo, **kwargs) if timestr else None
 
 
-class CompassPeopleScraper:
+class CompassPeopleScraper(CompassInterfaceBase):
     def __init__(self, session: requests.Session):
-        self.s = session
-
-    def get(self, url, **kwargs) -> requests.models.Response:
-        Settings.total_requests += 1
-        return self.s.get(url, **kwargs)
+        super().__init__(session)
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: str) -> dict:
         profile_tab = profile_tab.upper()

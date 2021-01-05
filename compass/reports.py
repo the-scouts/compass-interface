@@ -72,7 +72,7 @@ def get_report(logon: CompassLogon, report_type: str) -> bytes:
     run_report_url = get_report_token(logon, report_types[report_type])
 
     # Compass does user-agent sniffing in reports!!!
-    logon.session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    logon.update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
     print("Generating report")
     run_report = f"{Settings.base_url}/{run_report_url}"
