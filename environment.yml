@@ -17,6 +17,9 @@ dependencies:
   # Data arrangement
   - pandas
 
+  # Development
+  - ipython
+
   # Style, Linting
   - black
   - pre-commit
