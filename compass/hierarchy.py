@@ -43,12 +43,14 @@ def create_hierarchy_levels() -> pd.DataFrame:
 
     data["parent_level"] = data["level"].map(parent_level_map)
     data["endpoint"] = "/" + data["type"].str.lower().str.replace(" ", "/", regex=False)
-    data["has_children"] = data["endpoint"].str.rpartition("/").iloc[:, -1] != "sections"
+    data["has_children"] = data["type"].str.contains("section", case=False, regex=False)
 
     return data
 
 
 class CompassHierarchyScraper(CompassInterfaceBase):
+    hierarchy_levels = create_hierarchy_levels()
+
     def __init__(self, session: requests.Session):
         super().__init__(session)
 
@@ -61,9 +63,7 @@ class CompassHierarchyScraper(CompassInterfaceBase):
         """
 
         # Get API endpoint from level
-        level_endpoint = CompassHierarchy.hierarchy_levels.loc[
-            CompassHierarchy.hierarchy_levels["type"] == level, "endpoint"
-        ].str.cat()
+        level_endpoint = self.hierarchy_levels.loc[self.hierarchy_levels["type"] == level, "endpoint"].str.cat()
 
         # TODO PGS\Needle has `extra` bool in func signature to turn LiveData on/off
         result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
