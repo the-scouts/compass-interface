@@ -1,5 +1,6 @@
 import datetime
 import json
+import contextlib
 
 from pathlib import Path
 
@@ -136,12 +137,10 @@ class CompassHierarchy:
         """Recursively get all children from given unit ID and level, with caching"""
         filename = Path(f"hierarchy-{compass_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
-        try:
+        with contextlib.suppress(FileNotFoundError):
             out = json.loads(filename.read_text(encoding="utf-8"))
             if out:
                 return out
-        except FileNotFoundError:
-            pass
 
         # Fetch the hierarchy
         out = self._get_descendants_recursive(compass_id, hier_level=level)
@@ -233,14 +232,12 @@ class CompassHierarchy:
         return pd.DataFrame(flat_members)
 
     def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: pd.Series) -> dict:
-        try:
+        with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
             with open(f"all-members-{parent_id}.json", "r", encoding="utf-8") as f:
                 all_members = json.load(f)
                 if all_members:
                     return all_members
-        except FileNotFoundError:
-            pass
 
         # Fetch all members
         all_members = {}
