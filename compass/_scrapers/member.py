@@ -2,6 +2,7 @@ import contextlib
 import datetime
 import re
 import time
+from typing import Literal, get_args, Union
 
 import requests
 from dateutil.parser import parse
@@ -12,26 +13,102 @@ from compass.people import _parse
 from compass.settings import Settings
 from compass.utility import cast
 
+MEMBER_PROFILE_TAB_TYPES = Literal["Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"]
+
 
 class CompassPeopleScraper(CompassInterfaceBase):
+    """
+
+    Class directly interfaces with Compass operations to extract member data.
+
+    Compass's MemberProfile.aspx has 13 tabs:
+     1. Personal Details (No Key)
+     2. Your Children (Page=CHILD)
+     3. Roles (Page=ROLES)
+     4. Permits (Page=PERMITS)
+     5. Training (Page=TRAINING)
+     6. Awards (Page=AWARDS)
+     7. Youth Badges/Awards (Page=BADGES)
+     8. Event Invitations (Page=EVENTS)
+     9. Emergency Details (Page=EMERGENCY)
+     10. Communications (Page=COMMS)
+     11. Visibility (Page=VISIBILITY)
+     12. Disclosures (Page=DISCLOSURES)
+     13. Parents/Guardians (Page=PARENT)
+
+    Of these, tabs 2, 7, 8, 13 are disabled functionality.
+    Tab 11 (Visibility) is only shown on the members' own profile.
+
+    For member-adjdacent operations there are additional endpoints:
+     - /Popups/Profile/AssignNewRole.aspx
+     - /Popups/Maint/NewPermit.aspx
+     - /Popups/Profile/EditProfile.aspx
+
+    Currently we only use one of these endpoints (AssignNewRole), as all
+    other data we need can be found from the MemberProfile tabs.
+
+    All functions in the class output native types.
+    """
     def __init__(self, session: requests.Session):
+        """CompassPeopleScraper constructor.
+
+        takes an initialised Session object from CompassLogon
+        """
         super().__init__(session)
 
-    def _get_member_profile_tab(self, membership_num: int, profile_tab: str) -> dict:
+    def _get_member_profile_tab(self, membership_num: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> dict[str, Union[str, bytes]]:
+        """Returns data from a given tab in MemberProfile for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+            profile_tab: Tab requested from Compass
+
+        Returns:
+            A dict with content and encoding, e.g.:
+
+            {"content": b"...", "encoding": "utf-8"}
+
+            Both keys will always be present.
+
+        Raises:
+            ValueError: The given profile_tab value is illegal
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
+        """
         profile_tab = profile_tab.upper()
-        tabs = ["ROLES", "PERMITS", "TRAINING", "AWARDS", "EMERGENCY", "COMMS", "VISIBILITY", "DISCLOSURES"]
+        tabs = tuple(tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES))
         url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_num}"
-        if profile_tab == "PERSONAL":
+        if profile_tab == "PERSONAL":  # Personal tab has no key so is a special case
             response = self._get(url)
         elif profile_tab in tabs:
             url += f"&Page={profile_tab}&TAB"
             response = self._get(url)
         else:
-            raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs.append('PERSONAL')}")
+            raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs}")
 
         return {"content": response.content, "encoding": response.encoding}
 
-    def get_personal_tab(self, membership_num: int) -> dict:
+    def get_personal_tab(self, membership_num: int) -> dict[str, Union[int, str, datetime.datetime]]:
+        """Returns data from Personal Details tab for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A dict mapping keys to the corresponding data from the personal
+            data tab.
+
+            Keys will be present only if valid data could be extracted and
+            parsed from Compass.
+
+        Raises:
+            PermissionError:
+                Access to the member is not given by the current authentication
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
+        """
         response = self._get_member_profile_tab(membership_num, "Personal")
 
         tree = html.fromstring(response.get("content"))
@@ -53,7 +130,6 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         # Main Phone
         details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
-        # details['main_phone'] = self._extract_details(tree, 'string(//*[text()="Phone"]/../../../td[3])')
 
         # Main Email
         details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
@@ -89,13 +165,25 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
     def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict:
         """
-        Gets the data from the Role tab in Compass for the specified member.
+        Returns data from Roles tab for a given member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
 
-        :param membership_num:
-        :param keep_non_volunteer_roles:
-        :return:
+        Args:
+            membership_num: Membership Number to use
+            keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
+
+        Returns:
+            A dict mapping keys to the corresponding data from the roles tab.
+
+            Keys will always be present.
+
+        Raises:
+            PermissionError:
+                Access to the member is not given by the current authentication
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
         """
         print(f"getting roles tab for member number: {membership_num}")
         response = self._get_member_profile_tab(membership_num, "Roles")
@@ -156,11 +244,20 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
     def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> dict:
         """
-        Gets training tab data for a given member
+        Returns data from Training tab for a given member.
 
-        :param membership_num: Compass ID
-        :param ongoing_only: Return a dataframe of role training & OGL info? Otherwise returns all data
-        :return:
+        Args:
+            membership_num: Membership Number to use
+            ongoing_only: Return a dataframe of role training & OGL info? Otherwise returns all data
+
+        Returns:
+            A dict mapping keys to the corresponding data from the training
+            tab.
+
+            Keys will always be present.
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
         """
         response = self._get_member_profile_tab(membership_num, "Training")
         tree = html.fromstring(response.get("content"))
@@ -278,6 +375,21 @@ class CompassPeopleScraper(CompassInterfaceBase):
         return training_data
 
     def get_permits_tab(self, membership_num: int) -> list:
+        """
+        Returns data from Permits tab for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A list of dicts mapping keys to the corresponding data from the
+            permits tab.
+
+            Keys will always be present.
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
+        """
         response = self._get_member_profile_tab(membership_num, "Permits")
         tree = html.fromstring(response.get("content"))
 
@@ -300,7 +412,27 @@ class CompassPeopleScraper(CompassInterfaceBase):
         return permits
 
     # See getAppointment in PGS\Needle
-    def get_roles_detail(self, role_number: int, response: str = None) -> dict:
+    def get_roles_detail(
+            self,
+            role_number: int,
+            response: Union[str, requests.Response] = None
+    ) -> dict:
+        """
+        Returns detailed data from a given role number.
+
+        Args:
+            role_number: Role Number to use
+            response: Pre-generated response to use
+
+        Returns:
+            A dicts mapping keys to the corresponding data from the
+            role detail data.
+
+            Keys will always be present.
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
+        """
         renamed_levels = {
             "County / Area / Scottish Region / Overseas Branch": "County",
         }
