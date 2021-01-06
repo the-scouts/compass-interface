@@ -3,10 +3,9 @@ import ctypes
 import functools
 import certifi
 import requests
-import datetime
+import contextlib
 
 from pathlib import Path
-from dateutil.parser import parse
 
 
 def setup_tls_certs() -> None:
@@ -67,25 +66,9 @@ def cast(value):
     try:
         value = int(value)
     except (ValueError, TypeError):
+        # with contextlib.suppress(ValueError, TypeError, SyntaxError):  # TODO timeit suppress vs pure pass
         try:
             value = ast.literal_eval(str(value)) if value else value
         except (ValueError, TypeError, SyntaxError):
             pass
     return value
-
-
-def parse_datetime_safe(datetime_str: str) -> datetime:
-    """
-    Parses the datetime string into a object if it isn't empty or unknown
-    """
-    if not datetime_str:
-        return None
-
-    if len(datetime_str) == 0:
-        return None
-
-    if datetime_str is "Unknown":
-        return None
-
-    # Attempt to parse into a datetime obj
-    return parse(datetime_str)

@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import re
 import time
@@ -202,19 +203,16 @@ class CompassPeopleScraper(CompassInterfaceBase):
                 module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
                 module_data["learning_method"] = child_nodes[2].text_content()
                 module_data["learning_completed"] = child_nodes[3].text_content()
-                try:
+                with contextlib.suppress(ValueError):
                     module_data["learning_date"] = datetime.datetime.strptime(child_nodes[3].text_content(), "%d %B %Y")
-                except ValueError:
-                    pass
+
 
                 validated_by_string = child_nodes[4].text_content()
                 validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
                 module_data["validated_membership_number"] = cast(validated_by_data[0])
                 module_data["validated_name"] = validated_by_data[1]
-                try:
+                with contextlib.suppress(ValueError):
                     module_data["validated_date"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
-                except ValueError:
-                    pass
 
                 plp_data.append(module_data)
 
@@ -574,13 +572,11 @@ class CompassPeople:
         return self._scraper.get_permits_tab(membership_num)
 
     def get_roles_from_members(self, compass_unit_id: int, member_numbers: pd.Series):
-        try:
+        with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the roles table has been fetched already and is on the local system
             roles_table = pd.read_csv(f"all_roles-{compass_unit_id}.csv")
             if roles_table:
                 return roles_table
-        except FileNotFoundError:
-            pass
 
         member_numbers = member_numbers.drop_duplicates().to_list()
         roles_list = []
