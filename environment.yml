@@ -17,10 +17,8 @@ dependencies:
   # Data arrangement
   - pandas
 
-  # Development
+  # Development (Tools, Style, Linting)
   - ipython
-
-  # Style, Linting
   - black
   - pre-commit
   - virtualenv==20.0.33  # Solve regression, see
