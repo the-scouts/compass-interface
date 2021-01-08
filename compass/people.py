@@ -1,22 +1,20 @@
 import contextlib
-import datetime
 import re
 
 import pandas as pd
 import requests
-from dateutil.parser import parse
-from dateutil.parser import parserinfo as _parserinfo
 
 from compass._scrapers.member import CompassPeopleScraper
 from compass.utility import cast
 
-from typing import Union, Optional
+from typing import Union
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 
 
-def _parse(timestr: str, parserinfo: Optional[_parserinfo] = None, **kwargs) -> Optional[datetime.datetime]:
-    return parse(timestr, parserinfo, **kwargs) if timestr else None
+# SCRAPER CLASS - 1-1 mapping with compass to minimise calls
+# MAIN CLASS - object/properties focused, with abstractions of actual calls
+# UTILITY CLASS - get_member_data, get_roles_from_members, etc
 
 
 class CompassPeople:
