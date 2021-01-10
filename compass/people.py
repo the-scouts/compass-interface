@@ -69,31 +69,14 @@ class CompassPeople:
         """
         return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
 
-    def _training_tab(self, membership_num: int, return_frame: bool = False) -> RTRT:
+    def _training_tab(self, membership_num: int) -> dict:
         """
         Gets training tab data for a given member
 
         :param membership_num: Compass ID
-        :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
         :return:
         """
-        training_data = self._scraper.get_training_tab(membership_num)
-
-        training_roles = training_data["roles"]
-        training_ogl = training_data["mandatory"]
-
-        if return_frame:
-            if training_roles:
-                training_frame = pd.DataFrame(training_roles).T
-                training_frame["SafetyTraining"] = training_ogl.get("SA", {"renewal_date": None})["renewal_date"]
-                training_frame["SafeguardingTraining"] = training_ogl.get("SG", {"renewal_date": None})["renewal_date"]
-                training_frame["FirstAidTraining"] = training_ogl.get("FA", {"renewal_date": None})["renewal_date"]
-
-                return training_frame
-            else:
-                return pd.DataFrame()
-
-        return training_data
+        return self._scraper.get_training_tab(membership_num)
 
     def _permits_tab(self, membership_num: int) -> list:
         return self._scraper.get_permits_tab(membership_num)
@@ -128,7 +111,18 @@ class CompassPeopleUtility(CompassPeople):
         full_roles_mask = (roles_data["role_status"] != "Closed") & (roles_data["location_id"] > 0)
         open_roles = roles_data.index[full_roles_mask].to_list()
         roles_detail_array = [self._scraper.get_roles_detail(role_number) for role_number in open_roles]
-        training_data = self._training_tab(membership_num, return_frame=True)  # TODO rename completion date to WoodBadgeReceived
+        training_data = self._training_tab(membership_num)  # TODO rename completion date to WoodBadgeReceived
+        if training_data["roles"]:
+            training_frame = pd.DataFrame(training_data["roles"]).T
+            training_ogl = training_data["mandatory"]
+            empty_ogl = {"renewal_date": None}
+            training_frame["SafetyTraining"] = training_ogl.get("SA", empty_ogl)["renewal_date"]
+            training_frame["SafeguardingTraining"] = training_ogl.get("SG", empty_ogl)["renewal_date"]
+            training_frame["FirstAidTraining"] = training_ogl.get("FA", empty_ogl)["renewal_date"]
+
+            training_data = training_frame
+        else:
+            training_data = pd.DataFrame()
 
         compliance_data = pd.DataFrame(roles_detail_array)
         compliance_data = pd.concat([compliance_data[col].apply(pd.Series) for col in compliance_data], axis=1)
