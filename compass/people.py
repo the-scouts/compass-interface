@@ -56,6 +56,55 @@ class CompassPeople:
 
         return role_list
 
+    RTRT = Union[pd.DataFrame, dict]  # Roles Tab Return Type
+
+    # See getRole in PGS\Needle
+    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False, return_frame: bool = False) -> RTRT:
+        """
+        Gets the data from the Role tab in Compass for the specified member.
+
+        Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
+
+        :param membership_num:
+        :param keep_non_volunteer_roles:
+        :return:
+        """
+        response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
+        frame = pd.DataFrame(response).T
+        return frame if return_frame else response
+
+    def _training_tab(self, membership_num: int, return_frame: bool = False) -> dict or pd.DataFrame:
+        """
+        Gets training tab data for a given member
+
+        :param membership_num: Compass ID
+        :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
+        :return:
+        """
+        training_data = self._scraper.get_training_tab(membership_num)
+
+        training_roles = training_data["roles"]
+        training_ogl = training_data["mandatory"]
+
+        if return_frame:
+            if training_roles:
+                training_frame = pd.DataFrame(training_roles).T
+                training_frame["SafetyTraining"] = training_ogl.get("SA", {"renewal_date": None})["renewal_date"]
+                training_frame["SafeguardingTraining"] = training_ogl.get("SG", {"renewal_date": None})["renewal_date"]
+                training_frame["FirstAidTraining"] = training_ogl.get("FA", {"renewal_date": None})["renewal_date"]
+
+                return training_frame
+            else:
+                return pd.DataFrame()
+
+        return training_data
+
+    def _permits_tab(self, membership_num: int) -> list:
+        return self._scraper.get_permits_tab(membership_num)
+
+
+class CompassPeopleUtility(CompassPeople):
+
     def get_member_data(self, membership_num: int) -> pd.DataFrame:
         """
         Gets Compliance Report data for a specified member
@@ -105,7 +154,7 @@ class CompassPeople:
         # compliance_data[mol_columns] = compliance_data[mol_columns].fillna(mol_data)
         #
         # date_cols = [
-        #     "role_start_date", "role_end_date",
+        #     "role_start", "role_end",
         #     "ce_check", "review_date", "essential_info", "personal_learning_plan", "tools4_role", "gdpr",
         #     "wood_badge_received", "safety_training", "safeguarding_training", "first_aid_training"
         # ]
@@ -121,52 +170,6 @@ class CompassPeople:
             compliance_data[col] = compliance_data[col].str.strip()
 
         return compliance_data
-
-    RTRT = Union[pd.DataFrame, dict]  # Roles Tab Return Type
-
-    # See getRole in PGS\Needle
-    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False, return_frame: bool = False) -> RTRT:
-        """
-        Gets the data from the Role tab in Compass for the specified member.
-
-        Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
-
-        :param membership_num:
-        :param keep_non_volunteer_roles:
-        :return:
-        """
-        response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
-        frame = pd.DataFrame(response).T
-        return frame if return_frame else response
-
-    def _training_tab(self, membership_num: int, return_frame: bool = False) -> dict or pd.DataFrame:
-        """
-        Gets training tab data for a given member
-
-        :param membership_num: Compass ID
-        :param return_frame: Return a dataframe of role training & OGL info? Otherwise returns all data
-        :return:
-        """
-        training_data = self._scraper.get_training_tab(membership_num)
-
-        training_roles = training_data["roles"]
-        training_ogl = training_data["mandatory"]
-
-        if return_frame:
-            if training_roles:
-                training_frame = pd.DataFrame(training_roles).T
-                training_frame["SafetyTraining"] = training_ogl.get("SA", {"renewal_date": None})["renewal_date"]
-                training_frame["SafeguardingTraining"] = training_ogl.get("SG", {"renewal_date": None})["renewal_date"]
-                training_frame["FirstAidTraining"] = training_ogl.get("FA", {"renewal_date": None})["renewal_date"]
-
-                return training_frame
-            else:
-                return pd.DataFrame()
-
-        return training_data
-
-    def _permits_tab(self, membership_num: int) -> list:
-        return self._scraper.get_permits_tab(membership_num)
 
     def get_roles_from_members(self, compass_unit_id: int, member_numbers: pd.Series):
         with contextlib.suppress(FileNotFoundError):
