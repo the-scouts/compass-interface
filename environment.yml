@@ -12,7 +12,6 @@ dependencies:
 
   # For parsing results
   - lxml
-  - python-dateutil
 
   # Data arrangement
   - pandas

@@ -1,6 +1,5 @@
 certifi
 lxml
 pandas
-python-dateutil
 requests
 typing_extensions
