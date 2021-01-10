@@ -10,7 +10,7 @@ from compass.utility import cast
 from typing import Union
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
-
+RTRT = Union[pd.DataFrame, dict]  # Roles Tab Return Type
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
@@ -56,10 +56,8 @@ class CompassPeople:
 
         return role_list
 
-    RTRT = Union[pd.DataFrame, dict]  # Roles Tab Return Type
-
     # See getRole in PGS\Needle
-    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False, return_frame: bool = False) -> RTRT:
+    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict:
         """
         Gets the data from the Role tab in Compass for the specified member.
 
@@ -69,11 +67,9 @@ class CompassPeople:
         :param keep_non_volunteer_roles:
         :return:
         """
-        response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
-        frame = pd.DataFrame(response).T
-        return frame if return_frame else response
+        return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
 
-    def _training_tab(self, membership_num: int, return_frame: bool = False) -> dict or pd.DataFrame:
+    def _training_tab(self, membership_num: int, return_frame: bool = False) -> RTRT:
         """
         Gets training tab data for a given member
 
@@ -125,7 +121,7 @@ class CompassPeopleUtility(CompassPeople):
         ]
         # fmt: on
 
-        roles_data = self._roles_tab(membership_num, return_frame=True)
+        roles_data = pd.DataFrame(self._roles_tab(membership_num)).T  # coerce to dataframe
         if roles_data.empty:
             return pd.DataFrame(columns=compliance_columns)
 
@@ -182,7 +178,8 @@ class CompassPeopleUtility(CompassPeople):
         roles_list = []
         for member_number in member_numbers:
             try:
-                roles_list.append(self._roles_tab(member_number, return_frame=True))
+                roles_data = pd.DataFrame(self._roles_tab(member_number)).T  # coerce to dataframe
+                roles_list.append(roles_data)
             except Exception as e:
                 with open("error_roles.txt", "a") as f:
                     f.write(f"Member Number: {member_number}\n")
