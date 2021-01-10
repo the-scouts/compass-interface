@@ -16,6 +16,10 @@ dependencies:
   # Data arrangement
   - pandas
 
+  # Type validation
+  - pydantic
+  - email-validator
+
   # Development (Tools, Style, Linting)
   - ipython
   - black
