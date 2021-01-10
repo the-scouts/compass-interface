@@ -5,8 +5,6 @@ import time
 from typing import Literal, get_args, Union, Optional
 
 import requests
-from dateutil.parser import parse
-from dateutil.parser import parserinfo as _parserinfo
 from lxml import html
 
 from compass.interface_base import CompassInterfaceBase
@@ -14,10 +12,6 @@ from compass.settings import Settings
 from compass.utility import cast
 
 MEMBER_PROFILE_TAB_TYPES = Literal["Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"]
-
-
-def _parse(timestr: str, parserinfo: Optional[_parserinfo] = None, **kwargs) -> Optional[datetime.datetime]:
-    return parse(timestr, parserinfo, **kwargs) if timestr else None
 
 
 class CompassPeopleScraper(CompassInterfaceBase):

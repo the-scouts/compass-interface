@@ -35,7 +35,6 @@ pip install compass-interface-core
 - [requests](https://github.com/psf/requests) - for intuitive HTTP requests
 - [certifi](https://github.com/certifi/python-certifi) - for SSL/TLS certificate management
 - [lxml](https://lxml.de/) - for parsing HTML documents
-- [python-dateutil](https://github.com/dateutil/dateutil/lxm) - for parsing date strings
 - [pandas](https://github.com/pandas-dev/pandas) - for data management and transformation
 
 ## License

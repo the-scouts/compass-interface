@@ -1,6 +1,9 @@
 import ast
 import ctypes
+import datetime
 import functools
+from typing import Optional
+
 import certifi
 import requests
 import contextlib
@@ -72,3 +75,21 @@ def cast(value):
         except (ValueError, TypeError, SyntaxError):
             pass
     return value
+
+
+def maybe_int(value) -> Optional[int]:
+    """Casts value to int or None."""
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def parse(date_time_str: str) -> Optional[datetime.datetime]:
+    if not date_time_str:
+        return None
+    else:
+        try:
+            return datetime.datetime.strptime(date_time_str, "%d %B %Y")  # e.g. 01 January 2000
+        except ValueError:
+            return datetime.datetime.strptime(date_time_str, "%d %b %Y")  # e.g. 01 Jan 2000
