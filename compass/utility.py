@@ -2,11 +2,10 @@ import ast
 import ctypes
 import datetime
 import functools
-from typing import Optional
+from typing import Optional, Union, Any
 
 import certifi
 import requests
-import contextlib
 
 from pathlib import Path
 
@@ -21,7 +20,7 @@ def setup_tls_certs() -> None:
     Yes, it's horrid. TSA plz fix.
     """
 
-    thawte_CA_cert_url = "https://thawte.tbs-certificats.com/Thawte_RSA_CA_2018.crt"
+    thawte_ca_cert_url = "https://thawte.tbs-certificats.com/Thawte_RSA_CA_2018.crt"
 
     certifi_path = Path(certifi.where())
     certifi_contents = certifi_path.read_text("UTF-8")
@@ -32,7 +31,7 @@ def setup_tls_certs() -> None:
         print("Intermediate Certificate for Compass not found - Installing")
 
         # Fetch Thawte CA from known URL, rather than including PEM
-        ca_request = requests.get(thawte_CA_cert_url, allow_redirects=False)
+        ca_request = requests.get(thawte_ca_cert_url, allow_redirects=False)
 
         # Write to certifi PEM
         try:
@@ -59,7 +58,7 @@ def compass_restify(data: dict) -> list:
     return [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
 
-def cast(value, ast_eval: bool = False):
+def cast(value, ast_eval: bool = False) -> Union[int, str, Any]:
     """Casts values to native python types.
 
     lxml ETree return types don't do this automatically, and by using
