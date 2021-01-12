@@ -36,7 +36,7 @@ def setup_tls_certs() -> None:
                 f.write('\n# Label: "Thawte RSA CA 2018"\n')
                 f.write(ca_request.text)
         except IOError as x:
-            print(f'Unable to write to certifi PEM: {x.errno} - {x.strerror}')
+            print(f"Unable to write to certifi PEM: {x.errno} - {x.strerror}")
 
 
 def hash_code(text: str) -> int:
