@@ -5,10 +5,9 @@ import time
 import pandas as pd
 import requests
 from lxml import html
-from dateutil.parser import parse
 
 from compass.settings import Settings
-from compass.utility import cast
+from compass.utility import cast, parse_datetime_safe
 
 from typing import Union
 
@@ -71,14 +70,16 @@ class CompassPeopleScraper:
         # Known As
         details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
         # Join Date
-        details["join_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
+        details["join_date"] = parse_datetime_safe(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
 
         ## Position Varies:
 
         # Gender
         details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
         # DOB
-        details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
+        details["birth_date"] = parse_datetime_safe(
+            tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])")
+        )
         # Nationality
         details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
         # Ethnicity
