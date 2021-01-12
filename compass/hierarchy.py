@@ -159,8 +159,8 @@ class CompassHierarchy:
         try:
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(out, f, ensure_ascii=False)
-        except IOError as x:
-            print(f"Unable to write cache file: {x.errno} - {x.strerror}")
+        except IOError as e:
+            print(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
         return out
 
