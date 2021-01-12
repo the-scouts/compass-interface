@@ -261,7 +261,7 @@ class CompassHierarchy:
         try:
             with open(f"all-members-{parent_id}.json", "w", encoding="utf-8") as f:
                 json.dump(all_members, f, ensure_ascii=False, indent=4)
-        except IOError as x:
-            print(f"Unable to write cache file: {x.errno} - {x.strerror}")
+        except IOError as e:
+            print(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
         return all_members
