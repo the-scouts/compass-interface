@@ -5,12 +5,9 @@ import pandas as pd
 import requests
 
 from compass._scrapers.member import CompassPeopleScraper
-from compass.utility import cast
-
-from typing import Union
+from compass.utility import maybe_int
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
-RTRT = Union[pd.DataFrame, dict]  # Roles Tab Return Type
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
@@ -26,16 +23,19 @@ class CompassPeople:
 
         role_list = []
         for role_number, role_dict in response.items():
+            if not role_dict["can_view_details"]:
+                continue
+
             role_detail = self._scraper.get_roles_detail(role_number)
             details = role_detail["details"]
             hierarchy = role_detail["hierarchy"]
             data = {
                 "membership_number": membership_num,
-                "role_name": role_dict.get("role_name"),
-                "role_start": role_dict.get("role_start_date"),
-                "role_end": role_dict.get("role_end_date"),
+                "role_title": role_dict.get("role_title"),
+                "role_start": role_dict.get("role_start"),
+                "role_end": role_dict.get("role_end"),
                 "role_status": role_dict.get("role_status"),
-                "line_manager_number": cast(details.get("line_manager_number")),
+                "line_manager_number": maybe_int(details.get("line_manager_number")),
                 "line_manager": details.get("line_manager"),
                 "review_date": details.get("review_date"),
                 "organisation": hierarchy.get("organisation"),
