@@ -1,13 +1,84 @@
 import datetime
-from typing import Optional, Literal, Generic, TypeVar
-from typing import List, Dict  # Must use typing.Dict etc not native as of pydantic 1.7.3
+import warnings
+from typing import Optional, Literal, Generic, TypeVar, Union
+from typing import List, Dict  # Must use typing.Dict etc for generics not native as of pydantic 1.7.3
 
 from pydantic import generics
 import pydantic
 
 DataT = TypeVar('DataT')
 
-TYPES_SEX = Literal["Male", "Female"]
+TYPES_SEX = Literal["Male", "Female"]  # also 'Unknown'
+TYPES_ETHNICITY = Literal[
+    "1.English/Welsh/Scottish/Northern Irish/British",
+    "2.Irish",
+    "3.Gypsy or Irish Traveller",
+    "4.Any other White background",
+    "5.White and Black Caribbean",
+    "6.White and Black African",
+    "7.White and Asian",
+    "8.Any other mixed or Multiple ethic group",
+    "9.Indian",
+    "10.Pakistani",
+    "11.Bangladeshi",
+    "12.Chinese",
+    "13.Any other Asian Background",
+    "14.African",
+    "15.Caribbean",
+    "16.Any other Black/African/Caribbean background",
+    "17.Arab",
+    "18.Other",
+    "19.Prefer not to say",
+]
+TYPES_RELIGION = Union[
+    Literal[
+        "Buddhist",
+        "Christian (including all Christian denominations)",
+        "Hindu",
+        "Jewish",
+        "Muslim",
+        "Any other religion (please specify)",
+        "No religion",
+        "Prefer not to say",
+    ],
+    pydantic.constr(regex=r"^Christian.*"),
+    pydantic.constr(regex=r"^Any other religion.*"),
+]
+TYPES_OCCUPATION = Union[
+    Literal[
+        "Employed",
+        "Unemployed",
+        "Retired (whether receiving a pension or not)",
+        "Student",
+        "Long term sick or disabled",
+        "Looking after home of family",
+        "Other",
+    ],
+    pydantic.constr(regex=r"^Employed.*"),
+    pydantic.constr(regex=r"^Unemployed.*"),
+    pydantic.constr(regex=r"^Retired.*"),
+    pydantic.constr(regex=r"^Long term sick or disabled.*"),
+    pydantic.constr(regex=r"^Looking after home of family.*"),
+    pydantic.constr(regex=r"^Other.*")
+]
+TYPES_ROLE_CLASS = Literal[
+    "Administrator",
+    "Advisor",
+    "Assessor",
+    "Co-ordinator",
+    "Commissioner",
+    "Committee",
+    "Helper",
+    "Honorary",
+    "Leader",
+    "Manager",
+    "Secretary",
+    "Staff",
+    "System Role",
+    "Supporter",
+    "Trainer",
+    "Default role class",
+]
 TYPES_PERMIT = Literal[
     "Archery",
     "Bell Boating",
@@ -67,7 +138,7 @@ class MemberGenericDict(generics.GenericModel, Generic[DataT]):
     __root__: Dict[int, DataT]  # Must use typing.Dict not dict as of pydantic 1.7.3
 
     def __iter__(self):
-        return iter(self.__root__)
+        yield from self.__root__.items()
 
     def __getitem__(self, item):
         return self.__root__[item]
@@ -76,8 +147,7 @@ class MemberGenericDict(generics.GenericModel, Generic[DataT]):
         return len(self.__root__)
 
     def items(self):
-        for i in self.__root__:
-            yield i, self[i]
+        yield from iter(self)
 
 
 class MemberGenericList(generics.GenericModel, Generic[DataT]):
@@ -102,7 +172,8 @@ class MemberRoleBase(pydantic.BaseModel):
     role_number: int
     role_title: str  # role_name
     role_start: datetime.date
-    role_status: str
+    role_status: Literal["Cancelled", "Closed", "Full", "Pre provisional", "Provisional"]
+    review_date: Optional[datetime.date] = None
 
 
 # Personal Details Tab
@@ -116,10 +187,10 @@ class MemberDetails(MemberBase):
     # Core personal information
     birth_date: Optional[datetime.date] = None
     sex: Optional[TYPES_SEX] = None
-    nationality: Optional[str] = None  # TODO literal
-    ethnicity: Optional[str] = None  # TODO literal
-    religion: Optional[str] = None  # TODO literal
-    occupation: Optional[str] = None
+    nationality: Optional[str] = None  # literal? Big list...!
+    ethnicity: Optional[TYPES_ETHNICITY] = None
+    religion: Optional[TYPES_RELIGION] = None
+    occupation: Optional[TYPES_OCCUPATION] = None
     join_date: Optional[datetime.date] = None
 
     # Contact Details
@@ -136,12 +207,15 @@ class MemberDetails(MemberBase):
 class MemberRoleCore(MemberBase, MemberRoleBase):
     # Role details
     role_end: Optional[datetime.date] = None
-    role_class: str
-    role_type: Optional[str] = None
+    role_class: TYPES_ROLE_CLASS
+    role_type: Optional[str] = None  # TODO literal
 
     # Location details
     location_id: Optional[int] = None
     location_name: Optional[str] = None
+
+    # Is the role details popup accessible?
+    can_view_details: bool
 
 
 # Roles Tab (Main List - collection)
@@ -157,15 +231,15 @@ class MemberRoleDetail(MemberBase, MemberRoleBase):
     # Approval Process
     line_manager_number: Optional[int] = None
     line_manager: Optional[str] = None
-    review_date: Optional[str] = None
 
     # Approval information
-    ce_check: Optional[str] = None
-    disclosure_check: str
-    references: Optional[str] = None
-    appointment_panel_approval: Optional[str] = None
-    commissioner_approval: Optional[str] = None
-    committee_approval: Optional[str] = None
+    ce_check: datetime.date
+    disclosure_check: Literal["Disclosure Issued"]
+    disclosure_date: Optional[datetime.date]
+    references: Optional[Literal["Not Complete", "Not Required", "References Requested", "References Satisfactory", "References Unsatisfactory"]] = None
+    appointment_panel_approval: Optional[Literal["S", "NC", "NR", "U"]] = None
+    commissioner_approval: Optional[Literal["S", "NR", "RR", "U"]] = None
+    committee_approval: Optional[Literal["NC", "S", "U"]] = None
 
 
 # Roles Tab (Role Detail Popup - Hierarchy)
@@ -180,15 +254,30 @@ class MemberRoleHierarchy(pydantic.BaseModel):
     section: Optional[str] = None
 
 
-# TODO Roles Tab (Role Detail Popup - Getting Started)
-# class MemberRoleGettingStarted(pydantic.BaseModel):
-#     # Training
-#     module_01: Optional[str] = None
-#     module_02: Optional[str] = None
-#     module_03: Optional[str] = None
-#     module_04: Optional[str] = None
-#     gdpr: Optional[str] = None
-#     training_completion_date: Optional[str] = None
+# Roles Tab (Role Detail Popup - Getting Started)
+class MemberRoleGettingStartedModule(pydantic.BaseModel):
+    # name: str  # Module name  # needed?? as saved under key
+    validated: Optional[datetime.date] = None
+    validated_by: Optional[str] = None
+
+
+# Roles Tab (Role Detail Popup - Getting Started)
+class MemberRoleGettingStarted(pydantic.BaseModel):
+    # Getting Started Training
+    module_01: Optional[MemberRoleGettingStartedModule] = None
+    trustee_intro: Optional[MemberRoleGettingStartedModule] = None
+    module_02: Optional[MemberRoleGettingStartedModule] = None
+    module_03: Optional[MemberRoleGettingStartedModule] = None
+    module_04: Optional[MemberRoleGettingStartedModule] = None
+    gdpr: Optional[MemberRoleGettingStartedModule] = None
+    # training_completion_date: Optional[str] = None  # TODO where is this from???!!!
+
+
+# Roles Tab (Role Detail Popup - All)
+class MemberRolePopup(pydantic.BaseModel):
+    hierarchy: MemberRoleHierarchy
+    details: MemberRoleDetail
+    getting_started: MemberRoleGettingStarted
 
 
 # Training Tab (Role)
@@ -205,19 +294,15 @@ class MemberTrainingRole(MemberRoleBase):
     completion: Optional[str]
     completion_type: Optional[str]
     completion_date: Optional[datetime.date]
-    wood_badge_number: Optional[str]
-
-
-# Training Tab (Role) - collections
-MemberTrainingRolesDict = MemberGenericDict[MemberTrainingRole]
+    wood_badge_number: Optional[int]  # WB_1234567
 
 
 # Training Tab (PLP)
 class MemberTrainingPLP(pydantic.BaseModel):
     pk: int
     module_id: int
-    code: str
-    name: str
+    code: str  # TODO literal
+    name: str  # TODO literal
 
     # Learning details
     learning_required: Optional[bool]
@@ -231,14 +316,9 @@ class MemberTrainingPLP(pydantic.BaseModel):
     validated_date: Optional[datetime.date]
 
 
-# Training Tab (PLP) - collections
-MemberTrainingPLPsList = MemberGenericList[MemberTrainingPLP]
-MemberTrainingPLPsListsDict = MemberGenericDict[MemberTrainingPLPsList]
-
-
 # Training Tab (OGL - item)
 class MemberMOGL(pydantic.BaseModel):
-    name: str
+    name: Literal["GDPR", "Safeguarding", "Safety", "First Aid"]
     completed_date: Optional[datetime.date]
     renewal_date: Optional[datetime.date]  # GDPR has no renewal date...??
 
@@ -253,8 +333,8 @@ class MemberMOGLList(pydantic.BaseModel):
 
 # Training Tab
 class MemberTrainingTab(pydantic.BaseModel):
-    roles: MemberTrainingRolesDict
-    plps: MemberTrainingPLPsListsDict
+    roles: dict[int, MemberTrainingRole]
+    plps: dict[int, list[MemberTrainingPLP]]
     mandatory: MemberMOGLList
 
 
