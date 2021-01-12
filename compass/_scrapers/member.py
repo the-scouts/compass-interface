@@ -1,15 +1,15 @@
-import contextlib
 import datetime
 import re
 import time
-from typing import Literal, get_args, Union, Optional
+from typing import Literal, get_args, Union
 
 import requests
 from lxml import html
 
 from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
-from compass.utility import cast
+from compass.utility import cast, maybe_int, parse
+from compass.schemas import member as schema
 
 MEMBER_PROFILE_TAB_TYPES = Literal["Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"]
 
@@ -87,7 +87,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         return response.content
 
-    def get_personal_tab(self, membership_num: int) -> dict[str, Union[int, str, datetime.datetime]]:
+    def get_personal_tab(self, membership_num: int) -> schema.MemberDetails:
         """Returns data from Personal Details tab for a given member.
 
         Args:
@@ -156,7 +156,8 @@ class CompassPeopleScraper(CompassInterfaceBase):
         # Known As
         details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
         # Join Date
-        details["join_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)"))
+        join_date_str = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")  # TODO Unknown - take date from earliest role?
+        details["join_date"] = parse(join_date_str) if join_date_str != "Unknown" else None
 
         # ## Position Varies:
 
@@ -176,9 +177,10 @@ class CompassPeopleScraper(CompassInterfaceBase):
         details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
 
         # Filter out keys with no value.
-        return {k: v for k, v in details.items() if v}
+        details = {k: v for k, v in details.items() if v}
+        return schema.MemberDetails.parse_obj(details)
 
-    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> dict[int, dict[str, Union[int, str, datetime.datetime]]]:
+    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> schema.MemberRolesDict:
         """
         Returns data from Roles tab for a given member.
 
@@ -195,13 +197,13 @@ class CompassPeopleScraper(CompassInterfaceBase):
             {1234578:
              {'role_number': 1234578,
               'membership_number': ...,
-              'role_name': '...',
+              'role_title': '...',
               'role_class': '...',
               'role_type': '...',
               'location_id': ...,
               'location_name': '...',
               'role_start_date': datetime.datetime(...),
-              'role_end_date': datetime.datetime(...),
+              'role_end': datetime.datetime(...),
               'role_status': '...'},
              {...}
             }
@@ -215,6 +217,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         Todo:
             Other possible exceptions? i.e. from Requests
+            primary_role
         """
         print(f"getting roles tab for member number: {membership_num}")
         response = self._get_member_profile_tab(membership_num, "Roles")
@@ -233,21 +236,31 @@ class CompassPeopleScraper(CompassInterfaceBase):
             if len(cells[0].xpath("./label")) < 1:
                 cells.pop(0)
 
-            role_number = cast(row.get("data-pk"))  # TODO cast() or int()?
-            roles_data[role_number] = {
-                "role_number": role_number,
-                "membership_number": membership_num,
-                "role_name": cells[0].text_content().strip(),
-                "role_class": cells[1].text_content().strip(),
+            role_number = int(row.get("data-pk"))
+            status_with_review = cells[5].text_content().strip()
+            if status_with_review.startswith("Full Review Due "):
+                role_status = "Full"
+                review_date = parse(status_with_review.removeprefix("Full Review Due "))
+            else:
+                role_status = status_with_review
+                review_date = None
+
+            roles_data[role_number] = dict(
+                role_number=role_number,
+                membership_number=membership_num,
+                role_title=cells[0].text_content().strip(),
+                role_class=cells[1].text_content().strip(),
                 # role_type only visible if access to System Admin tab
-                "role_type": [*row.xpath("./td[1]/*/@title"), None][0],
+                role_type=[*row.xpath("./td[1]/*/@title"), None][0],
                 # location_id only visible if role is in hierarchy AND location still exists
-                "location_id": cells[2][0].get("data-ng_id"),
-                "location_name": cells[2].text_content().strip(),
-                "role_start_date": _parse(cells[3].text_content().strip()),
-                "role_end_date": _parse(cells[4].text_content().strip()),
-                "role_status": cells[5].text_content().strip(),
-            }
+                location_id=cells[2][0].get("data-ng_id"),
+                location_name=cells[2].text_content().strip(),
+                role_start=parse(cells[3].text_content().strip()),
+                role_end=parse(cells[4].text_content().strip()),
+                role_status=role_status,
+                review_date=review_date,
+                can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
+            )
 
         if not keep_non_volunteer_roles:
             # Remove OHs from list
@@ -257,7 +270,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
                 if "helper" in role_details["role_class"].lower():
                     continue
 
-                role_title = role_details["role_name"].lower()
+                role_title = role_details["role_title"].lower()
                 if "occasional helper" in role_title:
                     continue
 
@@ -269,9 +282,9 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
                 filtered_data[role_number] = role_details
             roles_data = filtered_data
-        return roles_data
+        return schema.MemberRolesDict.parse_obj(roles_data)
 
-    def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> dict[str, dict[Union[int, str], Union[dict, list]]]:
+    def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList]:
         """
         Returns data from Training tab for a given member.
 
@@ -285,9 +298,9 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
             E.g.:
             {'roles': {1234567: {'role_number': 1234567,
-               'title': '...',
-               'start_date': datetime.datetime(...),
-               'status': '...',
+               'role_title': '...',
+               'role_start': datetime.datetime(...),
+               'role_status': '...',
                'location': '...',
                'ta_data': '...',
                'ta_number': '...',
@@ -333,8 +346,8 @@ class CompassPeopleScraper(CompassInterfaceBase):
             for module_row in content_rows:
                 module_data = {}
                 child_nodes = list(module_row)
-                module_data["pk"] = cast(module_row.get("data-pk"))
-                module_data["module_id"] = cast(child_nodes[0].get("id")[4:])
+                module_data["pk"] = int(module_row.get("data-pk"))
+                module_data["module_id"] = int(child_nodes[0].get("id")[4:])
                 matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
                 if matches:
                     module_data["code"] = str(matches[0])
@@ -345,18 +358,18 @@ class CompassPeopleScraper(CompassInterfaceBase):
                     if ongoing_only and "gdpr" not in module_data["code"].lower():
                         continue
 
-                module_data["learning_required"] = "yes" in child_nodes[1].text_content().lower()
-                module_data["learning_method"] = child_nodes[2].text_content()
-                module_data["learning_completed"] = child_nodes[3].text_content()
-                with contextlib.suppress(ValueError):
-                    module_data["learning_date"] = datetime.datetime.strptime(child_nodes[3].text_content(), "%d %B %Y")
+                learning_required = child_nodes[1].text_content().lower()
+                module_data["learning_required"] = "yes" in learning_required if learning_required else None
+                module_data["learning_method"] = child_nodes[2].text_content() or None
+                module_data["learning_completed"] = parse(child_nodes[3].text_content())
+                module_data["learning_date"] = parse(child_nodes[3].text_content())
 
                 validated_by_string = child_nodes[4].text_content()
-                validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-                module_data["validated_membership_number"] = cast(validated_by_data[0])
-                module_data["validated_name"] = validated_by_data[1]
-                with contextlib.suppress(ValueError):
-                    module_data["validated_date"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
+                if validated_by_string:
+                    validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                    module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
+                    module_data["validated_name"] = validated_by_data[1]
+                module_data["validated_date"] = parse(child_nodes[5].text_content())
 
                 plp_data.append(module_data)
 
@@ -374,8 +387,8 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
             ogl_data = {
                 "name": cell_text.get(None),
-                "completed_date": datetime.datetime.strptime(cell_text.get("tdLastComplete"), "%d %B %Y"),
-                "renewal_date": datetime.datetime.strptime(cell_text.get("tdRenewal"), "%d %B %Y"),
+                "completed_date": parse(cell_text.get("tdLastComplete")),
+                "renewal_date": parse(cell_text.get("tdRenewal")),
             }
 
             training_ogl[ongoing_learning.get("data-ng_code")] = ogl_data
@@ -390,7 +403,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
         }
 
         if ongoing_only:
-            return training_ogl
+            return schema.MemberMOGLList.parse_obj(training_ogl)
 
         training_roles = {}
         for role in roles:
@@ -399,25 +412,36 @@ class CompassPeopleScraper(CompassInterfaceBase):
             info = {}  # NoQA
 
             info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
-            info["title"] = child_nodes[0].text_content()
-            info["start_date"] = datetime.datetime.strptime(child_nodes[1].text_content(), "%d %B %Y")
-            info["status"] = child_nodes[2].text_content()
+            info["role_title"] = child_nodes[0].text_content()
+            info["role_start"] = parse(child_nodes[1].text_content())
+            status_with_review = child_nodes[2].text_content()
+            if status_with_review.startswith("Full (Review Due: "):
+                role_status = "Full"
+                review_date = parse(status_with_review.removeprefix("Full (Review Due: ").removesuffix(")"))
+            else:
+                role_status = status_with_review
+                review_date = None
+
+            info["role_status"] = role_status
+            info["review_date"] = review_date
             info["location"] = child_nodes[3].text_content()
 
             training_advisor_string = child_nodes[4].text_content()
-            info["ta_data"] = training_advisor_string
-            training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-            info["ta_number"] = training_advisor_data[0]
-            info["ta_name"] = training_advisor_data[1]
+            if training_advisor_string:
+                info["ta_data"] = training_advisor_string
+                training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                info["ta_number"] = maybe_int(training_advisor_data[0])
+                info["ta_name"] = training_advisor_data[1]
 
             completion_string = child_nodes[5].text_content()
-            info["completion"] = completion_string
             if completion_string:
+                info["completion"] = completion_string
                 parts = completion_string.split(":")
                 info["completion_type"] = parts[0].strip()
-                info["completion_date"] = datetime.datetime.strptime(parts[1].strip(), "%d %B %Y")
+                info["completion_date"] = parse(parts[1].strip())
+                assert len(parts) <= 2, parts[2:]
                 info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
-            info["wood_badge_number"] = child_nodes[5].get("id")
+            info["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
 
             training_roles[info["role_number"]] = info
 
@@ -427,11 +451,13 @@ class CompassPeopleScraper(CompassInterfaceBase):
             "mandatory": training_ogl,
         }
 
-        return training_data
+        return schema.MemberTrainingTab.parse_obj(training_data)
 
-    def get_permits_tab(self, membership_num: int) -> list:
+    def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
         """
         Returns data from Permits tab for a given member.
+
+        If a permit has been revoked, the expires value is None and the status is PERM_REV
 
         Args:
             membership_num: Membership Number to use
@@ -459,19 +485,20 @@ class CompassPeopleScraper(CompassInterfaceBase):
             permit["category"] = child_nodes[2].text_content()
             permit["type"] = child_nodes[3].text_content()
             permit["restrictions"] = child_nodes[4].text_content()
-            permit["expires"] = datetime.datetime.strptime(child_nodes[5].text_content(), "%d %B %Y")
+            expires = child_nodes[5].text_content()
+            permit["expires"] = parse(expires) if expires != "Revoked" else None
             permit["status"] = child_nodes[5].get("class")
 
-            permits.append(permit)
+            permits.append(schema.MemberPermit(membership_number=membership_num, **permit))
 
-        return permits
+        return schema.MemberPermitsList.parse_obj(permits)
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(
             self,
             role_number: int,
             response: Union[str, requests.Response] = None
-    ) -> dict:
+    ) -> schema.MemberRolePopup:
         """
         Returns detailed data from a given role number.
 
@@ -493,12 +520,12 @@ class CompassPeopleScraper(CompassInterfaceBase):
               'section': '...'},
              'details': {'role_number': ...,
               'organisation_level': '...',
-              'dob': datetime.datetime(...),
-              'member_number': ...,
-              'member_name': '...',
+              'birth_date': datetime.datetime(...),
+              'membership_number': ...,
+              'name': '...',
               'role_title': '...',
-              'start_date': datetime.datetime(...),
-              'status': '...',
+              'role_start': datetime.datetime(...),
+              'role_status': '...',
               'line_manager_number': ...,
               'line_manager': '...',
               'ce_check': datetime.datetime(...),
@@ -523,14 +550,17 @@ class CompassPeopleScraper(CompassInterfaceBase):
         }
         renamed_modules = {
             1: "module_01",
+            "TRST": "trustee_intro",
             2: "module_02",
-            "M03": "module_03",
+            3: "module_03",
             4: "module_04",
+            "GDPR": "GDPR",
         }
         unset_vals = {"--- Not Selected ---", "--- No Items Available ---", "--- No Line Manager ---"}
 
         module_names = {
             "Essential Information": "M01",
+            "Trustee Introduction": "TRST",
             "PersonalLearningPlan": "M02",
             "Tools for the Role (Section Leaders)": "M03",
             "Tools for the Role (Managers and Supporters)": "M04",
@@ -557,61 +587,78 @@ class CompassPeopleScraper(CompassInterfaceBase):
             tree = html.fromstring(response.content)
         form = tree.forms[0]
 
+        if form.action == "./ScoutsPortal.aspx?Invalid=Access":
+            raise PermissionError(f"You do not have permission to the details of role {role_number}")
+
         member_string = form.fields.get("ctl00$workarea$txt_p1_membername")
         ref_code = form.fields.get("ctl00$workarea$cbo_p2_referee_status")
 
+        role_details = {}
         # Approval and Role details
-        role_details = {
-            "role_number": role_number,
-            "organisation_level": form.fields.get("ctl00$workarea$cbo_p1_level"),
-            "dob": _parse(form.inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
-            "member_number": cast(form.fields.get("ctl00$workarea$txt_p1_memberno")),
-            "member_name": member_string.split(" ", maxsplit=1)[1],
-            "role_title": form.fields.get("ctl00$workarea$txt_p1_alt_title"),
-            "start_date": _parse(form.fields.get("ctl00$workarea$txt_p1_startdate")),
-            # Role Status
-            "status": form.fields.get("ctl00$workarea$txt_p2_status"),
-            # Line Manager
-            "line_manager_number": cast(form.fields.get("ctl00$workarea$cbo_p2_linemaneger")),
-            "line_manager": form.inputs["ctl00$workarea$cbo_p2_linemaneger"].xpath("string(*[@selected])"),
-            # Review Date
-            "review_date": form.fields.get("ctl00$workarea$txt_p2_review"),
-            # CE (Confidential Enquiry) Check
-            "ce_check": _parse(form.fields.get("ctl00$workarea$txt_p2_cecheck")),  # TODO if CE check date != current date then is valid
-            # Disclosure Check
-            "disclosure_check": form.fields.get("ctl00$workarea$txt_p2_disclosure"),
-            # References
-            "references": references_codes.get(ref_code, ref_code),
-            # Appointment Panel Approval
-            "appointment_panel_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|AACA']//*[@selected])"),
-            # Commissioner Approval
-            "commissioner_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|CAPR']//*[@selected])"),
-            # Committee Approval
-            "committee_approval": tree.xpath("string(//*[@data-app_code='ROLPRP|CCA']//*[@selected])"),
-        }
+        role_details["role_number"] = role_number
+        role_details["organisation_level"] = form.fields.get("ctl00$workarea$cbo_p1_level")
+        role_details["birth_date"] = parse(form.inputs["ctl00$workarea$txt_p1_membername"].get("data-dob"))
+        role_details["membership_number"] = int(form.fields.get("ctl00$workarea$txt_p1_memberno"))
+        role_details["name"] = member_string.split(" ", maxsplit=1)[1]  # TODO does this make sense - should name be in every role??
+        role_details["role_title"] = form.fields.get("ctl00$workarea$txt_p1_alt_title")
+        role_details["role_start"] = parse(form.fields.get("ctl00$workarea$txt_p1_startdate"))
+        # Role Status
+        role_details["role_status"] = form.fields.get("ctl00$workarea$txt_p2_status")
+        # Line Manager TODO de-duplicate gets (ctl00$workarea$cbo_p2_linemaneger)
+        role_details["line_manager_number"] = maybe_int(form.fields.get("ctl00$workarea$cbo_p2_linemaneger"))
+        role_details["line_manager"] = next((op.text.strip() for op in form.inputs["ctl00$workarea$cbo_p2_linemaneger"] if op.get("selected")), None)
+        # Review Date
+        role_details["review_date"] = parse(form.fields.get("ctl00$workarea$txt_p2_review"))
+        # CE (Confidential Enquiry) Check
+        role_details["ce_check"] = parse(form.fields.get("ctl00$workarea$txt_p2_cecheck"))  # TODO if CE check date != current date then is valid
+        # Disclosure Check
+        disclosure_with_date = form.fields.get("ctl00$workarea$txt_p2_disclosure")
+        if disclosure_with_date.startswith("Disclosure Issued : "):
+            disclosure_date = parse(disclosure_with_date.removeprefix("Disclosure Issued : "))
+            disclosure_check = "Disclosure Issued"
+        else:
+            disclosure_date = None
+            disclosure_check = disclosure_with_date
+        role_details["disclosure_check"] = disclosure_check  # TODO extract date
+        role_details["disclosure_date"] = disclosure_date  # TODO extract date
+        # References
+        role_details["references"] = references_codes.get(ref_code, ref_code)
 
-        line_manager_number = role_details["line_manager_number"]
-        if line_manager_number in unset_vals:
+        approval_values = {}
+        approval_titles = {}  # TODO use title text - set by / on etc
+        for row in tree.xpath("//tr[@class='trProp']"):
+            select = row[1][0]
+            code = select.get("data-app_code")
+            approval_values[code] = select.get("data-db")
+            approval_titles[code] = select.get("title")
+
+        # Appointment Panel Approval
+        role_details["appointment_panel_approval"] = approval_values.get('ROLPRP|AACA')
+        # Commissioner Approval
+        role_details["commissioner_approval"] = approval_values.get('ROLPRP|CAPR')
+        # Committee Approval
+        role_details["committee_approval"] = approval_values.get('ROLPRP|CCA')
+
+        if role_details["line_manager_number"] in unset_vals:
             role_details["line_manager_number"] = None
+
+        # Filter null values
+        role_details = {k: v for k, v in role_details.items() if v is not None}
 
         # Getting Started
         modules_output = {}
         getting_started_modules = tree.xpath("//tr[@class='trTrain trTrainData']")
         # Get all training modules and then extract the required modules to a dictionary
         for module in getting_started_modules:
-            module_name = module.xpath("string(./td/label/text())")
+            module_name = module[0][0].text.strip()
             if module_name in module_names:
-                short_name = module_names[module_name]
                 info = {
-                    "name": short_name,
-                    "validated": _parse(module.xpath("./td[3]/input/@value")[0]),  # Save module validation date
-                    "validated_by": module.xpath("./td/input[2]/@value")[0],  # Save who validated the module
+                    # "name": module_names[module_name],  # short_name
+                    "validated": parse(module[2][0].value),  # Save module validation date
+                    "validated_by": module[1][1].value or None,  # Save who validated the module
                 }
-                mod_code = cast(module.xpath("./td[3]/input/@data-ng_value")[0])
-                modules_output[renamed_modules.get(mod_code, mod_code)] = info
-
-        # Filter null values
-        role_details = {k: v for k, v in role_details.items() if v is not None}
+                mod_code = cast(module[2][0].get("data-ng_value"))  # int or str
+                modules_output[renamed_modules[mod_code]] = info
 
         # Get all levels of the org hierarchy and select those that will have information:
         # Get all inputs with location data
@@ -625,5 +672,4 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         print(f"Processed details for role number: {role_number}. Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s")
         # TODO data-ng_id?, data-rtrn_id?
-        # return {**clipped_locations, **role_details, **modules_output}
-        return {"hierarchy": clipped_locations, "details": role_details, "getting_started": modules_output}
+        return schema.MemberRolePopup.parse_obj({"hierarchy": clipped_locations, "details": role_details, "getting_started": modules_output})
