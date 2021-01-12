@@ -160,7 +160,7 @@ class CompassHierarchy:
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(out, f, ensure_ascii=False)
         except IOError as x:
-            print(f'Unable to write cache file: {x.errno} - {x.strerror}')
+            print(f"Unable to write cache file: {x.errno} - {x.strerror}")
 
         return out
 
@@ -257,11 +257,11 @@ class CompassHierarchy:
             print(f"Getting members for {compass_id}")
             all_members[compass_id] = self._scraper.get_members_with_roles_in_unit(compass_id)
 
-         # Try and write to a file for caching
+        # Try and write to a file for caching
         try:
             with open(f"all-members-{parent_id}.json", "w", encoding="utf-8") as f:
                 json.dump(all_members, f, ensure_ascii=False, indent=4)
         except IOError as x:
-            print(f'Unable to write cache file: {x.errno} - {x.strerror}')
+            print(f"Unable to write cache file: {x.errno} - {x.strerror}")
 
         return all_members
