@@ -59,7 +59,7 @@ def compass_restify(data: dict) -> list:
     return [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
 
-def cast(value):
+def cast(value, ast_eval: bool = False):
     """Casts values to native python types.
 
     lxml ETree return types don't do this automatically, and by using
@@ -67,14 +67,14 @@ def cast(value):
     lists etc into native types.
     """
     try:
-        value = int(value)
+        return int(value)
     except (ValueError, TypeError):
-        # with contextlib.suppress(ValueError, TypeError, SyntaxError):  # TODO timeit suppress vs pure pass
+        if not ast_eval:
+            return str(value)
         try:
-            value = ast.literal_eval(str(value)) if value else value
+            return ast.literal_eval(str(value)) if value else value
         except (ValueError, TypeError, SyntaxError):
-            pass
-    return value
+            return value
 
 
 def maybe_int(value) -> Optional[int]:
