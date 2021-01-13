@@ -1,4 +1,5 @@
 import contextlib
+import enum
 import json
 from pathlib import Path
 from typing import Iterable
@@ -8,31 +9,31 @@ import requests
 from compass._scrapers.hierarchy import HierarchyScraper
 from compass.logging import logger
 
-level_parent_map = {
-    1: "Organisation",
-    2: "Country",
-    3: "Region",
-    4: "County",
-    5: "District",
-    6: "Group",
-}
-parent_level_map = {v: k for k, v in level_parent_map.items()}
 
-units = {
-    1: "Countries",
-    2: "Regions",
-    3: "Counties",
-    4: "Districts",
-    5: "Groups",
-}
-sections = {
-    1: "HQ Sections",
-    2: "Country Sections",
-    3: "Region Sections",
-    4: "County Sections",
-    5: "District Sections",
-    6: "Group Sections",
-}
+class Levels(enum.IntEnum):
+    Organisation = 1
+    Country = 2
+    Region = 3
+    County = 4
+    District = 5
+    Group = 6
+
+
+class UnitChildren(enum.IntEnum):
+    countries = Levels.Organisation
+    regions = Levels.Country
+    counties = Levels.Region
+    districts = Levels.County
+    groups = Levels.District
+
+
+class UnitSections(enum.IntEnum):
+    hq_sections = Levels.Organisation
+    country_sections = Levels.Country
+    region_sections = Levels.Region
+    county_sections = Levels.County
+    district_sections = Levels.District
+    group_sections = Levels.Group
 
 
 class Hierarchy:
@@ -62,14 +63,15 @@ class Hierarchy:
         return out
 
     # See recurseRetrieve in PGS\Needle
-    def _get_descendants_recursive(self, compass_id: int, hier_level: str = None, hier_num: int = None) -> dict:
+    def _get_descendants_recursive(self, compass_id: int, hier_level: str = None, hier_num: Levels = None) -> dict:
         """Recursively get all children from given unit ID and level name/number, with caching"""
         if hier_num is not None:
             level_numeric = hier_num
         elif hier_level is not None:
-            level_numeric = parent_level_map[hier_level]
-            if not level_numeric:
-                valid_values = list(parent_level_map.keys())
+            try:
+                level_numeric = Levels[hier_level]
+            except KeyError:
+                valid_values = [level.name for level in Levels]
                 raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_values}")
         else:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
@@ -79,22 +81,23 @@ class Hierarchy:
         for key, value in descendant_data.items():
             if key == "child" and value is not None:
                 for child in value:
-                    grandchildren = self._get_descendants_recursive(child["id"], hier_num=level_numeric + 1)
+                    child_level = Levels(level_numeric + 1)
+                    grandchildren = self._get_descendants_recursive(child["id"], hier_num=child_level)
                     child.update(grandchildren)
 
         return descendant_data
 
     # See recurseRetrieve in PGS\Needle
-    def get_descendants_from_numeric_level(self, parent_id: int, level_number: int) -> dict:
+    def get_descendants_from_numeric_level(self, parent_id: int, level_number: Levels) -> dict:
         logger.debug(f"getting data for unit {parent_id}")
-        parent_level = level_parent_map[level_number]
+        parent_level = level_number.name
 
         # All to handle as Group doesn't have grand-children
         children_and_sections = {
             "id": parent_id,
             "level": parent_level,
-            "child": self._scraper.get_units_from_hierarchy(parent_id, units[level_number]) if level_number in units else None,
-            "sections": self._scraper.get_units_from_hierarchy(parent_id, sections[level_number]),
+            "child": self._scraper.get_units_from_hierarchy(parent_id, UnitChildren(level_number).name) if level_number in set(UnitChildren) else None,
+            "sections": self._scraper.get_units_from_hierarchy(parent_id, UnitSections(level_number).name),
         }
 
         return children_and_sections

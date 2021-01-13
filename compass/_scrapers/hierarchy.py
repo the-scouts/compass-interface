@@ -9,17 +9,17 @@ from compass.settings import Settings
 from compass.utility import compass_restify
 
 endpoints = {
-    "Countries": "/countries",
-    "HQ Sections": "/hq/sections",
-    "Regions": "/regions",
-    "Country Sections": "/country/sections",
-    "Counties": "/counties",
-    "Region Sections": "/region/sections",
-    "Districts": "/districts",
-    "County Sections": "/county/sections",
-    "Groups": "/groups",
-    "District Sections": "/district/sections",
-    "Group Sections": "/group/sections",
+    "countries": "/countries",
+    "hq_sections": "/hq/sections",
+    "regions": "/regions",
+    "country_sections": "/country/sections",
+    "counties": "/counties",
+    "region_sections": "/region/sections",
+    "districts": "/districts",
+    "county_sections": "/county/sections",
+    "groups": "/groups",
+    "district_sections": "/district/sections",
+    "group_sections": "/group/sections",
 }
 
 
