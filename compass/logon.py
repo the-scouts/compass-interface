@@ -8,14 +8,14 @@ import requests
 
 from compass.errors import CompassAuthenticationError
 from compass.errors import CompassError
-from compass.interface_base import CompassInterfaceBase
+from compass.interface_base import InterfaceBase
 from compass.settings import Settings
 from compass.utility import cast
 from compass.utility import compass_restify
 from compass.utility import setup_tls_certs
 
 
-class CompassLogon(CompassInterfaceBase):
+class Logon(InterfaceBase):
     def __init__(self, credentials: list, role_to_use: str = None):
         self._member_role_number = 0
         self.compass_dict = {}
@@ -55,7 +55,7 @@ class CompassLogon(CompassInterfaceBase):
         if session is not None:
             return session.get(url, **kwargs)
         else:
-            return super(CompassLogon, self)._get(url, **kwargs)
+            return super(Logon, self)._get(url, **kwargs)
 
     def _jk_hash(self) -> str:
         """Generate JK Hash needed by Compass"""

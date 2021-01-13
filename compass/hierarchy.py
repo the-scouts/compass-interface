@@ -5,7 +5,7 @@ from typing import Iterable
 
 import requests
 
-from compass._scrapers.hierarchy import CompassHierarchyScraper
+from compass._scrapers.hierarchy import HierarchyScraper
 
 level_parent_map = {
     1: "Organisation",
@@ -34,9 +34,9 @@ sections = {
 }
 
 
-class CompassHierarchy:
+class Hierarchy:
     def __init__(self, session: requests.Session):
-        self._scraper = CompassHierarchyScraper(session)
+        self._scraper = HierarchyScraper(session)
 
     # See recurseRetrieve in PGS\Needle
     def get_hierarchy(self, compass_id: int, level: str) -> dict:

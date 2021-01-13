@@ -1,6 +1,6 @@
 import requests
 
-from compass._scrapers.member import CompassPeopleScraper
+from compass._scrapers.member import PeopleScraper
 from compass.utility import maybe_int
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
@@ -8,9 +8,9 @@ from compass.utility import maybe_int
 # UTILITY CLASS - get_member_data, get_roles_from_members, etc
 
 
-class CompassPeople:
+class People:
     def __init__(self, session: requests.Session):
-        self._scraper = CompassPeopleScraper(session)
+        self._scraper = PeopleScraper(session)
 
     def get_roles(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> list:
         response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)

@@ -4,7 +4,7 @@ import json
 from lxml import html
 import requests
 
-from compass.interface_base import CompassInterfaceBase
+from compass.interface_base import InterfaceBase
 from compass.settings import Settings
 from compass.utility import compass_restify
 
@@ -23,7 +23,7 @@ endpoints = {
 }
 
 
-class CompassHierarchyScraper(CompassInterfaceBase):
+class HierarchyScraper(InterfaceBase):
     def __init__(self, session: requests.Session):
         super().__init__(session)
 
