@@ -33,6 +33,7 @@ sections = {
     6: "Group Sections"
 }
 
+
 class CompassHierarchy:
     def __init__(self, session: requests.Session):
         self._scraper = CompassHierarchyScraper(session)
