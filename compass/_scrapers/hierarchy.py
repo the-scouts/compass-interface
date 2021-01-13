@@ -4,14 +4,26 @@ import json
 import requests
 from lxml import html
 
-from compass.hierarchy import create_hierarchy_levels
 from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
 from compass.utility import compass_restify
 
+endpoints = {
+    'Countries': '/countries',
+    'HQ Sections': '/hq/sections',
+    'Regions': '/regions',
+    'Country Sections': '/country/sections',
+    'Counties': '/counties',
+    'Region Sections': '/region/sections',
+    'Districts': '/districts',
+    'County Sections': '/county/sections',
+    'Groups': '/groups',
+    'District Sections': '/district/sections',
+    'Group Sections': '/group/sections'
+}
+
 
 class CompassHierarchyScraper(CompassInterfaceBase):
-    hierarchy_levels = create_hierarchy_levels()
 
     def __init__(self, session: requests.Session):
         super().__init__(session)
@@ -25,7 +37,7 @@ class CompassHierarchyScraper(CompassInterfaceBase):
         """
 
         # Get API endpoint from level
-        level_endpoint = self.hierarchy_levels.loc[self.hierarchy_levels["type"] == level, "endpoint"].str.cat()
+        level_endpoint = endpoints[level]
 
         # TODO PGS\Needle has `extra` bool in func signature to turn LiveData on/off
         result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})

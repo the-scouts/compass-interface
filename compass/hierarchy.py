@@ -8,44 +8,33 @@ import requests
 
 from compass._scrapers.hierarchy import CompassHierarchyScraper
 
+level_parent_map = {
+    1: 'Organisation',
+    2: 'Country',
+    3: 'Region',
+    4: 'County',
+    5: 'District',
+    6: 'Group'
+}
+parent_level_map = {v: k for k, v in level_parent_map.items()}
 
-def create_hierarchy_levels() -> pd.DataFrame:
-    data = pd.DataFrame(
-        columns=["level", "type"],
-        data=[
-            [1, "Countries"],
-            [1, "HQ Sections"],
-            [2, "Regions"],
-            [2, "Country Sections"],
-            [3, "Counties"],
-            [3, "Region Sections"],
-            [4, "Districts"],
-            [4, "County Sections"],
-            [5, "Groups"],
-            [5, "District Sections"],
-            [6, "Group Sections"],
-        ],
-    )
-
-    parent_level_map = {
-        1: "Organisation",
-        2: "Country",
-        3: "Region",
-        4: "County",
-        5: "District",
-        6: "Group",
-    }
-
-    data["parent_level"] = data["level"].map(parent_level_map)
-    data["endpoint"] = "/" + data["type"].str.lower().str.replace(" ", "/", regex=False)
-    data["has_children"] = data["type"].str.contains("section", case=False, regex=False)
-
-    return data
-
+units = {
+    1: 'Countries',
+    2: 'Regions',
+    3: 'Counties',
+    4: 'Districts',
+    5: 'Groups'
+}
+sections = {
+    1: 'HQ Sections',
+    2: 'Country Sections',
+    3: 'Region Sections',
+    4: 'County Sections',
+    5: 'District Sections',
+    6: "Group Sections"
+}
 
 class CompassHierarchy:
-    hierarchy_levels = create_hierarchy_levels()
-
     def __init__(self, session: requests.Session):
         self._scraper = CompassHierarchyScraper(session)
 
@@ -77,11 +66,9 @@ class CompassHierarchy:
         if hier_num is not None:
             level_numeric = hier_num
         elif hier_level is not None:
-            level_numeric = CompassHierarchy.hierarchy_levels.loc[
-                CompassHierarchy.hierarchy_levels["parent_level"] == hier_level, "level"
-            ].min()
+            level_numeric = parent_level_map[hier_level]
             if not level_numeric:
-                valid_values = CompassHierarchy.hierarchy_levels["parent_level"].drop_duplicates().to_list()
+                valid_values = list(parent_level_map.keys())
                 raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_values}")
         else:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
@@ -99,18 +86,14 @@ class CompassHierarchy:
     # See recurseRetrieve in PGS\Needle
     def get_descendants_from_numeric_level(self, parent_id: int, level_number: int) -> dict:
         print(f"getting data for unit {parent_id}")
-        mask = CompassHierarchy.hierarchy_levels["level"] == level_number
-        level_children = CompassHierarchy.hierarchy_levels.loc[mask, ["has_children", "type"]]
-        parent_level = CompassHierarchy.hierarchy_levels.loc[mask, "parent_level"].drop_duplicates().str.cat()
+        parent_level = level_parent_map[level_number]
 
         # All to handle as Group doesn't have grand-children
-        sections_list = level_children.loc[~level_children["has_children"], "type"].to_list()
-        has_children = level_children.loc[level_children["has_children"], "type"].to_list()
         children_and_sections = {
             "id": parent_id,
             "level": parent_level,
-            "child": self._scraper.get_units_from_hierarchy(parent_id, has_children[0]) if has_children else None,
-            "sections": self._scraper.get_units_from_hierarchy(parent_id, sections_list[0]),
+            "child": self._scraper.get_units_from_hierarchy(parent_id, units[level_number]) if level_number in units else None,
+            "sections": self._scraper.get_units_from_hierarchy(parent_id, sections[level_number]),
         }
 
         return children_and_sections
@@ -158,7 +141,7 @@ class CompassHierarchy:
 
         # Fetch all members
         all_members = {}
-        for compass_id in compass_ids.drop_duplicates().to_list():
+        for compass_id in set(compass_ids):
             print(f"Getting members for {compass_id}")
             all_members[compass_id] = self._scraper.get_members_with_roles_in_unit(compass_id)
 
