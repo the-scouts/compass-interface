@@ -98,6 +98,10 @@ class CompassHierarchy:
 
         return children_and_sections
 
+    def get_unique_members(self, compass_id: int, level: str):
+        # TODO this!!!
+        raise NotImplementedError
+
     def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: Iterable) -> dict:
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
