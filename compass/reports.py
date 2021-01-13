@@ -5,7 +5,7 @@ from typing import Tuple
 
 from lxml import html
 
-from compass.logon import CompassLogon
+from compass.logon import Logon
 from compass.settings import Settings
 
 # TODO Enum???
@@ -27,7 +27,7 @@ class CompassReportPermissionError(PermissionError, Exception):
     pass
 
 
-def get_report_token(logon: CompassLogon, report_number: int) -> str:
+def get_report_token(logon: Logon, report_number: int) -> str:
     params = {
         "pReportNumber": report_number,
         "pMemberRoleNumber": f"{logon.mrn}",
@@ -61,7 +61,7 @@ def get_report_export_url(report_page: str, filename: str = None) -> Tuple[str, 
     return export_url_path, report_export_url_data
 
 
-def get_report(logon: CompassLogon, report_type: str) -> bytes:
+def get_report(logon: Logon, report_type: str) -> bytes:
     # GET Report Page
     # POST Location Update
     # GET CSV data

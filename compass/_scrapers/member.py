@@ -6,7 +6,7 @@ from typing import get_args, Literal, Union
 from lxml import html
 import requests
 
-from compass.interface_base import CompassInterfaceBase
+from compass.interface_base import InterfaceBase
 from compass.schemas import member as schema
 from compass.settings import Settings
 from compass.utility import cast
@@ -18,7 +18,7 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 ]
 
 
-class CompassPeopleScraper(CompassInterfaceBase):
+class PeopleScraper(InterfaceBase):
     """
 
     Class directly interfaces with Compass operations to extract member data.
@@ -53,9 +53,9 @@ class CompassPeopleScraper(CompassInterfaceBase):
     """
 
     def __init__(self, session: requests.Session, validate: bool = False):
-        """CompassPeopleScraper constructor.
+        """PeopleScraper constructor.
 
-        takes an initialised Session object from CompassLogon
+        takes an initialised Session object from Logon
         """
         super().__init__(session)
         self.validate = validate

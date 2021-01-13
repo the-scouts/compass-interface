@@ -1,9 +1,9 @@
 import pandas as pd
 
-from compass.hierarchy import CompassHierarchy
+from compass.hierarchy import Hierarchy
 
 
-class CompassHierarchyUtility(CompassHierarchy):
+class HierarchyUtility(Hierarchy):
     def hierarchy_to_dataframe(self, hierarchy_dict) -> pd.DataFrame:
         flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
         dataframe = pd.DataFrame(flat_hierarchy)
