@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Black configuration
 [tool.black]
 line-length = 132  # 120*1.1
-target-version = ["py39"]  # Remember to change this if we change pins from Python 3.9!
+target-version = ["py38"]  # Remember to change this if we change pins from Python 3.9!  TODO black does not yet support 3.9 (13-01-2020)
 
 [tool.isort]
 line_length = 132
