@@ -5,6 +5,7 @@ from compass.settings import Settings
 
 class InterfaceBase:
     """Base class for interacting with the Compass server."""
+
     def __init__(self, session: requests.Session):
         self.s: requests.Session = session
 
