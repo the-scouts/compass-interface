@@ -630,7 +630,7 @@ class PeopleScraper(InterfaceBase):
         role_details["role_status"] = form.fields.get("ctl00$workarea$txt_p2_status")
         # Line Manager
         line_manager_el = next((op for op in form.inputs["ctl00$workarea$cbo_p2_linemaneger"] if op.get("selected")), None)
-        role_details["line_manager_number"] = maybe_int(line_manager_el.get("value"))
+        role_details["line_manager_number"] = maybe_int(line_manager_el.get("value")) if line_manager_el is not None else None
         role_details["line_manager"] = line_manager_el.text.strip() if line_manager_el is not None else None
         # Review Date
         role_details["review_date"] = parse(form.fields.get("ctl00$workarea$txt_p2_review"))
