@@ -5,6 +5,7 @@ from typing import List, Dict  # Must use typing.Dict etc for generics not nativ
 
 from pydantic import generics
 import pydantic
+import phonenumbers
 
 DataT = TypeVar('DataT')
 
@@ -201,6 +202,24 @@ class MemberDetails(MemberBase):
 
     # Additional / miscellaneous details
     # TODO - potential disabilities, qualifications, hobbies sections
+
+    @pydantic.validator('main_phone')
+    def check_phone_number(cls, v, values):
+        if v is None or not v or v == "0":
+            return None
+
+        try:
+            n = phonenumbers.parse(v, 'GB')
+        except phonenumbers.NumberParseException as e:
+            cn = values["membership_number"]
+            raise ValueError(f'Member No {cn}: phone number {v} is not valid!') from e
+
+        if not phonenumbers.is_valid_number(n):
+            cn = values["membership_number"]
+            warnings.warn(f"Member No {cn}: phone number {v} is not valid!", RuntimeWarning)
+
+        fmt = phonenumbers.PhoneNumberFormat.NATIONAL if n.country_code == 44 else phonenumbers.PhoneNumberFormat.INTERNATIONAL
+        return phonenumbers.format_number(n, fmt)
 
 
 # Roles Tab (Main List - item)

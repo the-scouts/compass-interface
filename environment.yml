@@ -13,12 +13,13 @@ dependencies:
   # For parsing results
   - lxml
 
-  # Data arrangement
+  # Data arrangement (util)
   - pandas
 
   # Type validation
   - pydantic
   - email-validator
+  - phonenumbers  # phonenumberslite?
 
   # Development (Tools, Style, Linting)
   - ipython
