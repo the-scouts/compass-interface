@@ -3,10 +3,11 @@ import time
 from typing import Optional
 
 import certifi
-import requests
 from lxml import html
+import requests
 
-from compass.errors import CompassError, CompassAuthenticationError
+from compass.errors import CompassAuthenticationError
+from compass.errors import CompassError
 from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
 from compass.utility import cast

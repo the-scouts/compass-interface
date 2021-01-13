@@ -6,4 +6,10 @@ build-backend = "setuptools.build_meta"
 # Black configuration
 [tool.black]
 line-length = 132  # 120*1.1
-target-version = ['py38']  # Remember to change this if we change pins from Python 3.8!
+target-version = ["py39"]  # Remember to change this if we change pins from Python 3.9!
+
+[tool.isort]
+line_length = 132
+profile = "google"
+py_version = "39"
+skip_gitignore = true
