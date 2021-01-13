@@ -7,6 +7,7 @@ from lxml import html
 import requests
 
 from compass.interface_base import InterfaceBase
+from compass.logging import logger
 from compass.schemas import member as schema
 from compass.settings import Settings
 from compass.utility import cast
@@ -228,7 +229,7 @@ class PeopleScraper(InterfaceBase):
             Other possible exceptions? i.e. from Requests
             primary_role
         """
-        print(f"getting roles tab for member number: {membership_num}")
+        logger.debug(f"getting roles tab for member number: {membership_num}")
         response = self._get_member_profile_tab(membership_num, "Roles")
         tree = html.fromstring(response)
 
@@ -601,7 +602,7 @@ class PeopleScraper(InterfaceBase):
         start_time = time.time()
         if response is None:
             response = self._get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
-            print(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
+            logger.debug(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
 
         post_response_time = time.time()
         if isinstance(response, (str, bytes)):
@@ -694,7 +695,7 @@ class PeopleScraper(InterfaceBase):
             renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals
         }
 
-        print(
+        logger.debug(
             f"Processed details for role number: {role_number}. "
             f"Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s"
         )

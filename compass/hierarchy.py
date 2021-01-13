@@ -6,6 +6,7 @@ from typing import Iterable
 import requests
 
 from compass._scrapers.hierarchy import HierarchyScraper
+from compass.logging import logger
 
 level_parent_map = {
     1: "Organisation",
@@ -56,7 +57,7 @@ class Hierarchy:
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(out, f, ensure_ascii=False)
         except IOError as e:
-            print(f"Unable to write cache file: {e.errno} - {e.strerror}")
+            logger.error(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
         return out
 
@@ -85,7 +86,7 @@ class Hierarchy:
 
     # See recurseRetrieve in PGS\Needle
     def get_descendants_from_numeric_level(self, parent_id: int, level_number: int) -> dict:
-        print(f"getting data for unit {parent_id}")
+        logger.debug(f"getting data for unit {parent_id}")
         parent_level = level_parent_map[level_number]
 
         # All to handle as Group doesn't have grand-children
@@ -113,7 +114,7 @@ class Hierarchy:
         # Fetch all members
         all_members = {}
         for compass_id in set(compass_ids):
-            print(f"Getting members for {compass_id}")
+            logger.debug(f"Getting members for {compass_id}")
             all_members[compass_id] = self._scraper.get_members_with_roles_in_unit(compass_id)
 
         # Try and write to a file for caching
@@ -121,6 +122,6 @@ class Hierarchy:
             with open(f"all-members-{parent_id}.json", "w", encoding="utf-8") as f:
                 json.dump(all_members, f, ensure_ascii=False, indent=4)
         except IOError as e:
-            print(f"Unable to write cache file: {e.errno} - {e.strerror}")
+            logger.error(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
         return all_members

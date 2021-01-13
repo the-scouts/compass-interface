@@ -8,6 +8,8 @@ from typing import Any, Optional, Union
 import certifi
 import requests
 
+from compass.logging import logger
+
 
 def setup_tls_certs() -> None:
     """
@@ -27,7 +29,7 @@ def setup_tls_certs() -> None:
     # Check for contents of Thawte CA, if not add
     if "Thawte RSA CA 2018" not in certifi_contents:
 
-        print("Intermediate Certificate for Compass not found - Installing")
+        logger.info("Intermediate Certificate for Compass not found - Installing")
 
         # Fetch Thawte CA from known URL, rather than including PEM
         ca_request = requests.get(thawte_ca_cert_url, allow_redirects=False)
@@ -38,7 +40,7 @@ def setup_tls_certs() -> None:
                 f.write('\n# Label: "Thawte RSA CA 2018"\n')
                 f.write(ca_request.text)
         except IOError as e:
-            print(f"Unable to write to certifi PEM: {e.errno} - {e.strerror}")
+            logger.error(f"Unable to write to certifi PEM: {e.errno} - {e.strerror}")
 
 
 def hash_code(text: str) -> int:
