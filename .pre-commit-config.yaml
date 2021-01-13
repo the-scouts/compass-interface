@@ -14,7 +14,7 @@ repos:
 
     # Enforce import ordering
   - repo: https://github.com/PyCQA/isort
-    rev: stable
+    rev: 5.7.0
     hooks:
       - id: isort
 
