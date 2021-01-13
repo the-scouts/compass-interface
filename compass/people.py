@@ -3,7 +3,6 @@ import requests
 from compass._scrapers.member import CompassPeopleScraper
 from compass.utility import maybe_int
 
-
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
 # UTILITY CLASS - get_member_data, get_roles_from_members, etc

@@ -24,6 +24,7 @@ dependencies:
   # Development (Tools, Style, Linting)
   - ipython
   - black
+  - isort
   - pre-commit
   - virtualenv==20.0.33  # Solve regression, see
       # https://github.com/ContinuumIO/anaconda-issues/issues/12094

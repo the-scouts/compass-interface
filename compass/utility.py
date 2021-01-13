@@ -3,7 +3,7 @@ import ctypes
 import datetime
 import functools
 from pathlib import Path
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
 import certifi
 import requests

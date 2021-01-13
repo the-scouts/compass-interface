@@ -1,15 +1,17 @@
 import datetime
 import re
 import time
-from typing import Literal, get_args, Union
+from typing import get_args, Literal, Union
 
-import requests
 from lxml import html
+import requests
 
 from compass.interface_base import CompassInterfaceBase
 from compass.schemas import member as schema
 from compass.settings import Settings
-from compass.utility import cast, maybe_int, parse
+from compass.utility import cast
+from compass.utility import maybe_int
+from compass.utility import parse
 
 MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"

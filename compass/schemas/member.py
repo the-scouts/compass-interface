@@ -1,11 +1,13 @@
 import datetime
+from typing import Generic, Literal, Optional, TypeVar, Union
 import warnings
-from typing import Optional, Literal, Generic, TypeVar, Union
-from typing import List, Dict  # Must use typing.Dict etc for generics not native as of pydantic 1.7.3
 
 import phonenumbers
 import pydantic
 from pydantic import generics
+
+# Must use typing.Dict etc for generics not native as of pydantic 1.7.3
+from typing import List, Dict  # isort: skip
 
 DataT = TypeVar("DataT")
 

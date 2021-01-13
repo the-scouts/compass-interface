@@ -1,8 +1,8 @@
 import datetime
 import json
 
-import requests
 from lxml import html
+import requests
 
 from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
