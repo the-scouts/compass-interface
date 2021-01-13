@@ -3,11 +3,11 @@ import warnings
 from typing import Optional, Literal, Generic, TypeVar, Union
 from typing import List, Dict  # Must use typing.Dict etc for generics not native as of pydantic 1.7.3
 
-from pydantic import generics
-import pydantic
 import phonenumbers
+import pydantic
+from pydantic import generics
 
-DataT = TypeVar('DataT')
+DataT = TypeVar("DataT")
 
 TYPES_SEX = Literal["Male", "Female"]  # also 'Unknown'
 TYPES_ETHNICITY = Literal[
@@ -60,7 +60,7 @@ TYPES_OCCUPATION = Union[
     pydantic.constr(regex=r"^Retired.*"),
     pydantic.constr(regex=r"^Long term sick or disabled.*"),
     pydantic.constr(regex=r"^Looking after home of family.*"),
-    pydantic.constr(regex=r"^Other.*")
+    pydantic.constr(regex=r"^Other.*"),
 ]
 TYPES_ROLE_CLASS = Literal[
     "Administrator",
@@ -79,6 +79,13 @@ TYPES_ROLE_CLASS = Literal[
     "Supporter",
     "Trainer",
     "Default role class",
+]
+TYPES_REFERENCES = Literal[
+    "Not Complete",
+    "Not Required",
+    "References Requested",
+    "References Satisfactory",
+    "References Unsatisfactory",
 ]
 TYPES_PERMIT = Literal[
     "Archery",
@@ -113,26 +120,26 @@ TYPES_PERMIT = Literal[
     "Yachting",
 ]
 TYPES_PERMIT_CATEGORIES = Literal[
-    'B1 Waters',
-    'B2 Waters',
-    'B2+ Waters',
-    'B3 Waters',
-    'C Waters',
-    'Campsite',
-    'Greenfield',
-    'Indoor',
-    'Lightweight Expedition',
-    'Open Inland B1 Waters',
-    'Open Inland B2 Waters',
-    'Open Inland B3 Waters',
-    'River B1 Waters',
-    'Sea B1 Waters',
-    'Sea B2 Waters',
-    'Surf B2 Waters',
-    'With Compound Bows',
-    'Without Compound Bows'
+    "B1 Waters",
+    "B2 Waters",
+    "B2+ Waters",
+    "B3 Waters",
+    "C Waters",
+    "Campsite",
+    "Greenfield",
+    "Indoor",
+    "Lightweight Expedition",
+    "Open Inland B1 Waters",
+    "Open Inland B2 Waters",
+    "Open Inland B3 Waters",
+    "River B1 Waters",
+    "Sea B1 Waters",
+    "Sea B2 Waters",
+    "Surf B2 Waters",
+    "With Compound Bows",
+    "Without Compound Bows",
 ]
-TYPES_PERMIT_TYPE = Literal['Leadership', 'Supervisory']
+TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory"]
 
 
 class MemberGenericDict(generics.GenericModel, Generic[DataT]):
@@ -203,16 +210,16 @@ class MemberDetails(MemberBase):
     # Additional / miscellaneous details
     # TODO - potential disabilities, qualifications, hobbies sections
 
-    @pydantic.validator('main_phone')
+    @pydantic.validator("main_phone")
     def check_phone_number(cls, v, values):
         if v is None or not v or v == "0":
             return None
 
         try:
-            n = phonenumbers.parse(v, 'GB')
+            n = phonenumbers.parse(v, "GB")
         except phonenumbers.NumberParseException as e:
             cn = values["membership_number"]
-            raise ValueError(f'Member No {cn}: phone number {v} is not valid!') from e
+            raise ValueError(f"Member No {cn}: phone number {v} is not valid!") from e
 
         if not phonenumbers.is_valid_number(n):
             cn = values["membership_number"]
@@ -255,7 +262,7 @@ class MemberRoleDetail(MemberBase, MemberRoleBase):
     ce_check: datetime.date
     disclosure_check: Literal["Disclosure Issued"]
     disclosure_date: Optional[datetime.date]
-    references: Optional[Literal["Not Complete", "Not Required", "References Requested", "References Satisfactory", "References Unsatisfactory"]] = None
+    references: Optional[TYPES_REFERENCES] = None
     appointment_panel_approval: Optional[Literal["S", "NC", "NR", "U"]] = None
     commissioner_approval: Optional[Literal["S", "NR", "RR", "U"]] = None
     committee_approval: Optional[Literal["NC", "S", "U"]] = None

@@ -1,6 +1,5 @@
 import requests
 
-
 from compass.settings import Settings
 
 
