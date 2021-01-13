@@ -7,11 +7,13 @@ import requests
 from lxml import html
 
 from compass.interface_base import CompassInterfaceBase
+from compass.schemas import member as schema
 from compass.settings import Settings
 from compass.utility import cast, maybe_int, parse
-from compass.schemas import member as schema
 
-MEMBER_PROFILE_TAB_TYPES = Literal["Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"]
+MEMBER_PROFILE_TAB_TYPES = Literal[
+    "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
+]
 
 
 class CompassPeopleScraper(CompassInterfaceBase):
@@ -47,6 +49,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
     All functions in the class output native types.
     """
+
     def __init__(self, session: requests.Session, validate: bool = False):
         """CompassPeopleScraper constructor.
 
@@ -156,8 +159,8 @@ class CompassPeopleScraper(CompassInterfaceBase):
         details["name"] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
         # Known As
         details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
-        # Join Date
-        join_date_str = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")  # TODO Unknown - take date from earliest role?
+        # Join Date  # TODO Unknown - take date from earliest role?
+        join_date_str = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")
         details["join_date"] = parse(join_date_str) if join_date_str != "Unknown" else None
 
         # ## Position Varies:
@@ -291,7 +294,9 @@ class CompassPeopleScraper(CompassInterfaceBase):
         else:
             return roles_data
 
-    def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList, dict]:
+    def get_training_tab(
+        self, membership_num: int, ongoing_only: bool = False
+    ) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList, dict]:
         """
         Returns data from Training tab for a given member.
 
@@ -402,7 +407,8 @@ class CompassPeopleScraper(CompassInterfaceBase):
             # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
         # Handle GDPR:
-        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.date)], reverse=True)  # Get latest GDPR date
+        # Get latest GDPR date
+        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.date)], reverse=True)
         gdpr_date = sorted_gdpr[0] if sorted_gdpr else None
         training_ogl["GDPR"] = {
             "name": "GDPR",
@@ -439,7 +445,8 @@ class CompassPeopleScraper(CompassInterfaceBase):
             training_advisor_string = child_nodes[4].text_content()
             if training_advisor_string:
                 info["ta_data"] = training_advisor_string
-                training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                # Add empty item to prevent IndexError
+                training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
                 info["ta_number"] = maybe_int(training_advisor_data[0])
                 info["ta_name"] = training_advisor_data[1]
 
@@ -511,9 +518,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(
-            self,
-            role_number: int,
-            response: Union[str, requests.Response] = None
+        self, role_number: int, response: Union[str, requests.Response] = None
     ) -> Union[schema.MemberRolePopup, dict]:
         """
         Returns detailed data from a given role number.
@@ -620,13 +625,14 @@ class CompassPeopleScraper(CompassInterfaceBase):
         role_details["role_start"] = parse(form.fields.get("ctl00$workarea$txt_p1_startdate"))
         # Role Status
         role_details["role_status"] = form.fields.get("ctl00$workarea$txt_p2_status")
-        # Line Manager TODO de-duplicate gets (ctl00$workarea$cbo_p2_linemaneger)
-        role_details["line_manager_number"] = maybe_int(form.fields.get("ctl00$workarea$cbo_p2_linemaneger"))
-        role_details["line_manager"] = next((op.text.strip() for op in form.inputs["ctl00$workarea$cbo_p2_linemaneger"] if op.get("selected")), None)
+        # Line Manager
+        line_manager_el = next((op for op in form.inputs["ctl00$workarea$cbo_p2_linemaneger"] if op.get("selected")), None)
+        role_details["line_manager_number"] = maybe_int(line_manager_el.get("value"))
+        role_details["line_manager"] = line_manager_el.text.strip() if line_manager_el is not None else None
         # Review Date
         role_details["review_date"] = parse(form.fields.get("ctl00$workarea$txt_p2_review"))
-        # CE (Confidential Enquiry) Check
-        role_details["ce_check"] = parse(form.fields.get("ctl00$workarea$txt_p2_cecheck"))  # TODO if CE check date != current date then is valid
+        # CE (Confidential Enquiry) Check  # TODO if CE check date != current date then is valid
+        role_details["ce_check"] = parse(form.fields.get("ctl00$workarea$txt_p2_cecheck"))
         # Disclosure Check
         disclosure_with_date = form.fields.get("ctl00$workarea$txt_p2_disclosure")
         if disclosure_with_date.startswith("Disclosure Issued : "):
@@ -649,11 +655,11 @@ class CompassPeopleScraper(CompassInterfaceBase):
             approval_titles[code] = select.get("title")
 
         # Appointment Panel Approval
-        role_details["appointment_panel_approval"] = approval_values.get('ROLPRP|AACA')
+        role_details["appointment_panel_approval"] = approval_values.get("ROLPRP|AACA")
         # Commissioner Approval
-        role_details["commissioner_approval"] = approval_values.get('ROLPRP|CAPR')
+        role_details["commissioner_approval"] = approval_values.get("ROLPRP|CAPR")
         # Committee Approval
-        role_details["committee_approval"] = approval_values.get('ROLPRP|CCA')
+        role_details["committee_approval"] = approval_values.get("ROLPRP|CCA")
 
         if role_details["line_manager_number"] in unset_vals:
             role_details["line_manager_number"] = None
@@ -686,7 +692,10 @@ class CompassPeopleScraper(CompassInterfaceBase):
             renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals
         }
 
-        print(f"Processed details for role number: {role_number}. Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s")
+        print(
+            f"Processed details for role number: {role_number}. "
+            f"Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s"
+        )
         # TODO data-ng_id?, data-rtrn_id?
         full_details = {
             "hierarchy": clipped_locations,

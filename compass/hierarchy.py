@@ -8,29 +8,29 @@ import requests
 from compass._scrapers.hierarchy import CompassHierarchyScraper
 
 level_parent_map = {
-    1: 'Organisation',
-    2: 'Country',
-    3: 'Region',
-    4: 'County',
-    5: 'District',
-    6: 'Group'
+    1: "Organisation",
+    2: "Country",
+    3: "Region",
+    4: "County",
+    5: "District",
+    6: "Group",
 }
 parent_level_map = {v: k for k, v in level_parent_map.items()}
 
 units = {
-    1: 'Countries',
-    2: 'Regions',
-    3: 'Counties',
-    4: 'Districts',
-    5: 'Groups'
+    1: "Countries",
+    2: "Regions",
+    3: "Counties",
+    4: "Districts",
+    5: "Groups",
 }
 sections = {
-    1: 'HQ Sections',
-    2: 'Country Sections',
-    3: 'Region Sections',
-    4: 'County Sections',
-    5: 'District Sections',
-    6: "Group Sections"
+    1: "HQ Sections",
+    2: "Country Sections",
+    3: "Region Sections",
+    4: "County Sections",
+    5: "District Sections",
+    6: "Group Sections",
 }
 
 

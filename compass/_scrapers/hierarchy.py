@@ -9,22 +9,21 @@ from compass.settings import Settings
 from compass.utility import compass_restify
 
 endpoints = {
-    'Countries': '/countries',
-    'HQ Sections': '/hq/sections',
-    'Regions': '/regions',
-    'Country Sections': '/country/sections',
-    'Counties': '/counties',
-    'Region Sections': '/region/sections',
-    'Districts': '/districts',
-    'County Sections': '/county/sections',
-    'Groups': '/groups',
-    'District Sections': '/district/sections',
-    'Group Sections': '/group/sections'
+    "Countries": "/countries",
+    "HQ Sections": "/hq/sections",
+    "Regions": "/regions",
+    "Country Sections": "/country/sections",
+    "Counties": "/counties",
+    "Region Sections": "/region/sections",
+    "Districts": "/districts",
+    "County Sections": "/county/sections",
+    "Groups": "/groups",
+    "District Sections": "/district/sections",
+    "Group Sections": "/group/sections",
 }
 
 
 class CompassHierarchyScraper(CompassInterfaceBase):
-
     def __init__(self, session: requests.Session):
         super().__init__(session)
 

@@ -2,17 +2,13 @@ import datetime
 import time
 from typing import Optional
 
-# from typing import Literal
-
-import requests
 import certifi
-
+import requests
 from lxml import html
 
+from compass.errors import CompassError, CompassAuthenticationError
 from compass.interface_base import CompassInterfaceBase
 from compass.settings import Settings
-from compass.errors import CompassError, CompassAuthenticationError
-
 from compass.utility import cast
 from compass.utility import compass_restify
 from compass.utility import setup_tls_certs
@@ -185,7 +181,6 @@ class CompassLogon(CompassInterfaceBase):
 
         form = html.fromstring(response.content).forms[0]
         self._update_authorisation(form, session)
-
 
     def _confirm_role_change(self, session: requests.Session, check_role_number: int) -> html.FormElement:
         """Confirms success and updates authorisation"""

@@ -2,12 +2,11 @@ import ast
 import ctypes
 import datetime
 import functools
+from pathlib import Path
 from typing import Optional, Union, Any
 
 import certifi
 import requests
-
-from pathlib import Path
 
 
 def setup_tls_certs() -> None:

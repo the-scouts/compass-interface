@@ -3,6 +3,7 @@ import requests
 from compass._scrapers.member import CompassPeopleScraper
 from compass.utility import maybe_int
 
+
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
 # UTILITY CLASS - get_member_data, get_roles_from_members, etc
@@ -74,6 +75,7 @@ class CompassPeople:
 
     def _permits_tab(self, membership_num: int) -> list:
         return self._scraper.get_permits_tab(membership_num)
+
 
 # class Member:
 #     def personal_details(self):
