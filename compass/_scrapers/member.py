@@ -47,12 +47,13 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
     All functions in the class output native types.
     """
-    def __init__(self, session: requests.Session):
+    def __init__(self, session: requests.Session, validate: bool = False):
         """CompassPeopleScraper constructor.
 
         takes an initialised Session object from CompassLogon
         """
         super().__init__(session)
+        self.validate = validate
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
         """Returns data from a given tab in MemberProfile for a given member.
@@ -87,7 +88,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         return response.content
 
-    def get_personal_tab(self, membership_num: int) -> schema.MemberDetails:
+    def get_personal_tab(self, membership_num: int) -> Union[schema.MemberDetails, dict]:
         """Returns data from Personal Details tab for a given member.
 
         Args:
@@ -178,9 +179,12 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
-        return schema.MemberDetails.parse_obj(details)
+        if self.validate:
+            return schema.MemberDetails.parse_obj(details)
+        else:
+            return details
 
-    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> schema.MemberRolesDict:
+    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> Union[schema.MemberRolesDict, dict]:
         """
         Returns data from Roles tab for a given member.
 
@@ -282,9 +286,12 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
                 filtered_data[role_number] = role_details
             roles_data = filtered_data
-        return schema.MemberRolesDict.parse_obj(roles_data)
+        if self.validate:
+            return schema.MemberRolesDict.parse_obj(roles_data)
+        else:
+            return roles_data
 
-    def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList]:
+    def get_training_tab(self, membership_num: int, ongoing_only: bool = False) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList, dict]:
         """
         Returns data from Training tab for a given member.
 
@@ -403,7 +410,10 @@ class CompassPeopleScraper(CompassInterfaceBase):
         }
 
         if ongoing_only:
-            return schema.MemberMOGLList.parse_obj(training_ogl)
+            if self.validate:
+                return schema.MemberMOGLList.parse_obj(training_ogl)
+            else:
+                return training_ogl
 
         training_roles = {}
         for role in roles:
@@ -451,9 +461,12 @@ class CompassPeopleScraper(CompassInterfaceBase):
             "mandatory": training_ogl,
         }
 
-        return schema.MemberTrainingTab.parse_obj(training_data)
+        if self.validate:
+            return schema.MemberTrainingTab.parse_obj(training_data)
+        else:
+            return training_data
 
-    def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
+    def get_permits_tab(self, membership_num: int) -> Union[schema.MemberPermitsList, list]:
         """
         Returns data from Permits tab for a given member.
 
@@ -479,7 +492,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         permits = []
         for row in rows:
-            permit = {}
+            permit = dict(membership_number=membership_num)
             child_nodes = list(row)
             permit["permit_type"] = child_nodes[1].text_content()
             permit["category"] = child_nodes[2].text_content()
@@ -489,16 +502,19 @@ class CompassPeopleScraper(CompassInterfaceBase):
             permit["expires"] = parse(expires) if expires != "Revoked" else None
             permit["status"] = child_nodes[5].get("class")
 
-            permits.append(schema.MemberPermit(membership_number=membership_num, **permit))
+            permits.append(permit)
 
-        return schema.MemberPermitsList.parse_obj(permits)
+        if self.validate:
+            return schema.MemberPermitsList.parse_obj(permits)
+        else:
+            return permits
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(
             self,
             role_number: int,
             response: Union[str, requests.Response] = None
-    ) -> schema.MemberRolePopup:
+    ) -> Union[schema.MemberRolePopup, dict]:
         """
         Returns detailed data from a given role number.
 
@@ -593,7 +609,7 @@ class CompassPeopleScraper(CompassInterfaceBase):
         member_string = form.fields.get("ctl00$workarea$txt_p1_membername")
         ref_code = form.fields.get("ctl00$workarea$cbo_p2_referee_status")
 
-        role_details = {}
+        role_details = dict()
         # Approval and Role details
         role_details["role_number"] = role_number
         role_details["organisation_level"] = form.fields.get("ctl00$workarea$cbo_p1_level")
@@ -672,4 +688,12 @@ class CompassPeopleScraper(CompassInterfaceBase):
 
         print(f"Processed details for role number: {role_number}. Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s")
         # TODO data-ng_id?, data-rtrn_id?
-        return schema.MemberRolePopup.parse_obj({"hierarchy": clipped_locations, "details": role_details, "getting_started": modules_output})
+        full_details = {
+            "hierarchy": clipped_locations,
+            "details": role_details,
+            "getting_started": modules_output,
+        }
+        if self.validate:
+            return schema.MemberRolePopup.parse_obj(full_details)
+        else:
+            return full_details
