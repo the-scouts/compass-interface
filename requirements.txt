@@ -5,3 +5,4 @@ requests
 typing_extensions
 pydantic
 email-validator
+phonenumbers
