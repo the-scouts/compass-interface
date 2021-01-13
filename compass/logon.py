@@ -9,6 +9,7 @@ import requests
 from compass.errors import CompassAuthenticationError
 from compass.errors import CompassError
 from compass.interface_base import InterfaceBase
+from compass.logging import logger
 from compass.settings import Settings
 from compass.utility import cast
 from compass.utility import compass_restify
@@ -63,7 +64,7 @@ class Logon(InterfaceBase):
         member_no = self.cn
         key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
         data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
-        print(f"Sending preflight data {datetime.datetime.now()}")
+        logger.debug(f"Sending preflight data {datetime.datetime.now()}")
         self._post(f"{Settings.base_url}/System/Preflight", json=data)
         return key_hash
 
@@ -113,7 +114,7 @@ class Logon(InterfaceBase):
         }
 
         # log in
-        print("Logging in")
+        logger.info("Logging in")
         response = session.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
         return response
 
@@ -126,14 +127,14 @@ class Logon(InterfaceBase):
                 raise ValueError("No session! session object must be passed or self.s set.") from None
 
         if new_role is not None:
-            print("Changing role")
+            logger.info("Changing role")
             new_role = new_role.strip()
 
             # Change role to the specified role number
             member_role_number = {v: k for k, v in self.roles_dict.items()}[new_role]
             session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": str(member_role_number)})
         else:
-            print("not changing role")
+            logger.info("not changing role")
             member_role_number = self.current_role_number
 
         # Confirm Compass is reporting the changed role number, update auth headers
@@ -143,7 +144,7 @@ class Logon(InterfaceBase):
         if member_role_number != self.mrn:
             raise CompassAuthenticationError("Compass Authentication failed to update")
 
-        print(f"Role updated successfully! Role is now {self.current_role}.")
+        logger.info(f"Role updated successfully! Role is now {self.current_role}.")
 
         return session
 
@@ -189,7 +190,7 @@ class Logon(InterfaceBase):
         response = self._get(portal_url, session=session)
         form = html.fromstring(response.content).forms[0]
 
-        print("Confirming role has been changed")
+        logger.debug("Confirming role has been changed")
         # Check that the role has been changed to the desired role. If not, raise exception.
         if self._get_active_role_number(form) != check_role_number:
             raise CompassError("Role failed to update in Compass")
@@ -211,6 +212,6 @@ class Logon(InterfaceBase):
         # TODO is this get role bit needed given that we change the role?
         self.current_role = self.roles_dict[int(self.mrn)]
         self.current_role_number = self._get_active_role_number(form)
-        print(f"Using Role: {self.current_role}")
+        logger.debug(f"Using Role: {self.current_role}")
 
         return session

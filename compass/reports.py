@@ -5,6 +5,7 @@ from typing import Tuple
 
 from lxml import html
 
+from compass.logging import logger
 from compass.logon import Logon
 from compass.settings import Settings
 
@@ -32,7 +33,7 @@ def get_report_token(logon: Logon, report_number: int) -> str:
         "pReportNumber": report_number,
         "pMemberRoleNumber": f"{logon.mrn}",
     }
-    print("Getting report token")
+    logger.debug("Getting report token")
     response = logon._get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
     response.raise_for_status()
@@ -74,7 +75,7 @@ def get_report(logon: Logon, report_type: str) -> bytes:
     # Compass does user-agent sniffing in reports!!!
     logon._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-    print("Generating report")
+    logger.info("Generating report")
     run_report = f"{Settings.base_url}/{run_report_url}"
     report_page = logon._get(run_report)
     tree = html.fromstring(report_page.content)
@@ -119,17 +120,17 @@ def get_report(logon: Logon, report_type: str) -> bytes:
     if "compass.scouts.org.uk%2fError.aspx|" in report.text:
         raise CompassReportError("Compass Error!")
 
-    print("Exporting report")
+    logger.info("Exporting report")
     export_url_path, export_url_params = get_report_export_url(report_page.text)
     csv_export = logon._get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
 
     # TODO Debug check
-    print("Saving report")
+    logger.info("Saving report")
     time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
     filename = f"{time_string} - {logon.cn} ({logon.current_role}).csv"
     Path(filename).write_bytes(csv_export.content)  # TODO Debug check
 
-    print(len(csv_export.content))
-    print("Report Saved")
+    logger.debug(len(csv_export.content))
+    logger.info("Report Saved")
 
     return csv_export.content
