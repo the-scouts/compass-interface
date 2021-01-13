@@ -74,3 +74,22 @@ class CompassPeople:
 
     def _permits_tab(self, membership_num: int) -> list:
         return self._scraper.get_permits_tab(membership_num)
+
+# class Member:
+#     def personal_details(self):
+#         pass
+#
+#     def role_details(self):
+#         pass
+#
+#     def ongoing_learning(self):
+#         pass
+#
+#     def training(self):
+#         pass
+#
+#     def permits(self):
+#         pass
+#
+#     # def awards(self):
+#     #     pass
