@@ -14,23 +14,23 @@ class HierarchyUtility(Hierarchy):
 
     @staticmethod
     def _flatten_hierarchy_dict(hierarchy_dict: dict) -> list:
-        def flatten(d: dict, hier: dict = None):
-            id_label = f"{d['level']}_ID"
-            name_label = f"{d['level']}_name"
-            out = {
-                **hier,
-                id_label: d["id"],
-                name_label: d.get("name"),
+        def flatten(d: dict, hierarchy_state: dict = None):
+            """Generator expresion to recursively flatten hierarchy"""
+            level_name = d["level"]
+            compass_id = d["id"]
+            name = d.get("name")
+            level_data = {
+                **hierarchy_state,
+                f"{level_name}_ID": compass_id,
+                f"{level_name}_name": name,
             }
-            flat.append({"compass": d["id"], "name": d.get("name"), **out})
+            yield {"compass": compass_id, "name": name, **level_data}
             for val in d["child"] or []:
-                flatten(val, out)
+                yield from flatten(val, level_data)
             for val in d["sections"]:
-                flat.append({"compass": val["id"], "name": val["name"], **out})
+                yield {"compass": val["id"], "name": val["name"], **level_data}
 
-        flat = []
-        flatten(hierarchy_dict, {})
-        return flat
+        return list(flatten(hierarchy_dict, {}))
 
     def get_all_members_table(self, parent_id: int, compass_ids: pd.Series) -> pd.DataFrame:
         members = self._get_all_members_in_hierarchy(parent_id, compass_ids)
