@@ -31,6 +31,12 @@ class HierarchyScraper(InterfaceBase):
     def get_units_from_hierarchy(self, parent_unit: int, level: str) -> list:
         """Get all children of a given unit
 
+        If LiveData=Y is passed, the resulting JSON additionally contains:
+            - (duplicated) parent id
+            - the unit address
+            - number of members
+            - SectionType1 and SectionTypeDesc1 keys, if requesting sections data
+
         TODO can we do this without needing to provide the level string?
 
         """
@@ -38,17 +44,15 @@ class HierarchyScraper(InterfaceBase):
         # Get API endpoint from level
         level_endpoint = endpoints[level]
 
-        # TODO PGS\Needle has `extra` bool in func signature to turn LiveData on/off
         result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
 
-        # Handle unauthorised access
+        # Handle unauthorised access TODO raise???
         if result_json == {"Message": "Authorization has been denied for this request."}:
             return [{"id": None, "name": None}]
 
         result_units = []
         for unit_dict in result_json:
-            # TODO LiveData check here too
             parsed = {
                 "id": int(unit_dict["Value"]),
                 "name": unit_dict["Description"],
@@ -56,10 +60,12 @@ class HierarchyScraper(InterfaceBase):
             }
             if unit_dict["Tag"]:  # TODO possible error states - what can we expect here as an invariant?
                 tag = json.loads(unit_dict["Tag"])[0]
-                parsed["status"] = tag.get("org_status")
-                parsed["address"] = tag.get("address")
-                parsed["member_count"] = tag.get("Members")
-                parsed["section_type"] = tag.get("SectionTypeDesc")
+                parsed["status"] = tag["org_status"]
+                parsed["address"] = tag["address"]
+                parsed["member_count"] = tag["Members"]
+                # Only include section_type if there is section type data
+                if "SectionTypeDesc" in tag:
+                    parsed["section_type"] = tag["SectionTypeDesc"]
 
             result_units.append(parsed)
 
