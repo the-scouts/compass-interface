@@ -71,11 +71,28 @@ class HierarchyScraper(InterfaceBase):
 
         return result_units
 
-    def get_members_with_roles_in_unit(self, unit_number):
+    def get_members_with_roles_in_unit(self, unit_number: int, include_name: bool = False, include_primary_role: bool = False) -> list:
+        """Get details of members with roles in a given unit
+
+        Keys within the member_data JSON are (as at 13/01/220):
+         - contact_number (membership number)
+         - name (member's name)
+         - visibility_status (this is meaningless as we can only see Y people)
+         - address (this doesn't reliably give us postcode and is a lot of data)
+         - role (This is Primary role and so only sometimes useful)
+
+        """
+        keys_to_keep = ("contact_number", )
+        if include_name:
+            keys_to_keep = (*keys_to_keep, "name")
+        if include_primary_role:
+            keys_to_keep = (*keys_to_keep, "role")
         # Construct request data
 
-        dt = datetime.datetime.now()
-        time_uid = f"{dt.hour}{dt.minute}{dt.microsecond // 1000}"
+        # It seems like the time UID value can be constant -- keeping old code in case something breaks
+        # dt = datetime.datetime.now()
+        # time_uid = f"{dt.hour}{dt.minute}{dt.microsecond // 1000}"
+        time_uid = str(12_34_567)
         data = {"SearchType": "HIERARCHY", "OrganisationNumber": unit_number, "UI": time_uid}
 
         # Execute search
@@ -87,17 +104,16 @@ class HierarchyScraper(InterfaceBase):
 
         # Gets the compass form from the returned document
         form = html.fromstring(search_results.content).forms[0]
+        del search_results
 
         # If the search hasn't worked the form returns an InvalidSearchError - check for this and raise an error if needed
         if form.action == "./ScoutsPortal.aspx?Invalid=SearchError":
             raise Exception("Invalid Search")
 
-        # Get the data and return it as a usable python object (list)
+        # Get the encoded JSON data from the HTML
         member_data_string = form.fields["ctl00$plInnerPanel_head$txt_h_Data"] or "[]"
+        del form
+
+        # parse the data and return it as a usable python object (list)
         member_data = json.loads(member_data_string)
-        for member in member_data:
-            del member["visibility_status"]  # This is meaningless as we can only see Y people
-            del member["address"]  # This doesn't reliably give us postcode and is a lot of data
-            del member["role"]  # This is Primary role and so not useful
-        # member_data = [prop for member in member_data for prop in member if prop not in ["visibility_status", "address", "role"]]
-        return member_data
+        return [{key: member[key] for key in keys_to_keep} for member in member_data]
