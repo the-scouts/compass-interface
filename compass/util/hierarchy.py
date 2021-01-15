@@ -1,3 +1,5 @@
+from typing import Generator, Optional, Iterable
+
 import pandas as pd
 
 from compass.hierarchy import Hierarchy
@@ -13,8 +15,8 @@ class HierarchyUtility(Hierarchy):
         return dataframe
 
     @staticmethod
-    def _flatten_hierarchy_dict(hierarchy_dict: dict) -> list:
-        def flatten(d: dict, hierarchy_state: dict = None):
+    def _flatten_hierarchy_dict(hierarchy_dict: dict) -> Generator:
+        def flatten(d: dict, hierarchy_state: Optional[dict] = None) -> Generator:
             """Generator expresion to recursively flatten hierarchy"""
             level_name = d["level"]
             compass_id = d["id"]
@@ -30,9 +32,9 @@ class HierarchyUtility(Hierarchy):
             for val in d["sections"]:
                 yield {"compass": val["id"], "name": val["name"], **level_data}
 
-        return list(flatten(hierarchy_dict, {}))
+        return flatten(hierarchy_dict, {})
 
-    def get_all_members_table(self, parent_id: int, compass_ids: pd.Series) -> pd.DataFrame:
+    def get_all_members_table(self, parent_id: int, compass_ids: Iterable) -> pd.DataFrame:
         members = self._get_all_members_in_hierarchy(parent_id, compass_ids)
         flat_members = [{"compass_id": compass, **mem_dict} for compass, mem_list in members.items() for mem_dict in mem_list]
         return pd.DataFrame(flat_members)
