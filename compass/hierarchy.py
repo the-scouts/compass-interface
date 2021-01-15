@@ -110,9 +110,22 @@ class Hierarchy:
 
         return flatten(hierarchy_dict, {})
 
-    def get_unique_members(self, compass_id: int, level: str):
-        # TODO this!!!
-        raise NotImplementedError
+    def get_unique_members(self, compass_id: int, level: Literal["Organisation", "Country", "Region", "County", "District", "Group"]) -> set:
+        """Get all unique members for a given level and its descendants"""
+        # get tree of all units
+        hierarchy_dict = self.get_hierarchy(compass_id, level)
+
+        # flatten tree
+        flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
+
+        # generator for compass unit IDs
+        compass_ids = (unit["compass"] for unit in flat_hierarchy)
+
+        # get members from the list of IDs
+        units_members = self._get_all_members_in_hierarchy(compass_id, compass_ids)
+
+        # return a set of membership numbers
+        return {members["contact_number"] for unit_members in units_members.values() for members in unit_members}
 
     def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: Iterable) -> dict:
         with contextlib.suppress(FileNotFoundError):
