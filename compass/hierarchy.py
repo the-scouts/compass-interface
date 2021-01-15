@@ -2,7 +2,7 @@ import contextlib
 import enum
 import json
 from pathlib import Path
-from typing import Iterable, Literal, Optional, Union
+from typing import Generator, Iterable, Literal, Optional, Union
 
 import requests
 
@@ -89,6 +89,26 @@ class Hierarchy:
             child.update(grandchildren)
 
         return descendant_data
+
+    @staticmethod
+    def _flatten_hierarchy_dict(hierarchy_dict: dict) -> Generator:
+        def flatten(d: dict, hierarchy_state: Optional[dict] = None) -> Generator:
+            """Generator expresion to recursively flatten hierarchy"""
+            level_name = d["level"]
+            compass_id = d["id"]
+            name = d.get("name")
+            level_data = {
+                **hierarchy_state,
+                f"{level_name}_ID": compass_id,
+                f"{level_name}_name": name,
+            }
+            yield {"compass": compass_id, "name": name, **level_data}
+            for val in d["child"] or []:
+                yield from flatten(val, level_data)
+            for val in d["sections"]:
+                yield {"compass": val["id"], "name": val["name"], **level_data}
+
+        return flatten(hierarchy_dict, {})
 
     def get_unique_members(self, compass_id: int, level: str):
         # TODO this!!!
