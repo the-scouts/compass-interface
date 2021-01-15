@@ -1,4 +1,4 @@
-from typing import Generator, Optional, Iterable
+from typing import Iterable
 
 import pandas as pd
 
@@ -13,26 +13,6 @@ class HierarchyUtility(Hierarchy):
             if dtype.name == "float64":
                 dataframe[field] = dataframe[field].astype("Int64")
         return dataframe
-
-    @staticmethod
-    def _flatten_hierarchy_dict(hierarchy_dict: dict) -> Generator:
-        def flatten(d: dict, hierarchy_state: Optional[dict] = None) -> Generator:
-            """Generator expresion to recursively flatten hierarchy"""
-            level_name = d["level"]
-            compass_id = d["id"]
-            name = d.get("name")
-            level_data = {
-                **hierarchy_state,
-                f"{level_name}_ID": compass_id,
-                f"{level_name}_name": name,
-            }
-            yield {"compass": compass_id, "name": name, **level_data}
-            for val in d["child"] or []:
-                yield from flatten(val, level_data)
-            for val in d["sections"]:
-                yield {"compass": val["id"], "name": val["name"], **level_data}
-
-        return flatten(hierarchy_dict, {})
 
     def get_all_members_table(self, parent_id: int, compass_ids: Iterable) -> pd.DataFrame:
         members = self._get_all_members_in_hierarchy(parent_id, compass_ids)
