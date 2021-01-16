@@ -1,4 +1,6 @@
 # Compass Interface - Core
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/compass-interface-core)
+![PyPI - Status](https://img.shields.io/pypi/status/compass-interface-core)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/compass-interface-core.svg)](https://pypi.org/project/compass-interface-core/)
 [![Conda Latest Release](https://anaconda.org/conda-forge/compass-interface-core/badges/version.svg)](https://anaconda.org/conda-forge/compass-interface-core/)
 [![License](https://img.shields.io/pypi/l/compass-interface-core.svg)](https://github.com/the-scouts/compass-interface-core/blob/master/LICENSE)
@@ -36,7 +38,9 @@ pip install compass-interface-core
 - [certifi](https://github.com/certifi/python-certifi) - for SSL/TLS certificate management
 - [lxml](https://lxml.de/) - for parsing HTML documents
 - [pandas](https://github.com/pandas-dev/pandas) - for data management and transformation
-- [pydantic](https://github.com/samuelcolvin/pydantic/) - for data validation and parsing
+- [pydantic](https://github.com/samuelcolvin/pydantic/), 
+  [email-validator](https://github.com/JoshData/python-email-validator), 
+  [phonenumbers](https://github.com/daviddrysdale/python-phonenumbers) - for data validation and parsing
 
 ## License
 

@@ -36,5 +36,4 @@ dependencies:
   - twine
 
   - pip:
-    # PyPA build package (not on conda 04/01/21)
-    - build
+    - build  # PyPA build package (not on conda 04/01/21)
