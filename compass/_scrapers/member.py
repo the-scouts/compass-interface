@@ -1,7 +1,7 @@
 import datetime
 import re
 import time
-from typing import get_args, Literal, Union, TYPE_CHECKING
+from typing import get_args, Literal, TYPE_CHECKING, Union
 
 from lxml import html
 
