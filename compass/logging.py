@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger("compass_interface")
 
 
-def _add_debug_handler() -> None:
+def enable_debug_logging() -> None:
     import sys
 
     logger.setLevel(logging.DEBUG)
