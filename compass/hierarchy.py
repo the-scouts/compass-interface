@@ -104,7 +104,7 @@ class Hierarchy:
         return descendant_data
 
     @staticmethod
-    def _flatten_hierarchy_dict(hierarchy_dict: dict) -> Generator:
+    def flatten_hierarchy(hierarchy_dict: dict) -> Generator:
         def flatten(d: dict, hierarchy_state: Optional[dict] = None) -> Generator:
             """Generator expresion to recursively flatten hierarchy"""
             level_name = d["level"]
@@ -132,7 +132,7 @@ class Hierarchy:
             hierarchy_dict = hierarchy_dict.dict()
 
         # flatten tree
-        flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
+        flat_hierarchy = self.flatten_hierarchy(hierarchy_dict)
 
         # generator for compass unit IDs
         compass_ids = (unit["compass"] for unit in flat_hierarchy)
