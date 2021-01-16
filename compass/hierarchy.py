@@ -138,7 +138,7 @@ class Hierarchy:
         compass_ids = (unit["compass"] for unit in flat_hierarchy)
 
         # get members from the list of IDs
-        units_members = self._get_all_members_in_hierarchy(compass_id, compass_ids)
+        units_members = self.get_members_in_units(compass_id, compass_ids)
 
         # return a set of membership numbers
         return {members["contact_number"] for unit_members in units_members for members in unit_members["member"]}
@@ -146,7 +146,7 @@ class Hierarchy:
     gamih_native = dict[str, Union[int, list[dict[str, Union[int, str]]]]]
     gamih_pydantic = schema.HierarchyUnitMembers
 
-    def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: Iterable) -> list[Union[gamih_pydantic, gamih_native]]:
+    def get_members_in_units(self, parent_id: int, compass_ids: Iterable) -> list[Union[gamih_pydantic, gamih_native]]:
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
             with open(f"all-members-{parent_id}.json", "r", encoding="utf-8") as f:
