@@ -4,7 +4,16 @@ from typing import Literal, Optional
 
 import pydantic
 
-TYPES_SECTION = Literal["Beavers", "Beaver Scout", "Cub Scout", "Explorer Scouts", "Scout", "Scout Active Support", "Scout Network", "Other",]
+TYPES_SECTION = Literal[
+    "Beavers",
+    "Beaver Scout",
+    "Cub Scout",
+    "Explorer Scouts",
+    "Scout",
+    "Scout Active Support",
+    "Scout Network",
+    "Other",
+]
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
 
