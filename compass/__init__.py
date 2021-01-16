@@ -1,10 +1,12 @@
 # This directory is a Python package.
+from typing import Optional
+
 from compass.errors import CompassAuthenticationError
 from compass.errors import CompassError
 import compass.hierarchy
 from compass.hierarchy import Hierarchy
 import compass.logging
-import compass.logon
+from compass.logon import Logon
 import compass.people
 from compass.people import People
 import compass.reports
@@ -14,9 +16,9 @@ import compass.settings
 import compass.utility
 
 
-def logon(username: str, password: str, compass_role: str = None) -> compass.logon.Logon:
+def logon(username: str, password: str, compass_role: Optional[str] = None) -> Logon:
     """Log in to compass, return a compass.logon.Logon object
 
     This function is provided as a convenient interface to the logon module.
     """
-    return compass.logon.Logon((username, password), compass_role)
+    return Logon((username, password), compass_role)
