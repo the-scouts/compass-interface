@@ -1,8 +1,20 @@
+# core
+requests
 certifi
 lxml
 pandas
-requests
-typing_extensions
+# core-typing
 pydantic
 email-validator
 phonenumbers
+
+# dev
+ipython
+black
+isort
+pre-commit
+
+# build
+pep517
+twine
+build
