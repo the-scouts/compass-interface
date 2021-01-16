@@ -1,6 +1,9 @@
-import requests
+from typing import TYPE_CHECKING
 
 from compass.settings import Settings
+
+if TYPE_CHECKING:
+    import requests
 
 
 class InterfaceBase:

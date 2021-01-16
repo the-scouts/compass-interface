@@ -1,10 +1,9 @@
 import datetime
 import re
 import time
-from typing import get_args, Literal, Union
+from typing import get_args, Literal, Union, TYPE_CHECKING
 
 from lxml import html
-import requests
 
 from compass.interface_base import InterfaceBase
 from compass.logging import logger
@@ -13,6 +12,9 @@ from compass.settings import Settings
 from compass.utility import cast
 from compass.utility import maybe_int
 from compass.utility import parse
+
+if TYPE_CHECKING:
+    import requests
 
 MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
