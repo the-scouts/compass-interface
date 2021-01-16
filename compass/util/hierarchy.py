@@ -15,6 +15,6 @@ class HierarchyUtility(Hierarchy):
         return dataframe
 
     def get_all_members_table(self, parent_id: int, compass_ids: Iterable) -> pd.DataFrame:
-        members = self._get_all_members_in_hierarchy(parent_id, compass_ids)
+        members = self.get_members_in_units(parent_id, compass_ids)
         flat_members = [{"compass_id": compass, **mem_dict} for compass, mem_list in members.items() for mem_dict in mem_list]
         return pd.DataFrame(flat_members)
