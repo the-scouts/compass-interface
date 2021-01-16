@@ -17,7 +17,7 @@ from compass.utility import setup_tls_certs
 
 
 class Logon(InterfaceBase):
-    def __init__(self, credentials: list, role_to_use: str = None):
+    def __init__(self, credentials: tuple[str, str], role_to_use: str = None):
         self._member_role_number = 0
         self.compass_dict = {}
 
@@ -68,7 +68,7 @@ class Logon(InterfaceBase):
         self._post(f"{Settings.base_url}/System/Preflight", json=data)
         return key_hash
 
-    def _do_logon(self, credentials: list = None, role_to_use: str = None) -> requests.Session:
+    def _do_logon(self, credentials: tuple[str, str] = None, role_to_use: str = None) -> requests.Session:
         """Log in to Compass, change role and confirm success."""
         session = self._create_session()
 
@@ -101,7 +101,7 @@ class Logon(InterfaceBase):
         return session
 
     @staticmethod
-    def _logon_remote(auth: list, session: requests.Session) -> requests.Response:
+    def _logon_remote(auth: tuple[str, str], session: requests.Session) -> requests.Response:
         """Interface code with Compass"""
         # Referer is genuinely needed otherwise login doesn't work
         headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
