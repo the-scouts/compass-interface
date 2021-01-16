@@ -1,34 +1,35 @@
-import datetime
 import json
+import typing
+from typing import Literal, Union
 
 from lxml import html
+import pydantic
 import requests
 
 from compass.interface_base import InterfaceBase
+from compass.schemas import hierarchy as schema
 from compass.settings import Settings
 from compass.utility import compass_restify
 
-endpoints = {
-    "countries": "/countries",
-    "hq_sections": "/hq/sections",
-    "regions": "/regions",
-    "country_sections": "/country/sections",
-    "counties": "/counties",
-    "region_sections": "/region/sections",
-    "districts": "/districts",
-    "county_sections": "/county/sections",
-    "groups": "/groups",
-    "district_sections": "/district/sections",
-    "group_sections": "/group/sections",
-}
+# TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
+TYPES_ENDPOINT_LEVELS = Literal['countries', 'hq_sections', 'regions', 'country_sections', 'counties', 'region_sections', 'districts', 'county_sections', 'groups', 'district_sections', 'group_sections']
+endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOINT_LEVELS)}
 
 
 class HierarchyScraper(InterfaceBase):
-    def __init__(self, session: requests.Session):
+    def __init__(self, session: requests.Session, validate: bool = False):
+        """HierarchyScraper constructor.
+
+        takes an initialised Session object from Logon
+        """
         super().__init__(session)
+        self.validate = validate
+
+    gufh_native = list[dict[str, Union[int, str, None]]]
+    gufh_pydantic = Union[schema.HierarchySection, schema.HierarchyUnit]
 
     # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
-    def get_units_from_hierarchy(self, parent_unit: int, level: str) -> list:
+    def get_units_from_hierarchy(self, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> Union[gufh_native, gufh_pydantic, None]:
         """Get all children of a given unit
 
         If LiveData=Y is passed, the resulting JSON additionally contains:
@@ -37,12 +38,33 @@ class HierarchyScraper(InterfaceBase):
             - number of members
             - SectionType1 and SectionTypeDesc1 keys, if requesting sections data
 
-        TODO can we do this without needing to provide the level string?
+        TODO
+
+        Args:
+            parent_unit: The unit ID to get descendants from
+            level: string org type, used for selecting API endpoint
+
+        Returns:
+            Mapping of unit properties to data.
+
+            E.g.:
+            {'id': ...,
+             'name': '...',
+             'parent_id': ...,
+             'status': '...',
+             'address': '...',
+             'member_count': ...}
+
+        Todo:
+            can we do this without needing to provide the level string?
+            raises? (from requests etc)
 
         """
 
         # Get API endpoint from level
         level_endpoint = endpoints[level]
+        # Are we requesting sections here?
+        is_sections = "/sections" in level_endpoint
 
         result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
@@ -69,9 +91,15 @@ class HierarchyScraper(InterfaceBase):
 
             result_units.append(parsed)
 
-        return result_units
+        if self.validate:
+            return pydantic.parse_obj_as(list[schema.HierarchySection if is_sections else schema.HierarchyUnit], result_units)
+        else:
+            return result_units
 
-    def get_members_with_roles_in_unit(self, unit_number: int, include_name: bool = False, include_primary_role: bool = False) -> list:
+    gmwriu_native = dict[str, Union[int, str]]
+    gmwriu_pydantic = schema.HierarchyMember
+
+    def get_members_with_roles_in_unit(self, unit_number: int, include_name: bool = False, include_primary_role: bool = False) -> list[Union[gmwriu_native, gmwriu_pydantic]]:
         """Get details of members with roles in a given unit
 
         Keys within the member_data JSON are (as at 13/01/220):
@@ -80,6 +108,23 @@ class HierarchyScraper(InterfaceBase):
          - visibility_status (this is meaningless as we can only see Y people)
          - address (this doesn't reliably give us postcode and is a lot of data)
          - role (This is Primary role and so only sometimes useful)
+
+        Args:
+            unit_number: Compass unit number
+            include_name: include member name in returned data
+            include_primary_role: include primary role in returned data
+
+        Returns:
+            A list of member records. Keys are included through args
+
+            E.g.:
+            [
+                {"contact_number": ..., ...},
+                ...
+            ]
+
+        Todo:
+            raises?
 
         """
         keys_to_keep = ("contact_number", )
@@ -116,4 +161,7 @@ class HierarchyScraper(InterfaceBase):
 
         # parse the data and return it as a usable python object (list)
         member_data = json.loads(member_data_string)
-        return [{key: member[key] for key in keys_to_keep} for member in member_data]
+        if self.validate:
+            return [schema.HierarchyMember(**{key: member[key] for key in keys_to_keep}) for member in member_data]
+        else:
+            return [{key: member[key] for key in keys_to_keep} for member in member_data]
