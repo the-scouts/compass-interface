@@ -4,10 +4,9 @@ import json
 from pathlib import Path
 from typing import Generator, Iterable, Literal, Optional, Union
 
-import requests
-
 from compass._scrapers.hierarchy import HierarchyScraper
 from compass.logging import logger
+from compass.logon import Logon
 from compass.schemas import hierarchy as schema
 
 TYPES_HIERARCHY_LEVEL = Literal["Organisation", "Country", "Region", "County", "District", "Group"]
@@ -40,8 +39,8 @@ class UnitSections(enum.IntEnum):
 
 
 class Hierarchy:
-    def __init__(self, session: requests.Session, validate: bool = False):
-        self._scraper = HierarchyScraper(session)
+    def __init__(self, session: Logon, validate: bool = False):
+        self._scraper = HierarchyScraper(session.s)
         self.validate = validate
 
     # See recurseRetrieve in PGS\Needle
