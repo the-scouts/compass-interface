@@ -8,6 +8,9 @@ import requests
 
 from compass._scrapers.hierarchy import HierarchyScraper
 from compass.logging import logger
+from compass.schemas import hierarchy as schema
+
+TYPES_HIERARCHY_LEVEL = Literal["Organisation", "Country", "Region", "County", "District", "Group"]
 
 
 class Levels(enum.IntEnum):
@@ -37,33 +40,42 @@ class UnitSections(enum.IntEnum):
 
 
 class Hierarchy:
-    def __init__(self, session: requests.Session):
+    def __init__(self, session: requests.Session, validate: bool = False):
         self._scraper = HierarchyScraper(session)
+        self.validate = validate
 
     # See recurseRetrieve in PGS\Needle
-    def get_hierarchy(self, compass_id: int, level: str) -> dict:
+    def get_hierarchy(self, compass_id: int, level: TYPES_HIERARCHY_LEVEL) -> Union[dict, schema.UnitData]:
         """Recursively get all children from given unit ID and level, with caching"""
         filename = Path(f"hierarchy-{compass_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
         with contextlib.suppress(FileNotFoundError):
             out = json.loads(filename.read_text(encoding="utf-8"))
             if out:
-                return out
+                if self.validate:
+                    return schema.UnitData.parse_obj(out)
+                else:
+                    return out
 
         # Fetch the hierarchy
         out = self._get_descendants_recursive(compass_id, hier_level=level)
 
         # Try and write to a file for caching
         try:
-            with open(filename, "w", encoding="utf-8") as f:
-                json.dump(out, f, ensure_ascii=False)
+            if self.validate:
+                filename.write_text(schema.UnitData.parse_obj(out).json(ensure_ascii=False), encoding="utf-8")
+            else:
+                filename.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
         except IOError as e:
             logger.error(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
-        return out
+        if self.validate:
+            return schema.UnitData.parse_obj(out)
+        else:
+            return out
 
     # See recurseRetrieve in PGS\Needle
-    def _get_descendants_recursive(self, compass_id: int, hier_level: Optional[Literal["Organisation", "Country", "Region", "County", "District", "Group"]] = None, hier_num: Optional[Levels] = None) -> dict[str, Union[int, str, None]]:
+    def _get_descendants_recursive(self, compass_id: int, hier_level: Optional[TYPES_HIERARCHY_LEVEL] = None, hier_num: Optional[Levels] = None) -> dict[str, Union[int, str, None]]:
         """Recursively get all children from given unit ID and level name/number, with caching"""
         if hier_level is hier_num is None:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
@@ -110,10 +122,13 @@ class Hierarchy:
 
         return flatten(hierarchy_dict, {})
 
-    def get_unique_members(self, compass_id: int, level: Literal["Organisation", "Country", "Region", "County", "District", "Group"]) -> set:
+    def get_unique_members(self, compass_id: int, level: TYPES_HIERARCHY_LEVEL) -> set[int]:
         """Get all unique members for a given level and its descendants"""
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(compass_id, level)
+
+        if self.validate:
+            hierarchy_dict = hierarchy_dict.dict()
 
         # flatten tree
         flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
@@ -125,9 +140,12 @@ class Hierarchy:
         units_members = self._get_all_members_in_hierarchy(compass_id, compass_ids)
 
         # return a set of membership numbers
-        return {members["contact_number"] for unit_members in units_members.values() for members in unit_members}
+        return {members["contact_number"] for unit_members in units_members for members in unit_members["member"]}
 
-    def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: Iterable) -> dict:
+    gamih_native = dict[str, Union[int, list[dict[str, Union[int, str]]]]]
+    gamih_pydantic = schema.HierarchyUnitMembers
+
+    def _get_all_members_in_hierarchy(self, parent_id: int, compass_ids: Iterable) -> list[Union[gamih_pydantic, gamih_native]]:
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
             with open(f"all-members-{parent_id}.json", "r", encoding="utf-8") as f:
@@ -136,10 +154,10 @@ class Hierarchy:
                     return all_members
 
         # Fetch all members
-        all_members = {}
+        all_members = []
         for compass_id in set(compass_ids):
             logger.debug(f"Getting members for {compass_id}")
-            all_members[compass_id] = self._scraper.get_members_with_roles_in_unit(compass_id)
+            all_members.append(dict(compass_id=compass_id, member=self._scraper.get_members_with_roles_in_unit(compass_id)))
 
         # Try and write to a file for caching
         try:
@@ -148,4 +166,7 @@ class Hierarchy:
         except IOError as e:
             logger.error(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
-        return all_members
+        if self.validate:
+            return schema.HierarchyUnitMembersList.parse_obj(all_members).__root__
+        else:
+            return all_members
