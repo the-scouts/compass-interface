@@ -12,7 +12,19 @@ from compass.settings import Settings
 from compass.utility import compass_restify
 
 # TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
-TYPES_ENDPOINT_LEVELS = Literal['countries', 'hq_sections', 'regions', 'country_sections', 'counties', 'region_sections', 'districts', 'county_sections', 'groups', 'district_sections', 'group_sections']
+TYPES_ENDPOINT_LEVELS = Literal[
+    "countries",
+    "hq_sections",
+    "regions",
+    "country_sections",
+    "counties",
+    "region_sections",
+    "districts",
+    "county_sections",
+    "groups",
+    "district_sections",
+    "group_sections",
+]
 endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOINT_LEVELS)}
 
 
@@ -99,7 +111,9 @@ class HierarchyScraper(InterfaceBase):
     gmwriu_native = dict[str, Union[int, str]]
     gmwriu_pydantic = schema.HierarchyMember
 
-    def get_members_with_roles_in_unit(self, unit_number: int, include_name: bool = False, include_primary_role: bool = False) -> list[Union[gmwriu_native, gmwriu_pydantic]]:
+    def get_members_with_roles_in_unit(
+        self, unit_number: int, include_name: bool = False, include_primary_role: bool = False
+    ) -> list[Union[gmwriu_native, gmwriu_pydantic]]:
         """Get details of members with roles in a given unit
 
         Keys within the member_data JSON are (as at 13/01/220):
@@ -127,7 +141,7 @@ class HierarchyScraper(InterfaceBase):
             raises?
 
         """
-        keys_to_keep = ("contact_number", )
+        keys_to_keep = ("contact_number",)
         if include_name:
             keys_to_keep = (*keys_to_keep, "name")
         if include_primary_role:

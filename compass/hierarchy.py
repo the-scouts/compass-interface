@@ -75,7 +75,9 @@ class Hierarchy:
             return out
 
     # See recurseRetrieve in PGS\Needle
-    def _get_descendants_recursive(self, compass_id: int, hier_level: Optional[TYPES_HIERARCHY_LEVEL] = None, hier_num: Optional[Levels] = None) -> dict[str, Union[int, str, None]]:
+    def _get_descendants_recursive(
+        self, compass_id: int, hier_level: Optional[TYPES_HIERARCHY_LEVEL] = None, hier_num: Optional[Levels] = None
+    ) -> dict[str, Union[int, str, None]]:
         """Recursively get all children from given unit ID and level name/number, with caching"""
         if hier_level is hier_num is None:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
