@@ -55,4 +55,18 @@ The main project is found at [the-scouts/compass-interface](https://github.com/t
 
 ## Example Usage
 
-TBC
+```python
+import compass as ci
+
+# Turn on debug logging for development
+ci.logging.enable_debug_logging()
+
+# Login to Compass
+compass_session = ci.logon(username=..., password=...)
+
+# Setup Compass Helpers
+hierarchy = ci.Hierarchy(compass_session)
+people = ci.People(compass_session)
+
+
+```
