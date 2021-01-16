@@ -6,7 +6,7 @@ from compass.hierarchy import Hierarchy
 
 
 class HierarchyUtility(Hierarchy):
-    def hierarchy_to_dataframe(self, hierarchy_dict) -> pd.DataFrame:
+    def hierarchy_to_dataframe(self, hierarchy_dict: dict) -> pd.DataFrame:
         flat_hierarchy = self._flatten_hierarchy_dict(hierarchy_dict)
         dataframe = pd.DataFrame(flat_hierarchy)
         for field, dtype in dataframe.dtypes.items():
