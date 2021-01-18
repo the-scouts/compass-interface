@@ -11,3 +11,4 @@ python-jose==3.1.0
 python-multipart==0.0.5
 requests
 uvicorn
+compass-interface-core
