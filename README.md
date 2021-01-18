@@ -15,7 +15,7 @@ and is licensed under the **[MIT license](https://choosealicense.com/licenses/mi
 
 You can install the dependencies through either `pip` or `conda`.
 
-```
+```shell
 # conda
 conda env create
 conda activate compass-interface
@@ -25,7 +25,7 @@ If installing dependencies from  PyPI, please **strongly** consider
 [using a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 to isolate your packages. 
 
-```
+```shell
 # PyPI
 pip install -r requirements.txt 
 ```
