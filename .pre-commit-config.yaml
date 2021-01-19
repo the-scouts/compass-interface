@@ -4,22 +4,35 @@ repos:
     rev: stable
     hooks:
       - id: black
+        name: Enforce code style (Black)
 
     # Check markup files
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.4.0  # Use the ref you want to point at
     hooks:
       - id: check-toml
+        name: Check for valid syntax in TOML files
       - id: check-yaml
+        name: Check for valid syntax in YAML files
 
     # Enforce import ordering
   - repo: https://github.com/PyCQA/isort
     rev: 5.7.0
     hooks:
       - id: isort
+        name: Enforce import ordering (isort)
 
 #    # Consistent setup.cfg formatting
 #  - repo: https://github.com/asottile/setup-cfg-fmt
 #    rev: stable
 #    hooks:
 #      - id: setup-cfg-fmt
+
+    # Code analysis (PyLint, PyCodeStyle, PyFlakes, McCabe, Dodgy
+  - repo: https://github.com/PyCQA/prospector
+    rev: 1.3.1
+    hooks:
+      - id: prospector
+        name: Code analysis (PyCQA Prospector)
+        args:
+          - --doc-warnings  # Runs PyDocStyle for docstrings
