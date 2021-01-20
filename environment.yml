@@ -31,9 +31,6 @@ dependencies:
       # https://github.com/pypa/virtualenv/issues/1986
       # https://github.com/pre-commit/pre-commit/issues/1675
 
-  # Build
-  - pep517
-  - twine
-
   - pip:
+    # Build
     - build  # PyPA build package (not on conda 04/01/21)
