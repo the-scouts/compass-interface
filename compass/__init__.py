@@ -17,7 +17,7 @@ import compass.utility
 
 
 def logon(username: str, password: str, compass_role: Optional[str] = None) -> Logon:
-    """Log in to compass, return a compass.logon.Logon object
+    """Log in to compass, return a compass.logon.Logon object.
 
     This function is provided as a convenient interface to the logon module.
     """

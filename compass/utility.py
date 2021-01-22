@@ -12,7 +12,8 @@ from compass.logging import logger
 
 
 def setup_tls_certs() -> None:
-    """
+    """Set up full TLS chain for Compass.
+
     Compass currently (as of 14/11/20) doesn't pass the Intermediate certificate it uses.
     This is at time of writing the 'Thawte RSA CA 2018', which is in turned signed by DigiCert Global Root CA.
 
@@ -20,7 +21,6 @@ def setup_tls_certs() -> None:
 
     Yes, it's horrid. TSA plz fix.
     """
-
     thawte_ca_cert_url = "https://thawte.tbs-certificats.com/Thawte_RSA_CA_2018.crt"
 
     certifi_path = Path(certifi.where())
@@ -44,7 +44,7 @@ def setup_tls_certs() -> None:
 
 
 def hash_code(text: str) -> int:
-    """Implements Java's hashCode in python
+    """Implements Java's hashCode in Python.
 
     Ref: https://stackoverflow.com/a/8831937
     """
@@ -60,7 +60,7 @@ def compass_restify(data: dict) -> list:
 
 
 def cast(value, ast_eval: bool = False) -> Union[int, str, Any]:
-    """Casts values to native python types.
+    """Casts values to native Python types.
 
     lxml ETree return types don't do this automatically, and by using
     ast.literal_eval we can directly map string representations of

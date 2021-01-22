@@ -25,7 +25,6 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 
 class PeopleScraper(InterfaceBase):
     """
-
     Class directly interfaces with Compass operations to extract member data.
 
     Compass's MemberProfile.aspx has 13 tabs:
@@ -58,7 +57,7 @@ class PeopleScraper(InterfaceBase):
     """
 
     def __init__(self, session: requests.Session, validate: bool = False):
-        """PeopleScraper constructor.
+        """Constructor for PeopleScraper.
 
         takes an initialised Session object from Logon
         """
@@ -361,7 +360,7 @@ class PeopleScraper(InterfaceBase):
         for plp in personal_learning_plans:
             plp_table = plp.getchildren()[0].getchildren()[0]
             plp_data = []
-            content_rows = [row for row in plp_table if "msTR trMTMN" == row.get("class")]
+            content_rows = [row for row in plp_table if row.get("class") =="msTR trMTMN"]
             for module_row in content_rows:
                 module_data = {}
                 child_nodes = list(module_row)

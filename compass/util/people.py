@@ -11,12 +11,11 @@ normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 class PeopleUtility(People):
     def get_member_data(self, membership_num: int) -> pd.DataFrame:
         """
-        Gets Compliance Report data for a specified member
+        Gets Compliance Report data for a specified member.
 
         :param membership_num:
         :return:
         """
-
         # Columns for the compliance report in order
         # fmt: off
         compliance_columns = [
