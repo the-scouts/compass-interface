@@ -24,8 +24,7 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 
 
 class PeopleScraper(InterfaceBase):
-    """
-    Class directly interfaces with Compass operations to extract member data.
+    """Class directly interfaces with Compass operations to extract member data.
 
     Compass's MemberProfile.aspx has 13 tabs:
      1. Personal Details (No Key)
@@ -83,6 +82,7 @@ class PeopleScraper(InterfaceBase):
 
         Todo:
             Other possible exceptions? i.e. from Requests
+
         """
         profile_tab = profile_tab.upper()
         tabs = tuple(tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES))
@@ -133,6 +133,7 @@ class PeopleScraper(InterfaceBase):
 
         Todo:
             Other possible exceptions? i.e. from Requests
+
         """
         response = self._get_member_profile_tab(membership_num, "Personal")
 
@@ -194,8 +195,7 @@ class PeopleScraper(InterfaceBase):
             return details
 
     def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> Union[schema.MemberRolesDict, dict]:
-        """
-        Returns data from Roles tab for a given member.
+        """Returns data from Roles tab for a given member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
 
@@ -303,8 +303,7 @@ class PeopleScraper(InterfaceBase):
     def get_training_tab(
         self, membership_num: int, ongoing_only: bool = False
     ) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList, dict]:
-        """
-        Returns data from Training tab for a given member.
+        """Returns data from Training tab for a given member.
 
         Args:
             membership_num: Membership Number to use
@@ -346,6 +345,7 @@ class PeopleScraper(InterfaceBase):
 
         Todo:
             Other possible exceptions? i.e. from Requests
+
         """
         response = self._get_member_profile_tab(membership_num, "Training")
         tree = html.fromstring(response)
@@ -480,8 +480,7 @@ class PeopleScraper(InterfaceBase):
             return training_data
 
     def get_permits_tab(self, membership_num: int) -> Union[schema.MemberPermitsList, list]:
-        """
-        Returns data from Permits tab for a given member.
+        """Returns data from Permits tab for a given member.
 
         If a permit has been revoked, the expires value is None and the status is PERM_REV
 
@@ -496,6 +495,7 @@ class PeopleScraper(InterfaceBase):
 
         Todo:
             Other possible exceptions? i.e. from Requests
+
         """
         response = self._get_member_profile_tab(membership_num, "Permits")
         tree = html.fromstring(response)
@@ -526,8 +526,7 @@ class PeopleScraper(InterfaceBase):
     def get_roles_detail(
         self, role_number: int, response: Union[str, requests.Response] = None
     ) -> Union[schema.MemberRolePopup, dict]:
-        """
-        Returns detailed data from a given role number.
+        """Returns detailed data from a given role number.
 
         Args:
             role_number: Role Number to use
@@ -571,6 +570,7 @@ class PeopleScraper(InterfaceBase):
 
         Todo:
             Other possible exceptions? i.e. from Requests
+
         """
         renamed_levels = {
             "County / Area / Scottish Region / Overseas Branch": "County",
