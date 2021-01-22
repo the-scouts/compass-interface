@@ -10,6 +10,8 @@ pylint:
     - import-error  # TODO: something going wrong as complaining can't import dependencies
     - unsubscriptable-object  # TODO: pylint doesn't yet (22-01-2020) support Py 3.9
     - no-else-return  # Probably bad style but this is cluttering the report
+    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
+    - too-many-branches  # McCabe duplication
 
 # pydocstyle
 pep257:
