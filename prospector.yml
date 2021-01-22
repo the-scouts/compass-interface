@@ -8,41 +8,42 @@ max-line-length: 132
 pep257:
   run: true
   convention: google
-## Codes: https://pydocstyle.readthedocs.io/en/latest/error_codes.html
-#  disable: [
-#    # Not part of PEP257:
-#      D203,  # 1 blank line required before class docstring
-#
-##      D212,  # Multi-line docstring summary should start at the first line
-#      D213,  # Multi-line docstring summary should start at the second line
-##      D214,  # Section is over-indented
-#      D215,  # Section underline is over-indented
-#
-#      D404,  # First word of the docstring should not be This
-##      D405,  # Section name should be properly capitalised
-#      D406,  # Section name should end with a newline
-#      D407,  # Missing dashed underline after section
-#      D408,  # Section underline should be in the line following the section’s name
-#      D409,  # Section underline should match the length of its name
-##      D410,  # Missing blank line after section
-##      D411,  # Missing blank line before section
-##      D413,  # Missing blank line after last section
-##      D415,  # First line should end with a full stop, exclamation mark, or question mark
-##      D416,  # Section name should end with a colon
-##      D417,  # Missing argument descriptions in the docstring
-#
-#    # Google docstring style guide:
-#
-#    # Examples of class docstrings without trailing blank line
-##      D204,  # 1 blank line required after class docstring
-#    # First line can end with a full stop, exclamation mark, or question mark
-#      D400,  # First line should end with a full stop
-#    # Style guide requires usage of descriptive mood
-#      D401,  # First line should be in imperative mood
-#  ]
-#  enable:
-#    D212,  # Multi-line docstring summary should start at the first line
-#  # Google docstring style guide:
-#    D415,  # First line should end with a full stop, exclamation mark, or question mark
-#    D416,  # Section name should end with a colon
-#    D417,  # Missing argument descriptions in the docstring
+# Codes: https://pydocstyle.readthedocs.io/en/latest/error_codes.html
+  disable: [
+    # Not part of PEP257:
+      D203,  # 1 blank line required before class docstring
+
+#      D212,  # Multi-line docstring summary should start at the first line
+      D213,  # Multi-line docstring summary should start at the second line
+#      D214,  # Section is over-indented
+      D215,  # Section underline is over-indented
+
+      D404,  # First word of the docstring should not be This
+#      D405,  # Section name should be properly capitalised
+      D406,  # Section name should end with a newline
+      D407,  # Missing dashed underline after section
+      D408,  # Section underline should be in the line following the section’s name
+      D409,  # Section underline should match the length of its name
+#      D410,  # Missing blank line after section
+#      D411,  # Missing blank line before section
+#      D413,  # Missing blank line after last section
+#      D415,  # First line should end with a full stop, exclamation mark, or question mark
+#      D416,  # Section name should end with a colon
+#      D417,  # Missing argument descriptions in the docstring
+
+    # Google docstring style guide:
+
+    # Examples of class docstrings without trailing blank line
+#      D204,  # 1 blank line required after class docstring
+    # First line can end with a full stop, exclamation mark, or question mark
+      D400,  # First line should end with a full stop
+    # Style guide requires usage of descriptive mood
+      D401,  # First line should be in imperative mood
+  ]
+  enable: [
+    D212,  # Multi-line docstring summary should start at the first line
+  # Google docstring style guide:
+    D415,  # First line should end with a full stop, exclamation mark, or question mark
+    D416,  # Section name should end with a colon
+    D417,  # Missing argument descriptions in the docstring
+  ]
