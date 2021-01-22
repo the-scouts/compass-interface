@@ -360,7 +360,7 @@ class PeopleScraper(InterfaceBase):
         for plp in personal_learning_plans:
             plp_table = plp.getchildren()[0].getchildren()[0]
             plp_data = []
-            content_rows = [row for row in plp_table if row.get("class") =="msTR trMTMN"]
+            content_rows = [row for row in plp_table if row.get("class") == "msTR trMTMN"]
             for module_row in content_rows:
                 module_data = {}
                 child_nodes = list(module_row)
