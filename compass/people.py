@@ -9,6 +9,7 @@ from compass.utility import maybe_int
 
 class People:
     def __init__(self, session: Logon):
+        """Constructor for People."""
         self._scraper = PeopleScraper(session.s)
 
     def get_roles(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> list:

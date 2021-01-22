@@ -1,18 +1,23 @@
+"""Compass Interface - Core!
+
+This module exposes the public api for CI core
+"""
+
 # This directory is a Python package.
 from typing import Optional
 
-from compass.errors import CompassAuthenticationError
-from compass.errors import CompassError
 from compass import hierarchy
-from compass.hierarchy import Hierarchy
 from compass import logging
-from compass.logon import Logon
 from compass import people
-from compass.people import People
 from compass import reports
 from compass import schemas  # TODO what schemas are should/need to be public?
 from compass import settings
 from compass import utility
+from compass.errors import CompassAuthenticationError
+from compass.errors import CompassError
+from compass.hierarchy import Hierarchy
+from compass.logon import Logon
+from compass.people import People
 
 __all__ = (
     "CompassAuthenticationError",

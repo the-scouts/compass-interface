@@ -231,6 +231,7 @@ class PeopleScraper(InterfaceBase):
         Todo:
             Other possible exceptions? i.e. from Requests
             primary_role
+
         """
         logger.debug(f"getting roles tab for member number: {membership_num}")
         response = self._get_member_profile_tab(membership_num, "Roles")

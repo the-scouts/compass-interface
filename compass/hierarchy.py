@@ -40,6 +40,7 @@ class UnitSections(enum.IntEnum):
 
 class Hierarchy:
     def __init__(self, session: Logon, validate: bool = False):
+        """Constructor for Hierarchy."""
         self._scraper = HierarchyScraper(session.s)
         self.validate = validate
 

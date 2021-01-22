@@ -18,6 +18,7 @@ from compass.utility import setup_tls_certs
 
 class Logon(InterfaceBase):
     def __init__(self, credentials: tuple[str, str], role_to_use: str = None):
+        """Constructor for Logon."""
         self._member_role_number = 0
         self.compass_dict = {}
 
