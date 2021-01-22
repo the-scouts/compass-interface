@@ -25,6 +25,10 @@ dependencies:
   - ipython
   - black
   - isort
+  #  - prospector
+    # prospector currently pins to pylint==2.5.3, which itself pins to isort<5.
+    # To use isort>=5.0.0, we must use pylint>=2.6.0, and wait for prospector to update.
+    # Current as at 20-01-2021
   - pre-commit
   - virtualenv==20.0.33  # Solve regression, see
       # https://github.com/ContinuumIO/anaconda-issues/issues/12094
