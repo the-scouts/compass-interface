@@ -12,6 +12,7 @@ class InterfaceBase:
     """Base class for interacting with the Compass server."""
 
     def __init__(self, session: requests.Session):
+        """Constructor for InterfaceBase."""
         self.s: requests.Session = session
 
     def _get(self, url: str, **kwargs) -> requests.Response:
