@@ -42,7 +42,7 @@ class Logon(InterfaceBase):
         return self.compass_dict["Master.User.JK"]  # ???? Key?
 
     def _get(self, url: str, auth_header: bool = False, session: Optional[requests.Session] = None, **kwargs) -> requests.Response:
-        """Override get method with custom auth_header logic"""
+        """Override get method with custom auth_header logic."""
         if auth_header:
             headers = {"Auth": self._jk_hash()}
             params = {
@@ -59,7 +59,7 @@ class Logon(InterfaceBase):
             return super(Logon, self)._get(url, **kwargs)
 
     def _jk_hash(self) -> str:
-        """Generate JK Hash needed by Compass"""
+        """Generate JK Hash needed by Compass."""
         # hash_code(f"{time.time() * 1000:.0f}")
         member_no = self.cn
         key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
@@ -102,7 +102,7 @@ class Logon(InterfaceBase):
 
     @staticmethod
     def _logon_remote(auth: tuple[str, str], session: requests.Session) -> requests.Response:
-        """Interface code with Compass"""
+        """Interface code with Compass."""
         # Referer is genuinely needed otherwise login doesn't work
         headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
 
@@ -119,11 +119,11 @@ class Logon(InterfaceBase):
         return response
 
     def change_role(self, new_role: Optional[str], session: Optional[requests.Session] = None) -> requests.Session:
-        """Update role information"""
+        """Update role information."""
         if session is None:
             try:
                 session = self.s
-            except AttributeError as _e:
+            except AttributeError:
                 raise ValueError("No session! session object must be passed or self.s set.") from None
 
         if new_role is not None:
@@ -150,7 +150,7 @@ class Logon(InterfaceBase):
 
     @staticmethod
     def _create_compass_dict(form_tree: html.FormElement) -> dict:
-        """Create Compass info dict from FormElement"""
+        """Create Compass info dict from FormElement."""
         compass_dict = {}
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
         for pair in compass_vars.split("~"):
@@ -161,17 +161,17 @@ class Logon(InterfaceBase):
 
     @staticmethod
     def _create_roles_dict(form_tree: html.FormElement) -> dict:
-        """Generate role number to role name mapping"""
+        """Generate role number to role name mapping."""
         roles_selector = form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"]  # get roles from compass page (list of option tags)
         return {int(role.get("value")): role.text.strip() for role in roles_selector}
 
     @staticmethod
     def _get_active_role_number(form_tree: html.FormElement) -> int:
-        """Gets active (selected) role from FormElement"""
+        """Gets active (selected) role from FormElement."""
         return int(form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"].value)
 
     def _confirm_login_success(self, session: requests.Session) -> None:
-        """Confirms success and updates authorisation"""
+        """Confirms success and updates authorisation."""
         portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"
         response = self._get(portal_url, session=session)
 
@@ -185,7 +185,7 @@ class Logon(InterfaceBase):
         self._update_authorisation(form, session)
 
     def _confirm_role_change(self, session: requests.Session, check_role_number: int) -> html.FormElement:
-        """Confirms success and updates authorisation"""
+        """Confirms success and updates authorisation."""
         portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"
         response = self._get(portal_url, session=session)
         form = html.fromstring(response.content).forms[0]
@@ -198,7 +198,7 @@ class Logon(InterfaceBase):
         return form
 
     def _update_authorisation(self, form: html.FormElement, session: requests.Session) -> requests.Session:
-        """Update authorisation data"""
+        """Update authorisation data."""
         self.compass_dict = self._create_compass_dict(form)  # Updates MRN property etc.
         self.roles_dict = self._create_roles_dict(form)
 

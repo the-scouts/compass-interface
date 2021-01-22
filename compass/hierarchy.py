@@ -45,7 +45,7 @@ class Hierarchy:
 
     # See recurseRetrieve in PGS\Needle
     def get_hierarchy(self, compass_id: int, level: TYPES_HIERARCHY_LEVEL) -> Union[dict, schema.UnitData]:
-        """Recursively get all children from given unit ID and level, with caching"""
+        """Recursively get all children from given unit ID and level, with caching."""
         filename = Path(f"hierarchy-{compass_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
         with contextlib.suppress(FileNotFoundError):
@@ -77,7 +77,7 @@ class Hierarchy:
     def _get_descendants_recursive(
         self, compass_id: int, hier_level: Optional[TYPES_HIERARCHY_LEVEL] = None, hier_num: Optional[Levels] = None
     ) -> dict[str, Union[int, str, None]]:
-        """Recursively get all children from given unit ID and level name/number, with caching"""
+        """Recursively get all children from given unit ID and level name/number, with caching."""
         if hier_level is hier_num is None:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
         try:
@@ -106,7 +106,7 @@ class Hierarchy:
     @staticmethod
     def flatten_hierarchy(hierarchy_dict: dict) -> Generator:
         def flatten(d: dict, hierarchy_state: Optional[dict] = None) -> Generator:
-            """Generator expresion to recursively flatten hierarchy"""
+            """Generator expresion to recursively flatten hierarchy."""
             level_name = d["level"]
             compass_id = d["id"]
             name = d.get("name")
@@ -124,7 +124,7 @@ class Hierarchy:
         return flatten(hierarchy_dict, {})
 
     def get_unique_members(self, compass_id: int, level: TYPES_HIERARCHY_LEVEL) -> set[int]:
-        """Get all unique members for a given level and its descendants"""
+        """Get all unique members for a given level and its descendants."""
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(compass_id, level)
 
