@@ -62,8 +62,7 @@ class People:
         return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
 
     def _training_tab(self, membership_num: int) -> dict:
-        """
-        Gets training tab data for a given member.
+        """Gets training tab data for a given member.
 
         :param membership_num: Compass ID
         :return:

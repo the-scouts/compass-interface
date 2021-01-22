@@ -148,12 +148,15 @@ class MemberGenericDict(generics.GenericModel, Generic[DataT]):
     __root__: Dict[int, DataT]  # Must use typing.Dict not dict as of pydantic 1.7.3
 
     def __iter__(self):
+        """Iterate over model items."""
         yield from self.__root__.items()
 
     def __getitem__(self, item):
+        """Get item by key."""
         return self.__root__[item]
 
     def __len__(self):
+        """Get number of items."""
         return len(self.__root__)
 
     def items(self):
@@ -164,12 +167,15 @@ class MemberGenericList(generics.GenericModel, Generic[DataT]):
     __root__: List[DataT]
 
     def __iter__(self):
+        """Iterate over model items."""
         return iter(self.__root__)
 
     def __getitem__(self, item):
+        """Get item by index."""
         return self.__root__[item]
 
     def __len__(self):
+        """Get number of items."""
         return len(self.__root__)
 
 
