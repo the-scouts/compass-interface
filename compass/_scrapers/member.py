@@ -244,10 +244,10 @@ class PeopleScraper(InterfaceBase):
         rows = tree.xpath("//tbody/tr")
         for row in rows:
             # Get children (cells in row)
-            cells = list(row)
+            cells = list(row)  # filter out empty elements
 
             # If current role allows selection of role for editing, remove tickbox
-            if len(cells[0].xpath("./label")) < 1:
+            if any(el.tag == "input" for el in cells[0]):
                 cells.pop(0)
 
             role_number = int(row.get("data-pk"))
@@ -259,7 +259,7 @@ class PeopleScraper(InterfaceBase):
                 role_status = status_with_review
                 review_date = None
 
-            roles_data[role_number] = dict(
+            role_details = dict(
                 role_number=role_number,
                 membership_number=membership_num,
                 role_title=cells[0].text_content().strip(),
@@ -275,27 +275,15 @@ class PeopleScraper(InterfaceBase):
                 review_date=review_date,
                 can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
             )
+            # Remove OHs etc from list
+            if not keep_non_volunteer_roles and (
+                "helper" in role_details["role_class"].lower()
+                or {role_details["role_title"].lower()} <= {"occasional helper", "pvg", "network member"}
+            ):
+                continue
 
-        if not keep_non_volunteer_roles:
-            # Remove OHs from list
-            filtered_data = {}
-            for role_number, role_details in roles_data.items():
+            roles_data[role_number] = role_details
 
-                if "helper" in role_details["role_class"].lower():
-                    continue
-
-                role_title = role_details["role_title"].lower()
-                if "occasional helper" in role_title:
-                    continue
-
-                if "pvg" in role_title:
-                    continue
-
-                if "network member" in role_title:
-                    continue
-
-                filtered_data[role_number] = role_details
-            roles_data = filtered_data
         if self.validate:
             return schema.MemberRolesDict.parse_obj(roles_data)
         else:
