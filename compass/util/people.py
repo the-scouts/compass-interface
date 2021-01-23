@@ -48,11 +48,11 @@ class PeopleUtility(People):
             training_data = pd.DataFrame()
 
         compliance_data = pd.DataFrame(roles_detail_array)
-        compliance_data = pd.concat([compliance_data[col].apply(pd.Series) for col in compliance_data], axis=1)
-        compliance_data = compliance_data.set_index(["role_number"])
-        compliance_data = compliance_data.join(roles_data)
-        compliance_data = compliance_data.merge(training_data, how="left", left_index=True, right_index=True)
-        compliance_data = compliance_data.reindex(columns=compliance_columns)
+        compliance_data = pd.concat([compliance_data[col].apply(pd.Series) for col in compliance_data], axis=1)\
+                            .set_index(["role_number"])\
+                            .join(roles_data)\
+                            .merge(training_data, how="left", left_index=True, right_index=True)\
+                            .reindex(columns=compliance_columns)
         compliance_data.columns = compliance_data.columns.str.replace(normalise_cols, r"_\1\2", regex=True).str.lower()
 
         compliance_data["membership_number"] = membership_num
@@ -78,8 +78,7 @@ class PeopleUtility(People):
         #         .dt.strftime('%d/%m/%Y')\
         #         .str.replace("NaT", "", regex=False)
 
-        text_cols = compliance_data.columns[compliance_data.dtypes == "object"]
-        for col in text_cols:
+        for col in compliance_data.columns[compliance_data.dtypes == "object"]:
             compliance_data[col] = compliance_data[col].str.strip()
 
         return compliance_data
