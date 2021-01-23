@@ -48,11 +48,13 @@ class PeopleUtility(People):
             training_data = pd.DataFrame()
 
         compliance_data = pd.DataFrame(roles_detail_array)
-        compliance_data = pd.concat([compliance_data[col].apply(pd.Series) for col in compliance_data], axis=1)\
-                            .set_index(["role_number"])\
-                            .join(roles_data)\
-                            .merge(training_data, how="left", left_index=True, right_index=True)\
-                            .reindex(columns=compliance_columns)
+        compliance_data = (
+            pd.concat([compliance_data[col].apply(pd.Series) for col in compliance_data], axis=1)
+            .set_index(["role_number"])
+            .join(roles_data)
+            .merge(training_data, how="left", left_index=True, right_index=True)
+            .reindex(columns=compliance_columns)
+        )
         compliance_data.columns = compliance_data.columns.str.replace(normalise_cols, r"_\1\2", regex=True).str.lower()
 
         compliance_data["membership_number"] = membership_num
