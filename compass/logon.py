@@ -42,7 +42,7 @@ class Logon(InterfaceBase):
     def jk(self) -> int:
         return self.compass_dict["Master.User.JK"]  # ???? Key?
 
-    def _get(self, url: str, auth_header: bool = False, session: Optional[requests.Session] = None, **kwargs) -> requests.Response:
+    def _get(self, url: str, auth_header: bool = False, session: Optional[requests.Session] = None, **kwargs) -> requests.Response:  # pylint: disable=arguments-differ
         """Override get method with custom auth_header logic."""
         if auth_header:
             headers = {"Auth": self._jk_hash()}
