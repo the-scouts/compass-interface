@@ -36,8 +36,11 @@ class HierarchySection(HierarchyUnit):
     section_type: Optional[TYPES_SECTION]
 
 
-class UnitData(HierarchyBase):
+class HierarchyLevel(HierarchyBase):
     level: TYPES_UNIT_LEVELS
+
+
+class UnitData(HierarchyLevel):
     child: Optional[list[DescendantData]]  # NOTE: deliberate recursive/forward reference here!
     sections: list[HierarchySection]
 
@@ -57,7 +60,7 @@ class HierarchyMember(pydantic.BaseModel):
 
 
 class HierarchyUnitMembers(pydantic.BaseModel):
-    compass_id: int
+    compass_id: int  # TODO disambiguate this
     member: list[HierarchyMember]
 
 
