@@ -68,5 +68,8 @@ compass_session = ci.logon(username=..., password=...)
 hierarchy = ci.Hierarchy(compass_session)
 people = ci.People(compass_session)
 
+# Get all unique members from the in your hierarchy
+member_set = hierarchy.get_unique_members()
+
 
 ```
