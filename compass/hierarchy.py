@@ -9,7 +9,7 @@ from compass.logging import logger
 from compass.logon import Logon
 from compass.schemas import hierarchy as schema
 
-TYPES_HIERARCHY_LEVEL = Literal["Organisation", "Country", "Region", "County", "District", "Group"]
+TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
 
 class Levels(enum.IntEnum):
@@ -41,13 +41,20 @@ class UnitSections(enum.IntEnum):
 class Hierarchy:
     def __init__(self, session: Logon, validate: bool = False):
         """Constructor for Hierarchy."""
-        self._scraper = HierarchyScraper(session.s)
-        self.validate = validate
+        self._scraper: HierarchyScraper = HierarchyScraper(session.s)
+        self.validate: bool = validate
+        self.unit_level: schema.HierarchyLevel = session.hierarchy
 
     # See recurseRetrieve in PGS\Needle
-    def get_hierarchy(self, compass_id: int, level: TYPES_HIERARCHY_LEVEL) -> Union[dict, schema.UnitData]:
-        """Recursively get all children from given unit ID and level, with caching."""
-        filename = Path(f"hierarchy-{compass_id}.json")
+    def get_hierarchy(self, unit_level: Optional[schema.HierarchyLevel] = None) -> Union[dict, schema.UnitData]:
+        """Gets all units at given level and below, including sections.
+
+        If no unit data is provided, the default level from the user's role is used.
+        """
+        if unit_level is None:
+            unit_level = self.unit_level
+
+        filename = Path(f"hierarchy-{unit_level.id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
         with contextlib.suppress(FileNotFoundError):
             out = json.loads(filename.read_text(encoding="utf-8"))
@@ -58,7 +65,7 @@ class Hierarchy:
                     return out
 
         # Fetch the hierarchy
-        out = self._get_descendants_recursive(compass_id, hier_level=level)
+        out = self._get_descendants_recursive(unit_level.id, hier_level=unit_level.level)
 
         # Try and write to a file for caching
         try:
@@ -76,7 +83,7 @@ class Hierarchy:
 
     # See recurseRetrieve in PGS\Needle
     def _get_descendants_recursive(
-        self, compass_id: int, hier_level: Optional[TYPES_HIERARCHY_LEVEL] = None, hier_num: Optional[Levels] = None
+        self, compass_id: int, hier_level: Optional[TYPES_UNIT_LEVELS] = None, hier_num: Optional[Levels] = None
     ) -> dict[str, Union[int, str, None]]:
         """Recursively get all children from given unit ID and level name/number, with caching."""
         if hier_level is hier_num is None:
@@ -124,10 +131,20 @@ class Hierarchy:
 
         return flatten(hierarchy_dict, {})
 
-    def get_unique_members(self, compass_id: int, level: TYPES_HIERARCHY_LEVEL) -> set[int]:
-        """Get all unique members for a given level and its descendants."""
+    def get_unique_members(self, unit_level: Optional[schema.HierarchyLevel] = None) -> set[int]:
+        """Get all unique members for a given level and its descendants.
+
+        If no unit data is provided, the default level from the user's role is used.
+
+        Returns:
+            A set of unique member numbers within the given unit.
+
+        """
+        if unit_level is None:
+            unit_level = self.unit_level
+
         # get tree of all units
-        hierarchy_dict = self.get_hierarchy(compass_id, level)
+        hierarchy_dict = self.get_hierarchy(unit_level)
 
         if self.validate:
             hierarchy_dict = hierarchy_dict.dict()
@@ -139,7 +156,7 @@ class Hierarchy:
         compass_ids = (unit["compass"] for unit in flat_hierarchy)
 
         # get members from the list of IDs
-        units_members = self.get_members_in_units(compass_id, compass_ids)
+        units_members = self.get_members_in_units(unit_level.id, compass_ids)
 
         # return a set of membership numbers
         return {members["contact_number"] for unit_members in units_members for members in unit_members["member"]}
