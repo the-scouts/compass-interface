@@ -1,6 +1,6 @@
 import datetime
 import time
-from typing import Optional
+from typing import Literal, Optional
 
 import certifi
 from lxml import html
@@ -14,6 +14,9 @@ from compass.settings import Settings
 from compass.utility import cast
 from compass.utility import compass_restify
 from compass.utility import setup_tls_certs
+from compass import schemas
+
+TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
 
 class Logon(InterfaceBase):
@@ -41,6 +44,27 @@ class Logon(InterfaceBase):
     @property
     def jk(self) -> int:
         return self.compass_dict["Master.User.JK"]  # ???? Key?
+
+    @property
+    def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
+        unit_number = self.compass_dict["Master.User.ON"]  # Organisation Number
+        unit_level = self.compass_dict["Master.User.LVL"]  # Level
+        level_map = {
+            "ORG": "Organisation",
+            # "ORST": "Organisation Sections",
+            "CNTR": "Country",
+            # "CNST": "Country Sections",
+            "REG": "Region",
+            # "RGST": "Regional Sections",
+            "CNTY": "County",  # Also Area/Scot Reg/Branch
+            # "CTST": "County Sections",  # Also Area/Scot Reg/Branch
+            "DIST": "District",
+            # "DTST": "District Sections",
+            "SGRP": "Group",
+            # "SGST": "Group Sections",
+        }
+
+        return schemas.hierarchy.HierarchyLevel(id=unit_number, level=level_map[unit_level])
 
     def _get(self, url: str, auth_header: bool = False, session: Optional[requests.Session] = None, **kwargs) -> requests.Response:
         """Override get method with custom auth_header logic."""
