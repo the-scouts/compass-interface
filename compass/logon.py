@@ -6,6 +6,7 @@ import certifi
 from lxml import html
 import requests
 
+from compass import schemas
 from compass.errors import CompassAuthenticationError
 from compass.errors import CompassError
 from compass.interface_base import InterfaceBase
@@ -14,7 +15,6 @@ from compass.settings import Settings
 from compass.utility import cast
 from compass.utility import compass_restify
 from compass.utility import setup_tls_certs
-from compass import schemas
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
