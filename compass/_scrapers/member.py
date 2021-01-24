@@ -340,17 +340,18 @@ class PeopleScraper(InterfaceBase):
         tree = html.fromstring(response)
 
         rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
-        roles = [row for row in rows if "msTR" in row.classes]
-
-        personal_learning_plans = [row for row in rows if "trPLP" in row.classes]
 
         training_plps = {}
-        training_gdpr = []
-        for plp in personal_learning_plans:
+        for plp in rows:
+            if "trPLP" not in plp.classes:
+                continue
+
             plp_table = plp.getchildren()[0].getchildren()[0]
             plp_data = []
-            content_rows = [row for row in plp_table if row.get("class") == "msTR trMTMN"]
-            for module_row in content_rows:
+            for module_row in plp_table:
+                if module_row.get("class") != "msTR trMTMN":
+                    continue
+
                 module_data = {}
                 child_nodes = list(module_row)
                 module_data["pk"] = int(module_row.get("data-pk"))
@@ -360,8 +361,7 @@ class PeopleScraper(InterfaceBase):
                     module_data["code"] = str(matches[0])
                     module_data["name"] = matches[1]
 
-                    # Skip processing if we only want ongoing learning data and the module
-                    # is not GDPR.
+                    # Skip processing if we only want ongoing learning data and the module is not GDPR.
                     if ongoing_only and "gdpr" not in module_data["code"].lower():
                         continue
 
@@ -380,35 +380,24 @@ class PeopleScraper(InterfaceBase):
 
                 plp_data.append(module_data)
 
-                # Save GDPR validations
-                if module_data.get("code").upper() == "GDPR":
-                    training_gdpr.append(module_data.get("validated_date"))
-
             training_plps[int(plp_table.get("data-pk"))] = plp_data
-
-        training_ogl = {}
-        ongoing_learning_rows = tree.xpath("//tr[@data-ng_code]")
-        for ongoing_learning in ongoing_learning_rows:
-            cell_text = {c.get("id"): c.text_content() for c in ongoing_learning}
-            cell_text = {k.split("_")[0] if isinstance(k, str) else k: v for k, v in cell_text.items()}
-
-            ogl_data = {
-                "name": cell_text.get(None),
-                "completed_date": parse(cell_text.get("tdLastComplete")),
-                "renewal_date": parse(cell_text.get("tdRenewal")),
-            }
-
-            training_ogl[ongoing_learning.get("data-ng_code")] = ogl_data
-            # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
-
         # Handle GDPR:
         # Get latest GDPR date
-        sorted_gdpr = sorted([date for date in training_gdpr if isinstance(date, datetime.date)], reverse=True)
-        gdpr_date = sorted_gdpr[0] if sorted_gdpr else None
-        training_ogl["GDPR"] = {
-            "name": "GDPR",
-            "completed_date": gdpr_date,
+        training_ogl = {
+            "GDPR": dict(
+                name="GDPR",
+                completed_date=next(reversed(sorted(mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR")), None),
+            ),
         }
+        for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
+            cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
+
+            training_ogl[ongoing_learning.get("data-ng_code")] = dict(
+                name=cell_text.get("<None>"),
+                completed_date=parse(cell_text.get("tdLastComplete")),
+                renewal_date=parse(cell_text.get("tdRenewal")),
+            )
+            # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
         if ongoing_only:
             if self.validate:
@@ -417,7 +406,10 @@ class PeopleScraper(InterfaceBase):
                 return training_ogl
 
         training_roles = {}
-        for role in roles:
+        for role in rows:
+            if "msTR" not in role.classes:
+                continue
+
             child_nodes = list(role)
 
             info = {}  # NoQA
@@ -427,14 +419,12 @@ class PeopleScraper(InterfaceBase):
             info["role_start"] = parse(child_nodes[1].text_content())
             status_with_review = child_nodes[2].text_content()
             if status_with_review.startswith("Full (Review Due: "):
-                role_status = "Full"
-                review_date = parse(status_with_review.removeprefix("Full (Review Due: ").removesuffix(")"))
+                info["role_status"] = "Full"
+                info["review_date"] = parse(status_with_review.removeprefix("Full (Review Due: ").removesuffix(")"))
             else:
-                role_status = status_with_review
-                review_date = None
+                info["role_status"] = status_with_review
+                info["review_date"] = None
 
-            info["role_status"] = role_status
-            info["review_date"] = review_date
             info["location"] = child_nodes[3].text_content()
 
             training_advisor_string = child_nodes[4].text_content()
@@ -452,7 +442,7 @@ class PeopleScraper(InterfaceBase):
                 info["completion_type"] = parts[0].strip()
                 info["completion_date"] = parse(parts[1].strip())
                 assert len(parts) <= 2, parts[2:]
-                info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
+                # info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
             info["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
 
             training_roles[info["role_number"]] = info
