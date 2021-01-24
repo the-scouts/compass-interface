@@ -374,7 +374,8 @@ class PeopleScraper(InterfaceBase):
 
                     validated_by_string = child_nodes[4].text_content()
                     if validated_by_string:
-                        validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                        # Add empty item to prevent IndexError
+                        validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]
                         module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
                         module_data["validated_name"] = validated_by_data[1]
                     module_data["validated_date"] = parse(child_nodes[5].text_content())
@@ -457,7 +458,6 @@ class PeopleScraper(InterfaceBase):
         }
 
         return schema.MemberTrainingTab.parse_obj(training_data) if self.validate else training_data
-
 
     def get_permits_tab(self, membership_num: int) -> Union[schema.MemberPermitsList, list]:
         """Returns data from Permits tab for a given member.
