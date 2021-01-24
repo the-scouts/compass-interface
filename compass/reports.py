@@ -1,3 +1,5 @@
+# pylint: disable=protected-access
+
 import datetime
 from pathlib import Path
 import re
