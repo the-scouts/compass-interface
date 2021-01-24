@@ -386,7 +386,12 @@ class PeopleScraper(InterfaceBase):
         training_ogl = {
             "GDPR": dict(
                 name="GDPR",
-                completed_date=next(reversed(sorted(mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR")), None),
+                completed_date=next(
+                    reversed(
+                        sorted(mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR")
+                    ),
+                    None,
+                ),
             ),
         }
         for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
