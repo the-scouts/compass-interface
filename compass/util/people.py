@@ -59,8 +59,7 @@ class PeopleUtility(People):
 
         compliance_data["membership_number"] = membership_num
 
-        personal_details = self._scraper.get_personal_tab(membership_num)
-        for key, value in personal_details.items():
+        for key, value in self._scraper.get_personal_tab(membership_num).items():
             compliance_data[key] = value
 
         # # Fill all rows with Mandatory Ongoing Learning data
