@@ -342,45 +342,88 @@ class PeopleScraper(InterfaceBase):
         rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
 
         training_plps = {}
-        for plp in rows:
-            if "trPLP" not in plp.classes:
-                continue
-
-            plp_table = plp.getchildren()[0].getchildren()[0]
-            plp_data = []
-            for module_row in plp_table:
-                if module_row.get("class") != "msTR trMTMN":
-                    continue
-
-                module_data = {}
-                child_nodes = list(module_row)
-                module_data["pk"] = int(module_row.get("data-pk"))
-                module_data["module_id"] = int(child_nodes[0].get("id")[4:])
-                matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
-                if matches:
-                    module_data["code"] = str(matches[0])
-                    module_data["name"] = matches[1]
-
-                    # Skip processing if we only want ongoing learning data and the module is not GDPR.
-                    if ongoing_only and "gdpr" not in module_data["code"].lower():
+        training_roles = {}
+        for row in rows:
+            # Personal Learning Plan (PLP) data
+            if "trPLP" in row.classes:
+                plp = row
+                plp_table = plp.getchildren()[0].getchildren()[0]
+                plp_data = []
+                for module_row in plp_table:
+                    if module_row.get("class") != "msTR trMTMN":
                         continue
 
-                learning_required = child_nodes[1].text_content().lower()
-                module_data["learning_required"] = "yes" in learning_required if learning_required else None
-                module_data["learning_method"] = child_nodes[2].text_content() or None
-                module_data["learning_completed"] = parse(child_nodes[3].text_content())
-                module_data["learning_date"] = parse(child_nodes[3].text_content())
+                    module_data = {}
+                    child_nodes = list(module_row)
+                    module_data["pk"] = int(module_row.get("data-pk"))
+                    module_data["module_id"] = int(child_nodes[0].get("id")[4:])
+                    matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
+                    if matches:
+                        module_data["code"] = str(matches[0])
+                        module_data["name"] = matches[1]
 
-                validated_by_string = child_nodes[4].text_content()
-                if validated_by_string:
-                    validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
-                    module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
-                    module_data["validated_name"] = validated_by_data[1]
-                module_data["validated_date"] = parse(child_nodes[5].text_content())
+                        # Skip processing if we only want ongoing learning data and the module is not GDPR.
+                        if ongoing_only and "gdpr" not in module_data["code"].lower():
+                            continue
 
-                plp_data.append(module_data)
+                    learning_required = child_nodes[1].text_content().lower()
+                    module_data["learning_required"] = "yes" in learning_required if learning_required else None
+                    module_data["learning_method"] = child_nodes[2].text_content() or None
+                    module_data["learning_completed"] = parse(child_nodes[3].text_content())
+                    module_data["learning_date"] = parse(child_nodes[3].text_content())
 
-            training_plps[int(plp_table.get("data-pk"))] = plp_data
+                    validated_by_string = child_nodes[4].text_content()
+                    if validated_by_string:
+                        validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]  # Add empty item to prevent IndexError
+                        module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
+                        module_data["validated_name"] = validated_by_data[1]
+                    module_data["validated_date"] = parse(child_nodes[5].text_content())
+
+                    plp_data.append(module_data)
+
+                training_plps[int(plp_table.get("data-pk"))] = plp_data
+
+            # Role data
+            if "msTR" in row.classes:
+                role = row
+
+                child_nodes = list(role)
+
+                info = {}  # NoQA
+
+                info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
+                info["role_title"] = child_nodes[0].text_content()
+                info["role_start"] = parse(child_nodes[1].text_content())
+                status_with_review = child_nodes[2].text_content()
+                if status_with_review.startswith("Full (Review Due: "):
+                    info["role_status"] = "Full"
+                    info["review_date"] = parse(status_with_review.removeprefix("Full (Review Due: ").removesuffix(")"))
+                else:
+                    info["role_status"] = status_with_review
+                    info["review_date"] = None
+
+                info["location"] = child_nodes[3].text_content()
+
+                training_advisor_string = child_nodes[4].text_content()
+                if training_advisor_string:
+                    info["ta_data"] = training_advisor_string
+                    # Add empty item to prevent IndexError
+                    training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
+                    info["ta_number"] = maybe_int(training_advisor_data[0])
+                    info["ta_name"] = training_advisor_data[1]
+
+                completion_string = child_nodes[5].text_content()
+                if completion_string:
+                    info["completion"] = completion_string
+                    parts = completion_string.split(":")
+                    info["completion_type"] = parts[0].strip()
+                    info["completion_date"] = parse(parts[1].strip())
+                    assert len(parts) <= 2, parts[2:]
+                    # info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
+                info["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
+
+                training_roles[info["role_number"]] = info
+
         # Handle GDPR:
         # Get latest GDPR date
         training_ogl = {
@@ -405,52 +448,7 @@ class PeopleScraper(InterfaceBase):
             # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
         if ongoing_only:
-            if self.validate:
-                return schema.MemberMOGLList.parse_obj(training_ogl)
-            else:
-                return training_ogl
-
-        training_roles = {}
-        for role in rows:
-            if "msTR" not in role.classes:
-                continue
-
-            child_nodes = list(role)
-
-            info = {}  # NoQA
-
-            info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
-            info["role_title"] = child_nodes[0].text_content()
-            info["role_start"] = parse(child_nodes[1].text_content())
-            status_with_review = child_nodes[2].text_content()
-            if status_with_review.startswith("Full (Review Due: "):
-                info["role_status"] = "Full"
-                info["review_date"] = parse(status_with_review.removeprefix("Full (Review Due: ").removesuffix(")"))
-            else:
-                info["role_status"] = status_with_review
-                info["review_date"] = None
-
-            info["location"] = child_nodes[3].text_content()
-
-            training_advisor_string = child_nodes[4].text_content()
-            if training_advisor_string:
-                info["ta_data"] = training_advisor_string
-                # Add empty item to prevent IndexError
-                training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
-                info["ta_number"] = maybe_int(training_advisor_data[0])
-                info["ta_name"] = training_advisor_data[1]
-
-            completion_string = child_nodes[5].text_content()
-            if completion_string:
-                info["completion"] = completion_string
-                parts = completion_string.split(":")
-                info["completion_type"] = parts[0].strip()
-                info["completion_date"] = parse(parts[1].strip())
-                assert len(parts) <= 2, parts[2:]
-                # info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
-            info["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
-
-            training_roles[info["role_number"]] = info
+            return schema.MemberMOGLList.parse_obj(training_ogl) if self.validate else training_ogl
 
         training_data = {
             "roles": training_roles,
@@ -458,10 +456,8 @@ class PeopleScraper(InterfaceBase):
             "mandatory": training_ogl,
         }
 
-        if self.validate:
-            return schema.MemberTrainingTab.parse_obj(training_data)
-        else:
-            return training_data
+        return schema.MemberTrainingTab.parse_obj(training_data) if self.validate else training_data
+
 
     def get_permits_tab(self, membership_num: int) -> Union[schema.MemberPermitsList, list]:
         """Returns data from Permits tab for a given member.
