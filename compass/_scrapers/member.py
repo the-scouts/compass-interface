@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import re
 import time
 from typing import get_args, Literal, TYPE_CHECKING, Union
@@ -552,6 +551,7 @@ class PeopleScraper(InterfaceBase):
             Other possible exceptions? i.e. from Requests
 
         """
+        # pylint: disable=too-many-locals,too-many-statements
         renamed_levels = {
             "County / Area / Scottish Region / Overseas Branch": "County",
         }
@@ -633,12 +633,12 @@ class PeopleScraper(InterfaceBase):
         role_details["references"] = references_codes.get(ref_code, ref_code)
 
         approval_values = {}
-        approval_titles = {}  # TODO use title text - set by / on etc
         for row in tree.xpath("//tr[@class='trProp']"):
             select = row[1][0]
             code = select.get("data-app_code")
             approval_values[code] = select.get("data-db")
-            approval_titles[code] = select.get("title")
+            # select.get("title") gives title text, but this is not useful as it does not reflect latest changes,
+            # but only who added the role to Compass.
 
         # Appointment Panel Approval
         role_details["appointment_panel_approval"] = approval_values.get("ROLPRP|AACA")
