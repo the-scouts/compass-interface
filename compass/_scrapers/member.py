@@ -336,6 +336,7 @@ class PeopleScraper(InterfaceBase):
             Other possible exceptions? i.e. from Requests
 
         """
+        # pylint: disable=too-many-locals,too-many-statements
         response = self._get_member_profile_tab(membership_num, "Training")
         tree = html.fromstring(response)
 
