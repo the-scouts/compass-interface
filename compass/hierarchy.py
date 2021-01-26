@@ -78,6 +78,8 @@ class Hierarchy:
         else:
             raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
 
+        logger.debug(f"found unit data: id: {unit_level.id}, level: {unit_level.level}")
+
         filename = Path(f"hierarchy-{unit_level.id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
         with contextlib.suppress(FileNotFoundError):
@@ -189,6 +191,8 @@ class Hierarchy:
             unit_level = self.unit_level
         else:
             raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
+
+        logger.debug(f"found unit data: id: {unit_level.id}, level: {unit_level.level}")
 
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(unit_level)
