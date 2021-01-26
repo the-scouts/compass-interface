@@ -45,6 +45,47 @@ class Hierarchy:
         self.validate: bool = validate
         self.unit_level: schema.HierarchyLevel = session.hierarchy
 
+    def get_unit_data(
+            self,
+            unit_level: Optional[schema.HierarchyLevel] = None,
+            _id: Optional[int] = None,
+            level: Optional[str] = None,
+            use_default: bool = False,
+    ) -> schema.HierarchyLevel:
+        """Helper function to construct unit level data.
+
+        Unit data can be specified as a pre-constructed model, by passing literals, or
+        by signalling to use the data from the user's current role. If all three
+        options are unset an exception is raised.
+
+        There is a strict priority ordering as follows:
+            1. pre-constructed pydantic model
+            2. literals
+            3. default data
+
+        Returns:
+            Constructed unit level data, as a pydantic model.
+            e.g.:
+                HierarchyLevel(id=..., level="...")
+
+        Raises:
+            ValueError:
+                When no unit data information has been provided
+
+        """
+        if unit_level is not None:
+            data = unit_level
+        elif id is not None and level is not None:
+            data = schema.HierarchyLevel(id=_id, level=level)
+        elif use_default:
+            data = self.unit_level
+        else:
+            raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
+
+        logger.debug(f"found unit data: id: {unit_level.id}, level: {unit_level.level}")
+
+        return data
+
     # See recurseRetrieve in PGS\Needle
     def get_hierarchy(
         self,
@@ -69,16 +110,7 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        if unit_level is not None:
-            pass  # don't need to do anything but makes control flow nicer
-        elif id is not None and level is not None:
-            unit_level = schema.HierarchyLevel(id=id, level=level)
-        elif use_default:
-            unit_level = self.unit_level
-        else:
-            raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
-
-        logger.debug(f"found unit data: id: {unit_level.id}, level: {unit_level.level}")
+        unit_level = self.get_unit_data(unit_level, id, level, use_default)
 
         filename = Path(f"hierarchy-{unit_level.id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
@@ -183,16 +215,7 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        if unit_level is not None:
-            pass  # don't need to do anything but makes control flow nicer
-        elif id is not None and level is not None:
-            unit_level = schema.HierarchyLevel(id=id, level=level)
-        elif use_default:
-            unit_level = self.unit_level
-        else:
-            raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
-
-        logger.debug(f"found unit data: id: {unit_level.id}, level: {unit_level.level}")
+        unit_level = self.get_unit_data(unit_level, id, level, use_default)
 
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(unit_level)
