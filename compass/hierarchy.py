@@ -46,11 +46,11 @@ class Hierarchy:
         self.unit_level: schema.HierarchyLevel = session.hierarchy
 
     def get_unit_data(
-            self,
-            unit_level: Optional[schema.HierarchyLevel] = None,
-            _id: Optional[int] = None,
-            level: Optional[str] = None,
-            use_default: bool = False,
+        self,
+        unit_level: Optional[schema.HierarchyLevel] = None,
+        _id: Optional[int] = None,
+        level: Optional[str] = None,
+        use_default: bool = False,
     ) -> schema.HierarchyLevel:
         """Helper function to construct unit level data.
 
