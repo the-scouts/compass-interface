@@ -90,7 +90,7 @@ class Hierarchy:
     def get_hierarchy(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
-        id: Optional[int] = None,
+        unit_id: Optional[int] = None,
         level: Optional[str] = None,
         use_default: bool = False,
     ) -> Union[dict, schema.UnitData]:
@@ -110,7 +110,7 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        unit_level = self.get_unit_data(unit_level, id, level, use_default)
+        unit_level = self.get_unit_data(unit_level, unit_id, level, use_default)
 
         filename = Path(f"hierarchy-{unit_level.id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
@@ -192,7 +192,7 @@ class Hierarchy:
     def get_unique_members(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
-        id: Optional[int] = None,
+        unit_id: Optional[int] = None,
         level: Optional[str] = None,
         use_default: bool = False,
     ) -> set[int]:
@@ -215,7 +215,7 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        unit_level = self.get_unit_data(unit_level, id, level, use_default)
+        unit_level = self.get_unit_data(unit_level, unit_id, level, use_default)
 
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(unit_level)
