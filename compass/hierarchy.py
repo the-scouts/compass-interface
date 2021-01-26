@@ -46,13 +46,37 @@ class Hierarchy:
         self.unit_level: schema.HierarchyLevel = session.hierarchy
 
     # See recurseRetrieve in PGS\Needle
-    def get_hierarchy(self, unit_level: Optional[schema.HierarchyLevel] = None) -> Union[dict, schema.UnitData]:
+    def get_hierarchy(
+        self,
+        unit_level: Optional[schema.HierarchyLevel] = None,
+        id: Optional[int] = None,
+        level: Optional[str] = None,
+        use_default: bool = False,
+    ) -> Union[dict, schema.UnitData]:
         """Gets all units at given level and below, including sections.
 
-        If no unit data is provided, the default level from the user's role is used.
+        Unit data can be specified as a pre-constructed model, by passing literals, or
+        by signalling to use the data from the user's current role. If all three
+        options are unset an exception is raised.
+
+        There is a strict priority ordering as follows:
+            1. pre-constructed pydantic model
+            2. literals
+            3. default data
+
+        Raises:
+            ValueError:
+                When no unit data information has been provided
+
         """
-        if unit_level is None:
+        if unit_level is not None:
+            pass  # don't need to do anything but makes control flow nicer
+        elif id is not None and level is not None:
+            unit_level = schema.HierarchyLevel(id=id, level=level)
+        elif use_default:
             unit_level = self.unit_level
+        else:
+            raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
 
         filename = Path(f"hierarchy-{unit_level.id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
@@ -131,17 +155,40 @@ class Hierarchy:
 
         return flatten(hierarchy_dict, {})
 
-    def get_unique_members(self, unit_level: Optional[schema.HierarchyLevel] = None) -> set[int]:
+    def get_unique_members(
+        self,
+        unit_level: Optional[schema.HierarchyLevel] = None,
+        id: Optional[int] = None,
+        level: Optional[str] = None,
+        use_default: bool = False,
+    ) -> set[int]:
         """Get all unique members for a given level and its descendants.
 
-        If no unit data is provided, the default level from the user's role is used.
+        Unit data can be specified as a pre-constructed model, by passing literals, or
+        by signalling to use the data from the user's current role. If all three
+        options are unset an exception is raised.
+
+        There is a strict priority ordering as follows:
+            1. pre-constructed pydantic model
+            2. literals
+            3. default data
 
         Returns:
             A set of unique member numbers within the given unit.
 
+        Raises:
+            ValueError:
+                When no unit data information has been provided
+
         """
-        if unit_level is None:
+        if unit_level is not None:
+            pass  # don't need to do anything but makes control flow nicer
+        elif id is not None and level is not None:
+            unit_level = schema.HierarchyLevel(id=id, level=level)
+        elif use_default:
             unit_level = self.unit_level
+        else:
+            raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
 
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(unit_level)
