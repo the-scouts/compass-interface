@@ -43,7 +43,7 @@ class Hierarchy:
         """Constructor for Hierarchy."""
         self._scraper: HierarchyScraper = HierarchyScraper(session.s)
         self.validate: bool = validate
-        self.unit_level: schema.HierarchyLevel = session.hierarchy
+        self.session: Logon = session
 
     def get_unit_data(
         self,
@@ -78,7 +78,7 @@ class Hierarchy:
         elif id is not None and level is not None:
             data = schema.HierarchyLevel(id=_id, level=level)
         elif use_default:
-            data = self.unit_level
+            data = self.session.hierarchy  # as this is a property, it will update when roles change
         else:
             raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
 
