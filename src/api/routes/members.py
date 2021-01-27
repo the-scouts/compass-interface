@@ -1,16 +1,17 @@
 from typing import List
 
-import pandas as pd
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
+import pandas as pd
 
+import compass as ci
 from compass.schemas import member
+
 from src.api.utility import reports_interface
 from src.api.utility.compass_people_interface import get_ongoing_learning_scraper
 from src.api.utility.oauth2 import get_current_user
 from src.api.utility.reports_interface import get_df
-import compass as ci
 
 router = APIRouter()
 

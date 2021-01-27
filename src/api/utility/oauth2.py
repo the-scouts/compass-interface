@@ -1,16 +1,21 @@
+from datetime import datetime
+from datetime import timedelta
 import json
 import os
-from datetime import datetime, timedelta
 from typing import Optional
 
 from aioredis import Redis
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
+from fastapi import HTTPException
+from fastapi import status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
+from jose import jwt
+from jose import JWTError
+
+import compass as ci
 
 from src.api.plugins.redis import depends_redis
 from src.api.schemas.auth import User
-import compass as ci
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 ALGORITHM = "HS256"

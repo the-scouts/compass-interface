@@ -2,7 +2,6 @@ import compass as ci
 
 from src.interface import compass_read
 
-
 if __name__ == '__main__':
     auth_keys = ('user', 'pass')
     compass_role_to_use = 'Regional Administrator'
