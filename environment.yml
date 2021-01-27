@@ -3,28 +3,25 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.8
+  - python>=3.9
 
-  # Scraping
-  - certifi
-  - requests
-  - lxml
+  # Compass-Interface Core
+  - compass-interface-core>=0.3.0
 
   # Transforming
-  - numba
+#  - numba>0.52  # Numba==0.52 does not support python 3.9!
   - pandas
   - pyarrow
-  - python-dateutil
 
   # API
   - fastapi
-  - python-jose
-  - aioredis
-  - python-multipart
+  - conda-forge::python-jose  # JSON Web Tokens (Must use CF build for resolver to succeed)
+  - aioredis  # (Async) Redis
+  - python-multipart  # Form Data (OAuth2)
 
   # Deployment
   - uvicorn
-  - gunicorn
+#  - gunicorn  # *NIX only, no windows support
 
   # Testing:
 #  - pytest
@@ -34,5 +31,6 @@ dependencies:
   # Development requirements:
 #  - pre-commit
   - black
+  - isort
   - ipython
-  - dtale
+#  - dtale
