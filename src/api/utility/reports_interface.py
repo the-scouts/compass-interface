@@ -1,14 +1,15 @@
+from functools import reduce
 import io
 import time
-from functools import reduce
 
-import compass as ci
 import numba
 import pandas as pd
 
+import compass as ci
+
 from script import auth_keys
-from src.api.utility import tables
 from src import utility
+from src.api.utility import tables
 
 
 def get_df():

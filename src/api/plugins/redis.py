@@ -1,7 +1,8 @@
 import os
-from typing import Optional, Any
+from typing import Any, Optional
 
-from aioredis import Redis, create_redis_pool
+from aioredis import create_redis_pool
+from aioredis import Redis
 from fastapi import FastAPI
 from pydantic import BaseSettings
 from starlette.requests import Request

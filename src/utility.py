@@ -1,6 +1,6 @@
 import functools
-import threading
 from pathlib import Path
+import threading
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent
 
