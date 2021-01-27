@@ -369,7 +369,7 @@ function FormReady() {
             DoBadgeFilter(this, e);
         });
     }
-
+        
     // Page fold
     definefolds();
     // end of Page fold
@@ -589,7 +589,10 @@ function DoPageNavigation(GoToTab, FormAction, GoToNumber)
 function definefolds()
 {
     for (var i = 0; i <= 24; i++) { definefold(i.toString()); }
-
+    if (parseInt(pk_val("Nav.StartPage")) === 5) { //Training tab is 5th
+      var loggedIn = localStorage.getItem("FirstTimeLoadValue");
+      FoldTrainingTabs(loggedIn);  
+    }    
     //definefold("0");
     //definefold("1");
     //definefold("2");
@@ -631,6 +634,22 @@ function definefold(Foldno) {
         $("#divProfile" + Foldno).hide();
         $("#MPfold" + Foldno).css({ "background-image": $(".foldimage_down").css("background-image"), "background-color": "transparent", "background-repeat": "no-repeat" });
     }
+}
+
+function FoldTrainingTabs(LoadAgain) { 
+  if (LoadAgain === 'true') {
+    var TrainingFoldno = 9; //9 to 12 are the training tabs
+    localStorage.setItem("FirstTimeLoadValue", false);
+    for (TrainingFoldno = 9; TrainingFoldno < 13; TrainingFoldno++) {      
+      // fold click/Key Press
+      var e = jQuery.Event("keydown");
+      e.which = 13; 
+      $("#SH_DIV_BN_MPT" + TrainingFoldno + ",#SH_DIV_BN_MPI" + TrainingFoldno).trigger(e);
+      //collapse the training tabs
+      $("#divProfile" + TrainingFoldno).hide();
+      $("#MPfold" + TrainingFoldno).css({ "background-image": $(".foldimage_down").css("background-image"), "background-color": "transparent", "background-repeat": "no-repeat" });    
+    }   
+  }    
 }
 
 function ReLoadPage(NoInvalid) {
@@ -1240,10 +1259,16 @@ function SetDB(self, UseVal) {
 }
 
 function ReqChange(self, PK) {
+  if ($(self).val().length > 0)
+  {
     $(".cbo_LR_" + PK).val($(self).val());
     var Vis = $("option:selected", $(self)).val() === "Y" && !$("option:selected", $(".cbo_LM_" + PK)).attr("value") ? "hidden" : "visible";
     $(".ValBy_" + PK + ", .ValOn_" + PK + ", .ValByBN_" + PK).css("visibility", Vis);
+    var PLPCombobox = $(".cbo_LR_" + PK + " option").filter(function () {
+      return !this.value || $.trim(this.value).length === 0 || $.trim(this.text).length === 0;
+    }).remove();    
     UpdatePLPDetails(PK, $("option:selected", $(self)).val());
+  }    
 }
 
 function LCVB_Change(self, CLS, PK) {
@@ -1656,7 +1681,7 @@ function AddTraining(MRN) {
     OpeniFrame(WebSitePath() + 'Popups/Maint/UpdateTraining.aspx?CN=' + pk_val("Page.UseCN") + "&MRN=" + MRN, '69%', '850px', '90%', '750px', '350px', true, false);
 }
 
-function HideTrainingFolds(Self, cls, PK) {
+function HideTrainingFolds(Self, cls, PK) {    
     // this line when commented out will allow All/many/none training items to be folded at the same time, commented in only 1 open at a time.
     if (Self) $("." + cls).not("." + cls + "_" + $(Self).data(PK)).css("display", "none");
 
