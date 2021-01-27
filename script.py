@@ -2,6 +2,9 @@ import compass as ci
 
 from src.interface import compass_read
 
+start = time.time()
+# Exporting Appointments report: 14.39s 13.73s 13.26s
+
 if __name__ == '__main__':
     auth_keys = ('user', 'pass')
     compass_role_to_use = 'Regional Administrator'
@@ -10,14 +13,15 @@ if __name__ == '__main__':
     # compass_role_to_use = 'County Executive Committee Member'
     # compass_read(auth_keys)
     c_logon = ci.Logon(auth_keys, compass_role_to_use)
-    # hierarchy = CompassHierarchy(c_logon.session)
+    hierarchy = ci.Hierarchy(c_logon)
     # people = CompassPeople(c_logon.session)
     # b = people.get_member_data(12047820)
     # a = people._scraper.get_roles_detail(2155910)
     # a = people._scraper.get_roles_detail(760357)
     # a = people.get_member_data(760357)
 
-    ci.reports.get_report(c_logon)
+    ci.reports.get_report(c_logon, "Region Appointments Report")
+    print(f"Took {time.time() - start}s")
 
     # SCRATCH #
     leah_sier_id = 11861706
@@ -32,14 +36,21 @@ if __name__ == '__main__':
     surrey_county_id = 10000115
     banstead_district_id = 10001222
     cook_meth_id = 10013849
+
+    # members_json = get_members_with_roles_in_unit(cook_meth_id)
+    org_hierarchy = hierarchy.get_hierarchy(10000001, "Organisation")
+    # a = hierarchy.get_hierarchy(10013849, "Group")
+
     # surrey_county_id = 10000115
     # cook_meth_id = 10013849
     # surrey_hierarchy = hierarchy.get_hierarchy(cook_meth_id, "Group")
     # table_surrey = hierarchy.hierarchy_to_dataframe(surrey_hierarchy)
+    table_org = hierarchy.hierarchy_to_dataframe(org_hierarchy)
     # print(table_surrey)
 
     # Get all members within that OU  (5020s ~= 1.5 hours for FULL ORG)
     # surrey_members = hierarchy.get_all_members_table(cook_meth_id, table_surrey["compass"])
+    all_members = hierarchy.get_all_members_table(cook_meth_id, table_org["compass"])
 
     # Get all roles within that OU (0.25s per unique member)
     # surrey_roles = people.get_roles_from_members(cook_meth_id, surrey_members["contact_number"])
@@ -58,3 +69,27 @@ if __name__ == '__main__':
     # View DBS    : https://compass.scouts.org.uk/MemberProfile.aspx?CN=183755&Page=DISCLOSURES&TAB
 
     # View permit detail : https://compass.scouts.org.uk/Popups/Maint/NewPermit.aspx?CN=12047820&VIEW=64093&UseCN=849454
+
+    # JS assets:
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/adultjoining.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/assignnewrole.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/Dates.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/extenders.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/Grids.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/hierarchy.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/jQuery191.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/master.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/memberprofile.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/membertraining.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/Menu.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/neworgentity.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/newpermit.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/newrole.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/Popup.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/QAS.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/reports.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/roles.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/Scouts.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/scoutsportal.js
+    # https://compass.scouts.org.uk/Scripts_v4.06/JS/searchresults.js
