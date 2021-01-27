@@ -1,10 +1,9 @@
-from src.compass.logon import CompassLogon
-from src.compass.people import CompassPeopleScraper
+import compass as ci
 
 
 def compass_read(auth: list or tuple):
-    logon = CompassLogon(auth)
-    scraper = CompassPeopleScraper(logon.session)
+    logon = ci.Logon(auth)
+    scraper = ci.People(logon)._scraper
 
     member_number = logon.cn
     training_data = scraper.get_training_tab(member_number)
@@ -21,4 +20,3 @@ def compass_read(auth: list or tuple):
     }
 
     return obj
-

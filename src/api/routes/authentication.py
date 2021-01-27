@@ -1,12 +1,17 @@
 from datetime import timedelta
 
 from aioredis import Redis
-from fastapi import Depends, APIRouter
+from fastapi import APIRouter
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.api.plugins.redis import depends_redis
 from src.api.schemas.auth import Token
-from src.api.utility.oauth2 import authenticate_user, custom_bearer_auth_exception, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, store_session
+from src.api.utility.oauth2 import ACCESS_TOKEN_EXPIRE_MINUTES
+from src.api.utility.oauth2 import authenticate_user
+from src.api.utility.oauth2 import create_access_token
+from src.api.utility.oauth2 import custom_bearer_auth_exception
+from src.api.utility.oauth2 import store_session
 
 router = APIRouter()
 

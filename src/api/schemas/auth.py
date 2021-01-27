@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from src.api.schemas.member import MemberBase
+from compass.schemas.member import MemberBase
 
 
 class User(MemberBase):
