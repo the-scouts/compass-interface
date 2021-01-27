@@ -10,8 +10,7 @@ from jose import JWTError, jwt
 
 from src.api.plugins.redis import depends_redis
 from src.api.schemas.auth import User
-from src.compass.errors import CompassError
-from src.compass.logon import CompassLogon
+import compass as ci
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 ALGORITHM = "HS256"
@@ -28,8 +27,8 @@ def custom_bearer_auth_exception(detail: str) -> HTTPException:
 
 def authenticate_user(username: str, password: str) -> User:
     try:
-        user = CompassLogon([username, password])
-    except CompassError:
+        user = ci.logon(username=username, password=password)
+    except ci.CompassError:
         raise PermissionError from None
 
     return User(
@@ -61,7 +60,7 @@ def create_access_token(subject: str, expires_delta: Optional[timedelta] = None)
     return encoded_jwt
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = Depends(depends_redis)) -> CompassLogon:
+async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = Depends(depends_redis)) -> ci.Logon:
     credentials_exception = custom_bearer_auth_exception("Could not validate credentials")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -74,10 +73,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
 
     try:
         user_dict = json.loads(user_json)
-        logon = CompassLogon(user_dict.get("auth", ["", ""]))
+        logon = ci.Logon(user_dict.get("auth", ("", "")))
         if int(payload.get("sub")) != int(logon.cn):
-            raise CompassError()
-    except (CompassError, ValueError):
+            raise ci.CompassError()
+    except (ci.CompassError, ValueError):
         raise credentials_exception from None
 
     return logon
