@@ -40,7 +40,7 @@ function positionFilter(Up) {
 }
 
 function FormReady() {
-    $("#noalerthr").hide();
+  $("#noalerthr").hide();    
 
     if (!pk_val("Page.NoAlerts")) {
         CheckAllState();
@@ -106,7 +106,10 @@ function FormReady() {
         CustomResize = ResizeSP;
         $("#divSearchFold").html("<h2 style='margin-top: 3px;'>My Messages</h2>"); // for when messages are off (either no messages or < 14 etc),FYI:  only <14 for now get this at the mo
         $("#noalerthr").show();
-    }
+  }
+  //Store this value for checking first login - to be used for folding training tabs 
+  var firsTimeLoadValue = true;
+  localStorage.setItem("FirstTimeLoadValue", firsTimeLoadValue);
 }
 
 function Attr2Data() {
