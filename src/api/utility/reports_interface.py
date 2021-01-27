@@ -2,13 +2,12 @@ import io
 import time
 from functools import reduce
 
+import compass as ci
 import numba
 import pandas as pd
 
 from script import auth_keys
 from src.api.utility import tables
-from src.compass.logon import CompassLogon
-from src.compass.reports import get_report
 from src import utility
 
 
@@ -38,7 +37,7 @@ def sub(sub_list):
 
 
 def report_to_sql():
-    session = CompassLogon(auth_keys, 'Regional Administrator')
+    session = ci.Logon(auth_keys, 'Regional Administrator')
     # csv_content: bytes = get_report(session, "Region Appointments Report")
     # rep: pd.DataFrame = pd.read_csv(io.BytesIO(csv_content), skiprows=[2])
     rep: pd.DataFrame = pd.read_csv(utility.PROJECT_ROOT.parent / "2020-08-02T00-02-34 - 12047820 (Regional Administrator).csv", skiprows=[2])
