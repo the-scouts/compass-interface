@@ -24,9 +24,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/token")
 
 
-def custom_bearer_auth_exception(detail: str) -> HTTPException:
+def custom_bearer_auth_exception(detail: str, code: int = status.HTTP_401_UNAUTHORIZED) -> HTTPException:
     return HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail=detail, headers={"WWW-Authenticate": "Bearer"}
+        status_code=code, detail=detail, headers={"WWW-Authenticate": "Bearer"}
     )
 
 
