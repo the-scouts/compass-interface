@@ -1,18 +1,16 @@
-from src.compass.hierarchy import CompassHierarchy
-from src.compass.logon import CompassLogon
-from src.compass.people import CompassPeople
-from src.compass.reports import get_report
+import compass as ci
+
 from src.interface import compass_read
 
 
 if __name__ == '__main__':
-    auth_keys = ['user', 'pass']
+    auth_keys = ('user', 'pass')
     compass_role_to_use = 'Regional Administrator'
     # compass_role_to_use = 'HQ Committee Member - Scout Grants Committee'
     # compass_role_to_use = 'Country Scout Active Support Member'
     # compass_role_to_use = 'County Executive Committee Member'
     # compass_read(auth_keys)
-    c_logon = CompassLogon(auth_keys, compass_role_to_use)
+    c_logon = ci.Logon(auth_keys, compass_role_to_use)
     # hierarchy = CompassHierarchy(c_logon.session)
     # people = CompassPeople(c_logon.session)
     # b = people.get_member_data(12047820)
@@ -20,7 +18,7 @@ if __name__ == '__main__':
     # a = people._scraper.get_roles_detail(760357)
     # a = people.get_member_data(760357)
 
-    get_report(c_logon)
+    ci.reports.get_report(c_logon)
 
     # SCRATCH #
     leah_sier_id = 11861706
