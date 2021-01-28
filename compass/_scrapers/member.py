@@ -169,7 +169,7 @@ class PeopleScraper(InterfaceBase):
         join_date_str = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")
         details["join_date"] = parse(join_date_str) if join_date_str != "Unknown" else None
 
-        # ## Position Varies:
+        # ## Position Varies, only if authorised:
 
         # Gender
         details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
