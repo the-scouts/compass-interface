@@ -1,19 +1,25 @@
 # pylint: disable=protected-access
+from __future__ import annotations
 
 import datetime
 import enum
 from pathlib import Path
 import re
 import time
+from typing import TYPE_CHECKING
 import urllib.parse
 
 from lxml import html
 
 from compass.errors import CompassReportError
 from compass.errors import CompassReportPermissionError
+from compass.interface_base import InterfaceBase
 from compass.logging import logger
 from compass.logon import Logon
 from compass.settings import Settings
+
+if TYPE_CHECKING:
+    import requests
 
 
 class ReportTypes(enum.IntEnum):
@@ -25,10 +31,13 @@ class ReportTypes(enum.IntEnum):
     region_disclosure_management_report = 100
 
 
-class Reports:
-    def __init__(self, session: Logon):
-        """Constructor for Reports."""
-        self.session: Logon = session
+class ReportsScraper(InterfaceBase):
+    def __init__(self, session: requests.Session):
+        """Constructor for ReportsScraper.
+
+        takes an initialised Session object from Logon
+        """
+        super().__init__(session)
 
     def get_report_token(self, report_number: int, role_number: int) -> str:
         params = {
@@ -36,7 +45,7 @@ class Reports:
             "pMemberRoleNumber": role_number,
         }
         logger.debug("Getting report token")
-        response = self.session._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
+        response = self._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
         response.raise_for_status()
 
         report_token_uri = response.json().get("d")
@@ -60,6 +69,18 @@ class Reports:
             report_export_url_data["FileName"] = filename
 
         return export_url_path, report_export_url_data
+
+    def get_report_page(self, run_report_url):
+        # TODO what breaks if we don't update user-agent?
+        # Compass does user-agent sniffing in reports!!!
+        self._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+
+        # Get initial reports page, for export URL and config.
+        logger.info("Generating report")
+        report_page = self._get(f"{Settings.base_url}/{run_report_url}")
+        form = html.fromstring(report_page.content).forms[0]
+
+        return report_page, form
 
     def update_form_data(self, form: html.FormElement, run_report: str):
         elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
@@ -104,7 +125,7 @@ class Reports:
 
         # Including MicrosoftAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
         # In reality we don't care about the output of this POST, just that it doesn't fail
-        report = self.session._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
+        report = self._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
         report.raise_for_status()
 
         # Check error state
@@ -112,7 +133,7 @@ class Reports:
             raise CompassReportError("Compass Error!")
 
     def download_report_streaming(self, url: str, params: dict, filename: str, ska_url=None):
-        with self.session._get(url, params=params, stream=True) as r:
+        with self._get(url, params=params, stream=True) as r:
             print("")
             r.raise_for_status()
             with open(filename, "wb") as f:
@@ -121,7 +142,7 @@ class Reports:
 
     def download_report_normal(self, url: str, params: dict, filename: str):
         start = time.time()
-        csv_export = self.session._get(url, params=params)
+        csv_export = self._get(url, params=params)
         print(f"Exporting took {time.time() - start}s")
         print("Saving report")
         Path(filename).write_bytes(csv_export.content)  # TODO Debug check
@@ -131,6 +152,14 @@ class Reports:
 
         return csv_export
 
+
+class Reports:
+    def __init__(self, session: Logon):
+        """Constructor for Reports."""
+        self._scraper = ReportsScraper(session.s)
+        self._scraper._get = session._get
+        self.session: Logon = session
+
     def get_report(self, report_type: str) -> bytes:
         # GET Report Page
         # POST Location Update
@@ -139,33 +168,26 @@ class Reports:
         # Get token for report type & role running said report:
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
-            run_report_url = self.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value, self.session.mrn)
+            run_report_url = self._scraper.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value, self.session.mrn)
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
             types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
             raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
 
-        # TODO what breaks if we don't update user-agent?
-        # Compass does user-agent sniffing in reports!!!
-        self.session._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        # Get initial reports page, for export URL and config:
+        report_page, form = self._scraper.get_report_page(run_report_url)
 
-        # Get initial reports page, for export URL and config.
-        logger.info("Generating report")
-        run_report = f"{Settings.base_url}/{run_report_url}"
-        report_page = self.session._get(run_report)
-        form = html.fromstring(report_page.content).forms[0]
+        # Update form data & set location selection:
+        self._scraper.update_form_data(form, f"{Settings.base_url}/{run_report_url}")
 
-        # Update form data & set location selection
-        self.update_form_data(form, run_report)
-
-        # Export the report
+        # Export the report:
         logger.info("Exporting report")
-        export_url_path, export_url_params = self.get_report_export_url(report_page.text)
+        export_url_path, export_url_params = self._scraper.get_report_export_url(report_page.text)
 
         # TODO Debug check
         time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
         filename = f"{time_string} - {self.session.cn} ({self.session.current_role}).csv"
 
-        csv_export = self.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
+        csv_export = self._scraper.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
 
         return csv_export.content
