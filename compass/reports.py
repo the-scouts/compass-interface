@@ -53,13 +53,21 @@ class Reports:
     def get_report_export_url(report_page: str, filename: str = None) -> tuple[str, dict]:
         full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
         fragments = urllib.parse.urlparse(full_url)
-        export_url_path = fragments.path[1:]
+        export_url_path = fragments.path[1:]  # strip leading `/`
         report_export_url_data = dict(urllib.parse.parse_qsl(fragments.query, keep_blank_values=True))
         report_export_url_data["Format"] = "CSV"
         if filename:
             report_export_url_data["FileName"] = filename
 
         return export_url_path, report_export_url_data
+
+    def download_report_streaming(self, url: str, params: dict, filename: str, ska_url=None):
+        with self.session._get(url, params=params, stream=True) as r:
+            print("")
+            r.raise_for_status()
+            with open(filename, "wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
+                    f.write(chunk)
 
     def download_report_normal(self, url: str, params: dict, filename: str):
         start = time.time()
