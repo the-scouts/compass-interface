@@ -2,9 +2,9 @@ from fastapi import APIRouter
 from fastapi import FastAPI
 import uvicorn
 
-from src.api.routes import authentication
-from src.api.routes import members
-from src.api.utility import redis_handler
+from routes import authentication
+from routes import members
+from utility import redis_handler
 
 open_api_tag_metadata = [
     {

@@ -7,19 +7,19 @@ RUN cat /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt
 
 # App Module for Gunicorn, pattern module_fqn:variable_name
-ENV APP_MODULE="src.api.app:app"
+ENV APP_MODULE="compass.api.app:app"
 
 # This must be the same as GUNICORN_CONF env variable
-COPY ./src/api/gunicorn_conf.py /gunicorn_conf.py
+COPY ./compass/api/gunicorn_conf.py /gunicorn_conf.py
 
 # Custom start script
-COPY ./src/api/startup.sh /start.sh
+COPY ./compass/api/startup.sh /start.sh
 RUN chmod +x /start.sh
 
-# Docker compose file mounts src directory to /app/src
-COPY ./certificates /app/certificates
+# Docker compose file mounts compass directory to /app/compass
+#COPY ./certificates /app/certificates
 COPY ./script.py /app/script.py
-#COPY ./src /app/src
+#COPY ./compass /app/compass
 
-ENV PYTHONPATH=/app/src:/app:$PYTHONPATH
+ENV PYTHONPATH=/app/compass:/app:$PYTHONPATH
 WORKDIR /app

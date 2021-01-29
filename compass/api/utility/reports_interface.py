@@ -6,7 +6,7 @@ import pandas as pd
 
 import compass as ci
 
-from src.api.utility import tables
+from api.utility import tables
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent.parent.parent
 

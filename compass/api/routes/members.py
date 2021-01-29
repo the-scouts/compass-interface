@@ -8,10 +8,10 @@ import pandas as pd
 import compass as ci
 from compass.schemas import member
 
-from src.api.utility import reports_interface
-from src.api.utility.compass_people_interface import get_ongoing_learning_scraper
-from src.api.utility.oauth2 import get_current_user
-from src.api.utility.reports_interface import get_df
+from api.utility import reports_interface
+from api.utility.compass_people_interface import get_ongoing_learning_scraper
+from api.utility.oauth2 import get_current_user
+from api.utility.reports_interface import get_df
 
 router = APIRouter()
 
