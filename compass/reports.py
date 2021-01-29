@@ -9,6 +9,8 @@ from typing import Tuple
 
 from lxml import html
 
+from compass.errors import CompassReportError
+from compass.errors import CompassReportPermissionError
 from compass.logging import logger
 from compass.logon import Logon
 from compass.settings import Settings
@@ -21,14 +23,6 @@ class ReportTypes(enum.IntEnum):
     region_disclosure_report = 76
     region_training_report = 84
     region_disclosure_management_report = 100
-
-
-class CompassReportError(Exception):
-    pass
-
-
-class CompassReportPermissionError(PermissionError, Exception):
-    pass
 
 
 class Reports:
