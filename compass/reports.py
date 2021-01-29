@@ -35,7 +35,7 @@ class Reports:
             "pMemberRoleNumber": f"{self.session.mrn}",
         }
         logger.debug("Getting report token")
-        response = self.session._get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
+        response = self.session._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
         response.raise_for_status()
         report_token_uri = response.json().get("d")

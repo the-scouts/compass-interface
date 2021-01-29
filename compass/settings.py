@@ -1,6 +1,7 @@
 class Settings:
-    web_service_path = "/JSon.svc"
     base_url = "https://compass.scouts.org.uk"
+    date_format = "%d %B %Y"  # dd Month YYYY
     org_number = 10000001
     total_requests = 0
-    date_format = "%d %B %Y"  # dd Month YYYY
+    wcf_json_endpoint = "/JSon.svc"  # Windows communication foundation JSON service endpoint
+    web_service_path = base_url + wcf_json_endpoint
