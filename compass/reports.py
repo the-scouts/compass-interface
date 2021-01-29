@@ -37,20 +37,17 @@ class Reports:
         }
         logger.debug("Getting report token")
         response = self.session._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
-
         response.raise_for_status()
+
         report_token_uri = response.json().get("d")
+        if report_token_uri not in {"-1", "-2", "-3", "-4"}:
+            return report_token_uri
+        elif report_token_uri in {"-2", "-3"}:
+            raise CompassReportError("Report aborted: Report No Longer Available")
+        elif report_token_uri == "-4":
+            raise CompassReportError("Report aborted: USER DOES NOT HAVE PERMISSION")
 
-        if report_token_uri in ["-1", "-2", "-3", "-4"]:
-            msg = ""
-            if report_token_uri in ["-2", "-3"]:
-                msg = "Report No Longer Available"
-            elif report_token_uri == "-4":
-                msg = "USER DOES NOT HAVE PERMISSION"
-
-            raise CompassReportError(f"Report aborted: {msg}")
-
-        return report_token_uri
+        raise CompassReportError(f"Report aborted")
 
     @staticmethod
     def get_report_export_url(report_page: str, filename: str = None) -> tuple[str, dict]:
