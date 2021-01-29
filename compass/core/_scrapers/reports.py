@@ -9,11 +9,11 @@ import urllib.parse
 
 from lxml import html
 
-from compass.errors import CompassReportError
-from compass.errors import CompassReportPermissionError
-from compass.interface_base import InterfaceBase
-from compass.logging import logger
-from compass.settings import Settings
+from compass.core.errors import CompassReportError
+from compass.core.errors import CompassReportPermissionError
+from compass.core.interface_base import InterfaceBase
+from compass.core.logging import logger
+from compass.core.settings import Settings
 
 if TYPE_CHECKING:
     import requests

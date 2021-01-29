@@ -3,7 +3,7 @@ import re
 
 import pandas as pd
 
-from compass.people import People
+from compass import People
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 

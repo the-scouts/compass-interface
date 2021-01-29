@@ -6,33 +6,26 @@ This module exposes the public api for CI core
 # This directory is a Python package.
 from typing import Optional
 
-from compass import hierarchy
-from compass import logging
-from compass import people
-from compass import reports
-from compass import schemas  # TODO what schemas are should/need to be public?
-from compass import settings
-from compass import utility
-from compass.errors import CompassAuthenticationError
-from compass.errors import CompassError
-from compass.hierarchy import Hierarchy
-from compass.logon import Logon
-from compass.people import People
+from compass import core
+from compass.core import errors
+from compass.core.hierarchy import Hierarchy
+from compass.core.logon import Logon
+from compass.core.people import People
+from compass.core.reports import Reports
+from compass import util
 
 __all__ = (
-    "CompassAuthenticationError",
-    "CompassError",
-    "hierarchy",
+    # sub-packages: CI-Core
+    "core",
+    "errors",
+    "util",
+    # public classes
     "Hierarchy",
-    "logging",
     "Logon",
-    "logon",
-    "people",
     "People",
-    "reports",
-    "schemas",
-    "settings",
-    "utility",
+    "Reports",
+    # public functions
+    "logon",
 )
 
 

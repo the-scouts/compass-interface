@@ -2,7 +2,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from compass.hierarchy import Hierarchy
+from compass import Hierarchy
 
 
 class HierarchyUtility(Hierarchy):

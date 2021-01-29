@@ -1,6 +1,6 @@
-from compass._scrapers.member import PeopleScraper
-from compass.logon import Logon
-from compass.utility import maybe_int
+from compass.core._scrapers.member import PeopleScraper
+from compass.core.logon import Logon
+from compass.core.utility import maybe_int
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls

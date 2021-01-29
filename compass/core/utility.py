@@ -9,7 +9,7 @@ from typing import Any, Optional, Union
 import certifi
 import requests
 
-from compass.logging import logger
+from compass.core.logging import logger
 
 
 def setup_tls_certs() -> None:

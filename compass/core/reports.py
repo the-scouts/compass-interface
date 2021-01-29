@@ -4,11 +4,11 @@ import datetime
 import enum
 from typing import Literal
 
-from compass._scrapers.reports import ReportsScraper
-from compass.errors import CompassReportError
-from compass.logging import logger
-from compass.logon import Logon
-from compass.settings import Settings
+from compass.core._scrapers.reports import ReportsScraper
+from compass.core.errors import CompassReportError
+from compass.core.logging import logger
+from compass.core.logon import Logon
+from compass.core.settings import Settings
 
 TYPES_REPORTS = Literal[
     "Region Member Directory",
