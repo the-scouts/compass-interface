@@ -25,6 +25,7 @@ class ReportsScraper(InterfaceBase):
 
         takes an initialised Session object from Logon
         """
+        # pylint: disable=useless-super-delegation
         super().__init__(session)
 
     def get_report_token(self, report_number: int, role_number: int) -> str:
@@ -44,7 +45,7 @@ class ReportsScraper(InterfaceBase):
         elif report_token_uri == "-4":
             raise CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
 
-        raise CompassReportError(f"Report aborted")
+        raise CompassReportError("Report aborted")
 
     @staticmethod
     def get_report_export_url(report_page: str, filename: str = None) -> tuple[str, dict]:
@@ -123,11 +124,11 @@ class ReportsScraper(InterfaceBase):
     def report_keep_alive(self, report_page: str):
         print(f"Extending Report Session {datetime.datetime.now()}")
         keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
-        response = self._post(f"{Settings.base_url}{keep_alive}")
+        response = self._post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841
 
         return keep_alive  # response
 
-    def download_report_streaming(self, url: str, params: dict, filename: str, ska_url=None):
+    def download_report_streaming(self, url: str, params: dict, filename: str):
         with self._get(url, params=params, stream=True) as r:
             print("")
             r.raise_for_status()

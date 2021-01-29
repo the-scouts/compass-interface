@@ -4,11 +4,9 @@ import datetime
 import functools
 from pathlib import Path
 import threading
-import time
 from typing import Any, Optional, Union
 
 import certifi
-import requests
 
 from compass.logging import logger
 
@@ -99,6 +97,7 @@ def parse(date_time_str: str) -> Optional[datetime.datetime]:
 
 class PeriodicTimer:
     def __init__(self, interval, callback):
+        """Constructor for PeriodicTimer."""
         self.thread = None
         self.interval = interval
 
