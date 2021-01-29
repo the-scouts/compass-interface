@@ -70,7 +70,7 @@ class ReportsScraper(InterfaceBase):
 
         return export_url_path, report_export_url_data
 
-    def get_report_page(self, run_report_url):
+    def get_report_page(self, run_report_url: str) -> bytes:
         # TODO what breaks if we don't update user-agent?
         # Compass does user-agent sniffing in reports!!!
         self._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
@@ -78,11 +78,11 @@ class ReportsScraper(InterfaceBase):
         # Get initial reports page, for export URL and config.
         logger.info("Generating report")
         report_page = self._get(f"{Settings.base_url}/{run_report_url}")
-        form = html.fromstring(report_page.content).forms[0]
 
-        return report_page, form
+        return report_page.content
 
-    def update_form_data(self, form: html.FormElement, run_report: str):
+    def update_form_data(self, report_page: bytes, run_report: str):
+        form = html.fromstring(report_page).forms[0]
         elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
         # Table Controls: table#ParametersGridReportViewer1_ctl04
@@ -140,7 +140,7 @@ class ReportsScraper(InterfaceBase):
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                     f.write(chunk)
 
-    def download_report_normal(self, url: str, params: dict, filename: str):
+    def download_report_normal(self, url: str, params: dict, filename: str) -> requests.Response:
         start = time.time()
         csv_export = self._get(url, params=params)
         print(f"Exporting took {time.time() - start}s")
@@ -157,7 +157,7 @@ class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
         self._scraper = ReportsScraper(session.s)
-        self._scraper._get = session._get
+        self._scraper._get = session._get  # massively hacky but we need to send the jk_hash stuff through
         self.session: Logon = session
 
     def get_report(self, report_type: str) -> bytes:
@@ -175,14 +175,14 @@ class Reports:
             raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
 
         # Get initial reports page, for export URL and config:
-        report_page, form = self._scraper.get_report_page(run_report_url)
+        report_page = self._scraper.get_report_page(run_report_url)
 
         # Update form data & set location selection:
-        self._scraper.update_form_data(form, f"{Settings.base_url}/{run_report_url}")
+        self._scraper.update_form_data(report_page, f"{Settings.base_url}/{run_report_url}")
 
         # Export the report:
         logger.info("Exporting report")
-        export_url_path, export_url_params = self._scraper.get_report_export_url(report_page.text)
+        export_url_path, export_url_params = self._scraper.get_report_export_url(report_page.decode("UTF-8"))
 
         # TODO Debug check
         time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
