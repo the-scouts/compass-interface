@@ -127,7 +127,7 @@ class ReportsScraper(InterfaceBase):
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                     f.write(chunk)
 
-    def download_report_normal(self, url: str, params: dict, filename: str) -> requests.Response:
+    def download_report_normal(self, url: str, params: dict, filename: str) -> bytes:
         start = time.time()
         csv_export = self._get(url, params=params)
         print(f"Exporting took {time.time() - start}s")
@@ -137,4 +137,4 @@ class ReportsScraper(InterfaceBase):
 
         print(len(csv_export.content))
 
-        return csv_export
+        return csv_export.content
