@@ -1,19 +1,18 @@
 from functools import reduce
-import io
-import time
+from pathlib import Path
 
 import numba
 import pandas as pd
 
 import compass as ci
 
-from script import auth_keys
-from src import utility
 from src.api.utility import tables
+
+PROJECT_ROOT = Path(__file__).absolute().parent.parent.parent.parent
 
 
 def get_df():
-    df = pd.read_feather(utility.PROJECT_ROOT / "all-region.feather")
+    df = pd.read_feather(PROJECT_ROOT / "all-region.feather")
     try:
         yield df
     finally:
@@ -38,10 +37,10 @@ def sub(sub_list):
 
 
 def report_to_sql():
-    session = ci.Logon(auth_keys, 'Regional Administrator')
+    session = ci.Logon(("user", "pass"), 'Regional Administrator')
     # csv_content: bytes = get_report(session, "Region Appointments Report")
     # rep: pd.DataFrame = pd.read_csv(io.BytesIO(csv_content), skiprows=[2])
-    rep: pd.DataFrame = pd.read_csv(utility.PROJECT_ROOT.parent / "2020-08-02T00-02-34 - 12047820 (Regional Administrator).csv", skiprows=[2])
+    rep: pd.DataFrame = pd.read_csv(PROJECT_ROOT.parent / "2020-08-02T00-02-34 - 12047820 (Regional Administrator).csv", skiprows=[2])
     rep.columns = [tables.MemberFields[c].value for c in rep.columns]
     rep["name"] = rep['forenames'] + ' ' + rep['surname']
     section_cols = ["county_section", "district_section", "scout_group_section"]
@@ -51,7 +50,7 @@ def report_to_sql():
     rep["phone_number"] = rep["phone_number"].astype("string")
     # TODO phone number to string
 
-    rep.to_feather(utility.PROJECT_ROOT.parent / "all-region.feather")
+    rep.to_feather(PROJECT_ROOT.parent / "all-region.feather")
     print("Report Saved to Feather")
 
 
