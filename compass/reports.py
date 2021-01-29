@@ -124,12 +124,21 @@ class Reports:
         }
 
         # districts = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl07_divDropDown']//label/text()")
-        # numbered_districts = {str(i): unicodedata.normalize("NFKD", d) for i, d in enumerate(districts[1:])}
+        # list_districts = [unicodedata.normalize("NFKD", d) for d in districts if "select all" not in d.lower()]
+        # numbered_districts = {str(i): d for i, d in enumerate(list_districts)}
         # all_districts = ", ".join(numbered_districts.values())
         # all_districts_indices = ",".join(numbered_districts.keys())
         #
+        # counties = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl05_divDropDown']//label/text()")
+        # list_counties = [unicodedata.normalize("NFKD", c) for c in counties if "select all" not in c.lower()]
+        # numbered_counties = {str(i): c for i, c in enumerate(list_counties)}
+        # all_counties = ", ".join(numbered_counties.values())
+        # all_counties_indices = ",".join(numbered_counties.keys())
+        #
         # form_data = {
         #     "__VIEWSTATE": elements["__VIEWSTATE"],
+        #     "ReportViewer1$ctl04$ctl05$txtValue": all_counties,
+        #     "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": all_counties_indices,
         #     "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
         #     "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
         # }
