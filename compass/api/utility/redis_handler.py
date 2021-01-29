@@ -1,4 +1,4 @@
-from src.api.plugins import redis
+from api.plugins import redis
 
 
 class RedisConfig(redis.RedisSettings):

@@ -1,8 +1,5 @@
 import compass as ci
 
-from src.interface import compass_read
-
-start = time.time()
 # Exporting Appointments report: 14.39s 13.73s 13.26s
 
 if __name__ == '__main__':

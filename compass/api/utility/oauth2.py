@@ -14,8 +14,8 @@ from jose import JWTError
 
 import compass as ci
 
-from src.api.plugins.redis import depends_redis
-from src.api.schemas.auth import User
+from api.plugins.redis import depends_redis
+from api.schemas.auth import User
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 ALGORITHM = "HS256"
