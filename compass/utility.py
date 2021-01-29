@@ -3,6 +3,8 @@ import ctypes
 import datetime
 import functools
 from pathlib import Path
+import threading
+import time
 from typing import Any, Optional, Union
 
 import certifi
@@ -93,3 +95,35 @@ def parse(date_time_str: str) -> Optional[datetime.datetime]:
             return datetime.datetime.strptime(date_time_str, "%d %B %Y")  # e.g. 01 January 2000
         except ValueError:
             return datetime.datetime.strptime(date_time_str, "%d %b %Y")  # e.g. 01 Jan 2000
+
+
+class PeriodicTimer:
+    def __init__(self, interval, callback):
+        self.thread = None
+        self.interval = interval
+
+        @functools.wraps(callback)
+        def wrapper(*args, **kwargs):
+            result = callback(*args, **kwargs)
+            if result is not None:
+                self.thread = threading.Timer(self.interval, self.callback)
+                self.thread.start()
+
+        self.callback = wrapper
+
+    def start(self):
+        self.thread = threading.Thread(target=self.callback)
+        self.thread.start()
+        return self
+
+    def cancel(self):
+        self.thread.cancel()
+        return self
+
+
+if __name__ == "__main__":
+    import requests
+
+    thread = PeriodicTimer(1, lambda: (print(requests.get("https://httpbin.org/uuid").text) or True)).start()
+    print(requests.get("http://slowwly.robertomurray.co.uk/delay/3000/url/https://www.bbc.co.uk", allow_redirects=False).headers)
+    # thread.cancel()

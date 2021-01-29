@@ -14,6 +14,7 @@ from compass.logging import logger
 from compass.settings import Settings
 from compass.utility import cast
 from compass.utility import compass_restify
+from compass.utility import PeriodicTimer
 from compass.utility import setup_tls_certs
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
@@ -32,6 +33,9 @@ class Logon(InterfaceBase):
         self.roles_dict: dict = {}
 
         super().__init__(self._do_logon(credentials, role_to_use))
+
+        self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
+        # self.sto_thread.start()
 
     @property
     def mrn(self) -> int:
@@ -93,6 +97,11 @@ class Logon(InterfaceBase):
         logger.debug(f"Sending preflight data {datetime.datetime.now()}")
         self._post(f"{Settings.base_url}/System/Preflight", json=data)
         return key_hash
+
+    def _extend_session_timeout(self, sto: Literal[None, "0", "5", "X"] = "0"):
+        # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
+        print(f"Extending session length {datetime.datetime.now()}")
+        return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
 
     def _do_logon(self, credentials: tuple[str, str] = None, role_to_use: str = None) -> requests.Session:
         """Log in to Compass, change role and confirm success."""
