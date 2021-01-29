@@ -118,7 +118,7 @@ services:
     ports:
       - 8888:8888
     volumes:
-      - ./src:/app/src
+      - ./compass:/app/compass
     image: scouts/compass-interface-backend
     depends_on:
       - redis
@@ -131,7 +131,7 @@ services:
       - REDIS_PASS=ubuntu
     build:
       context: ./
-      dockerfile: src/api/backend.dockerfile
+      dockerfile: compass/api/backend.dockerfile
 #      args:
 #        INSTALL_DEV: ${INSTALL_DEV-false}
     labels:
