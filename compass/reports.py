@@ -5,7 +5,6 @@ import enum
 from pathlib import Path
 import re
 import time
-from typing import Tuple
 
 from lxml import html
 
@@ -53,7 +52,7 @@ class Reports:
         return report_token_uri
 
     @staticmethod
-    def get_report_export_url(report_page: str, filename: str = None) -> Tuple[str, dict]:
+    def get_report_export_url(report_page: str, filename: str = None) -> tuple[str, dict]:
         full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
         export_url_path = full_url.split("?")[0][1:]
         report_export_url_data = dict(param.split("=") for param in full_url.split("?")[1].split("&"))
