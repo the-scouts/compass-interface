@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from pathlib import Path
 import re
 import time
@@ -118,6 +119,13 @@ class ReportsScraper(InterfaceBase):
         # Check error state
         if "compass.scouts.org.uk%2fError.aspx|" in report.text:
             raise CompassReportError("Compass Error!")
+
+    def report_keep_alive(self, report_page: str):
+        print(f"Extending Report Session {datetime.datetime.now()}")
+        keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
+        response = self._post(f"{Settings.base_url}{keep_alive}")
+
+        return keep_alive  # response
 
     def download_report_streaming(self, url: str, params: dict, filename: str, ska_url=None):
         with self._get(url, params=params, stream=True) as r:

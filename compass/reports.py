@@ -104,6 +104,22 @@ class Reports:
         time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
         filename = f"{time_string} - {self.session.cn} ({self.session.current_role}).csv"
 
+        # start = time.time()
+        # TODO TRAINING REPORT ETC.
+        # # TODO REPORT BODY HAS KEEP ALIVE URL KeepAliveUrl
+        # p = PeriodicTimer(15, lambda: self.report_keep_alive(self.session, report_page.text))
+        # self.session.sto_thread.start()
+        # p.start()
+        # # ska_url = self.report_keep_alive(self.session, report_page.text)
+        # try:
+        #     self.download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
+        # except (ConnectionResetError, requests.ConnectionError):
+        #     print(f"Stopped at {datetime.datetime.now()}")
+        #     p.cancel()
+        #     self.session.sto_thread.cancel()
+        #     raise
+        # print(f"Exporting took {time.time() -start}s")
+
         csv_export = self._scraper.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
 
         return csv_export
