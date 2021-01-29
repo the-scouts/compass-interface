@@ -30,112 +30,116 @@ class CompassReportPermissionError(PermissionError, Exception):
     pass
 
 
-def get_report_token(logon: Logon, report_number: int) -> str:
-    params = {
-        "pReportNumber": report_number,
-        "pMemberRoleNumber": f"{logon.mrn}",
-    }
-    logger.debug("Getting report token")
-    response = logon._get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
+class Reports:
+    def __init__(self, session: Logon):
+        """Constructor for Reports."""
+        self.session: Logon = session
 
-    response.raise_for_status()
-    report_token_uri = response.json().get("d")
+    def get_report_token(self, report_number: int) -> str:
+        params = {
+            "pReportNumber": report_number,
+            "pMemberRoleNumber": f"{self.session.mrn}",
+        }
+        logger.debug("Getting report token")
+        response = self.session._get(f"{Settings.base_url}{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
 
-    if report_token_uri in ["-1", "-2", "-3", "-4"]:
-        msg = ""
-        if report_token_uri in ["-2", "-3"]:
-            msg = "Report No Longer Available"
-        elif report_token_uri == "-4":
-            msg = "USER DOES NOT HAVE PERMISSION"
+        response.raise_for_status()
+        report_token_uri = response.json().get("d")
 
-        raise CompassReportError(f"Report aborted: {msg}")
+        if report_token_uri in ["-1", "-2", "-3", "-4"]:
+            msg = ""
+            if report_token_uri in ["-2", "-3"]:
+                msg = "Report No Longer Available"
+            elif report_token_uri == "-4":
+                msg = "USER DOES NOT HAVE PERMISSION"
 
-    return report_token_uri
+            raise CompassReportError(f"Report aborted: {msg}")
 
+        return report_token_uri
 
-def get_report_export_url(report_page: str, filename: str = None) -> Tuple[str, dict]:
-    full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
-    export_url_path = full_url.split("?")[0][1:]
-    report_export_url_data = dict(param.split("=") for param in full_url.split("?")[1].split("&"))
-    report_export_url_data["Format"] = "CSV"
-    if filename:
-        report_export_url_data["FileName"] = filename
+    @staticmethod
+    def get_report_export_url(report_page: str, filename: str = None) -> Tuple[str, dict]:
+        full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
+        export_url_path = full_url.split("?")[0][1:]
+        report_export_url_data = dict(param.split("=") for param in full_url.split("?")[1].split("&"))
+        report_export_url_data["Format"] = "CSV"
+        if filename:
+            report_export_url_data["FileName"] = filename
 
-    return export_url_path, report_export_url_data
+        return export_url_path, report_export_url_data
 
+    def get_report(self, report_type: str) -> bytes:
+        # GET Report Page
+        # POST Location Update
+        # GET CSV data
 
-def get_report(logon: Logon, report_type: str) -> bytes:
-    # GET Report Page
-    # POST Location Update
-    # GET CSV data
+        try:
+            # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
+            run_report_url = self.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value)
+        except KeyError:
+            # enum keys are in `snake_case`, output types as `Title Case` with spaces
+            types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
+            raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
 
-    try:
-        # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
-        run_report_url = get_report_token(logon, ReportTypes[report_type.lower().replace(" ", "_")].value)
-    except KeyError:
-        # enum keys are in `snake_case`, output types as `Title Case` with spaces
-        types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
-        raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
+        # Compass does user-agent sniffing in reports!!!
+        self.session._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
-    # Compass does user-agent sniffing in reports!!!
-    logon._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        logger.info("Generating report")
+        run_report = f"{Settings.base_url}/{run_report_url}"
+        report_page = self.session._get(run_report)
+        tree = html.fromstring(report_page.content)
+        form: html.FormElement = tree.forms[0]
 
-    logger.info("Generating report")
-    run_report = f"{Settings.base_url}/{run_report_url}"
-    report_page = logon._get(run_report)
-    tree = html.fromstring(report_page.content)
-    form: html.FormElement = tree.forms[0]
+        elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
-    elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
+        # Table Controls: table#ParametersGridReportViewer1_ctl04
+        # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label
+        # ReportViewer1$ctl04$ctl05$txtValue - County Label
+        # ReportViewer1$ctl04$ctl07$txtValue - District Label
+        # ReportViewer1$ctl04$ctl09$txtValue - Role Types (Status)
+        # ReportViewer1$ctl04$ctl15$txtValue - Columns Label
 
-    # Table Controls: table#ParametersGridReportViewer1_ctl04
-    # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label
-    # ReportViewer1$ctl04$ctl05$txtValue - County Label
-    # ReportViewer1$ctl04$ctl07$txtValue - District Label
-    # ReportViewer1$ctl04$ctl09$txtValue - Role Types (Status)
-    # ReportViewer1$ctl04$ctl15$txtValue - Columns Label
+        # ReportViewer1_ctl04_ctl07_divDropDown - Districts
+        # ReportViewer1_ctl04_ctl05_divDropDown - Counties
+        # ReportViewer1_ctl04_ctl09_divDropDown - Role Types
+        # ReportViewer1_ctl04_ctl15_divDropDown - Columns
 
-    # ReportViewer1_ctl04_ctl07_divDropDown - Districts
-    # ReportViewer1_ctl04_ctl05_divDropDown - Counties
-    # ReportViewer1_ctl04_ctl09_divDropDown - Role Types
-    # ReportViewer1_ctl04_ctl15_divDropDown - Columns
+        form_data = {
+            "__VIEWSTATE": elements["__VIEWSTATE"],
+            "ReportViewer1$ctl04$ctl05$txtValue": "Regional Roles",
+            "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": "0",
+        }
 
-    form_data = {
-        "__VIEWSTATE": elements["__VIEWSTATE"],
-        "ReportViewer1$ctl04$ctl05$txtValue": "Regional Roles",
-        "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": "0",
-    }
+        # districts = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl07_divDropDown']//label/text()")
+        # numbered_districts = {str(i): unicodedata.normalize("NFKD", d) for i, d in enumerate(districts[1:])}
+        # all_districts = ", ".join(numbered_districts.values())
+        # all_districts_indices = ",".join(numbered_districts.keys())
+        #
+        # form_data = {
+        #     "__VIEWSTATE": elements["__VIEWSTATE"],
+        #     "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
+        #     "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
+        # }
 
-    # districts = tree.xpath("//div[@id='ReportViewer1_ctl04_ctl07_divDropDown']//label/text()")
-    # numbered_districts = {str(i): unicodedata.normalize("NFKD", d) for i, d in enumerate(districts[1:])}
-    # all_districts = ", ".join(numbered_districts.values())
-    # all_districts_indices = ",".join(numbered_districts.keys())
-    #
-    # form_data = {
-    #     "__VIEWSTATE": elements["__VIEWSTATE"],
-    #     "ReportViewer1$ctl04$ctl07$txtValue": all_districts,
-    #     "ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices": all_districts_indices,
-    # }
+        # Including MicrosoftAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
+        # In reality we don't care about the output of this POST, just that it doesn't fail
+        report = self.session._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
+        report.raise_for_status()
 
-    # Including MicrosoftAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
-    # In reality we don't care about the output of this POST, just that it doesn't fail
-    report = logon._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
-    report.raise_for_status()
+        if "compass.scouts.org.uk%2fError.aspx|" in report.text:
+            raise CompassReportError("Compass Error!")
 
-    if "compass.scouts.org.uk%2fError.aspx|" in report.text:
-        raise CompassReportError("Compass Error!")
+        logger.info("Exporting report")
+        export_url_path, export_url_params = self.get_report_export_url(report_page.text)
+        csv_export = self.session._get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
 
-    logger.info("Exporting report")
-    export_url_path, export_url_params = get_report_export_url(report_page.text)
-    csv_export = logon._get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
+        # TODO Debug check
+        logger.info("Saving report")
+        time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
+        filename = f"{time_string} - {self.session.cn} ({self.session.current_role}).csv"
+        Path(filename).write_bytes(csv_export.content)  # TODO Debug check
 
-    # TODO Debug check
-    logger.info("Saving report")
-    time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
-    filename = f"{time_string} - {logon.cn} ({logon.current_role}).csv"
-    Path(filename).write_bytes(csv_export.content)  # TODO Debug check
+        logger.debug(len(csv_export.content))
+        logger.info("Report Saved")
 
-    logger.debug(len(csv_export.content))
-    logger.info("Report Saved")
-
-    return csv_export.content
+        return csv_export.content
