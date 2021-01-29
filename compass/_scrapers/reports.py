@@ -41,7 +41,7 @@ class ReportsScraper(InterfaceBase):
         elif report_token_uri in {"-2", "-3"}:
             raise CompassReportError("Report aborted: Report No Longer Available")
         elif report_token_uri == "-4":
-            raise CompassReportError("Report aborted: USER DOES NOT HAVE PERMISSION")
+            raise CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
 
         raise CompassReportError(f"Report aborted")
 
