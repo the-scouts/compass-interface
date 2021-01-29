@@ -61,48 +61,7 @@ class Reports:
 
         return export_url_path, report_export_url_data
 
-    def download_report_streaming(self, url: str, params: dict, filename: str, ska_url=None):
-        with self.session._get(url, params=params, stream=True) as r:
-            print("")
-            r.raise_for_status()
-            with open(filename, "wb") as f:
-                for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
-                    f.write(chunk)
-
-    def download_report_normal(self, url: str, params: dict, filename: str):
-        start = time.time()
-        csv_export = self.session._get(url, params=params)
-        print(f"Exporting took {time.time() - start}s")
-        print("Saving report")
-        Path(filename).write_bytes(csv_export.content)  # TODO Debug check
-        print("Report Saved")
-
-        print(len(csv_export.content))
-
-        return csv_export
-
-    def get_report(self, report_type: str) -> bytes:
-        # GET Report Page
-        # POST Location Update
-        # GET CSV data
-
-        try:
-            # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
-            run_report_url = self.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value, self.session.mrn)
-        except KeyError:
-            # enum keys are in `snake_case`, output types as `Title Case` with spaces
-            types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
-            raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
-
-        # Compass does user-agent sniffing in reports!!!
-        self.session._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-
-        logger.info("Generating report")
-        run_report = f"{Settings.base_url}/{run_report_url}"
-        report_page = self.session._get(run_report)
-        tree = html.fromstring(report_page.content)
-        form: html.FormElement = tree.forms[0]
-
+    def update_form_data(self, form: html.FormElement, run_report: str):
         elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
         # Table Controls: table#ParametersGridReportViewer1_ctl04
@@ -148,9 +107,58 @@ class Reports:
         report = self.session._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
         report.raise_for_status()
 
+        # Check error state
         if "compass.scouts.org.uk%2fError.aspx|" in report.text:
             raise CompassReportError("Compass Error!")
 
+    def download_report_streaming(self, url: str, params: dict, filename: str, ska_url=None):
+        with self.session._get(url, params=params, stream=True) as r:
+            print("")
+            r.raise_for_status()
+            with open(filename, "wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
+                    f.write(chunk)
+
+    def download_report_normal(self, url: str, params: dict, filename: str):
+        start = time.time()
+        csv_export = self.session._get(url, params=params)
+        print(f"Exporting took {time.time() - start}s")
+        print("Saving report")
+        Path(filename).write_bytes(csv_export.content)  # TODO Debug check
+        print("Report Saved")
+
+        print(len(csv_export.content))
+
+        return csv_export
+
+    def get_report(self, report_type: str) -> bytes:
+        # GET Report Page
+        # POST Location Update
+        # GET CSV data
+
+        # Get token for report type & role running said report:
+        try:
+            # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
+            run_report_url = self.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value, self.session.mrn)
+        except KeyError:
+            # enum keys are in `snake_case`, output types as `Title Case` with spaces
+            types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
+            raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
+
+        # TODO what breaks if we don't update user-agent?
+        # Compass does user-agent sniffing in reports!!!
+        self.session._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+
+        # Get initial reports page, for export URL and config.
+        logger.info("Generating report")
+        run_report = f"{Settings.base_url}/{run_report_url}"
+        report_page = self.session._get(run_report)
+        form = html.fromstring(report_page.content).forms[0]
+
+        # Update form data & set location selection
+        self.update_form_data(form, run_report)
+
+        # Export the report
         logger.info("Exporting report")
         export_url_path, export_url_params = self.get_report_export_url(report_page.text)
 
