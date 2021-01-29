@@ -106,4 +106,4 @@ class Reports:
 
         csv_export = self._scraper.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
 
-        return csv_export.content
+        return csv_export
