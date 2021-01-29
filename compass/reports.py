@@ -30,10 +30,10 @@ class Reports:
         """Constructor for Reports."""
         self.session: Logon = session
 
-    def get_report_token(self, report_number: int) -> str:
+    def get_report_token(self, report_number: int, role_number: int) -> str:
         params = {
             "pReportNumber": report_number,
-            "pMemberRoleNumber": f"{self.session.mrn}",
+            "pMemberRoleNumber": role_number,
         }
         logger.debug("Getting report token")
         response = self.session._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
@@ -80,7 +80,7 @@ class Reports:
 
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
-            run_report_url = self.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value)
+            run_report_url = self.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value, self.session.mrn)
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
             types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
