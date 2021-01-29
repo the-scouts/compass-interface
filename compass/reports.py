@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 
 import datetime
+import enum
 from pathlib import Path
 import re
 from typing import Tuple
@@ -11,15 +12,14 @@ from compass.logging import logger
 from compass.logon import Logon
 from compass.settings import Settings
 
-# TODO Enum???
-report_types = {
-    "Region Member Directory": 37,
-    "Region Appointments Report": 52,
-    "Region Permit Report": 72,
-    "Region Disclosure Report": 76,
-    "Region Training Report": 84,
-    "Region Disclosure Management Report": 100,
-}
+
+class ReportTypes(enum.IntEnum):
+    region_member_directory = 37
+    region_appointments_report = 52
+    region_permit_report = 72
+    region_disclosure_report = 76
+    region_training_report = 84
+    region_disclosure_management_report = 100
 
 
 class CompassReportError(Exception):
@@ -69,10 +69,13 @@ def get_report(logon: Logon, report_type: str) -> bytes:
     # POST Location Update
     # GET CSV data
 
-    if report_type not in report_types:
-        raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {', '.join(report_types)}")
-
-    run_report_url = get_report_token(logon, report_types[report_type])
+    try:
+        # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
+        run_report_url = get_report_token(logon, ReportTypes[report_type.lower().replace(" ", "_")].value)
+    except KeyError:
+        # enum keys are in `snake_case`, output types as `Title Case` with spaces
+        types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
+        raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
 
     # Compass does user-agent sniffing in reports!!!
     logon._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
