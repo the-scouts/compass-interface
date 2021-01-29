@@ -5,6 +5,7 @@ import enum
 from pathlib import Path
 import re
 import time
+import urllib.parse
 
 from lxml import html
 
@@ -54,8 +55,9 @@ class Reports:
     @staticmethod
     def get_report_export_url(report_page: str, filename: str = None) -> tuple[str, dict]:
         full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
-        export_url_path = full_url.split("?")[0][1:]
-        report_export_url_data = dict(param.split("=") for param in full_url.split("?")[1].split("&"))
+        fragments = urllib.parse.urlparse(full_url)
+        export_url_path = fragments.path[1:]
+        report_export_url_data = dict(urllib.parse.parse_qsl(fragments.query, keep_blank_values=True))
         report_export_url_data["Format"] = "CSV"
         if filename:
             report_export_url_data["FileName"] = filename
