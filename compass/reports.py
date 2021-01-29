@@ -6,7 +6,6 @@ from typing import Literal
 
 from compass._scrapers.reports import ReportsScraper
 from compass.errors import CompassReportError
-from compass.errors import CompassReportPermissionError
 from compass.logging import logger
 from compass.logon import Logon
 from compass.settings import Settings
@@ -78,8 +77,8 @@ class Reports:
             requests.HTTPError:
                 If there is an error in the transport layer, or if Compass
                 reports a HTTP 5XX status code
-        """
 
+        """
         # Get token for report type & role running said report:
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
