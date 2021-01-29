@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+from typing import Literal
 
 from compass._scrapers.reports import ReportsScraper
 from compass.errors import CompassReportError
@@ -9,6 +10,15 @@ from compass.errors import CompassReportPermissionError
 from compass.logging import logger
 from compass.logon import Logon
 from compass.settings import Settings
+
+TYPES_REPORTS = Literal[
+    "Region Member Directory",
+    "Region Appointments Report",
+    "Region Permit Report",
+    "Region Disclosure Report",
+    "Region Training Report",
+    "Region Disclosure Management Report",
+]
 
 
 class ReportTypes(enum.IntEnum):
@@ -27,7 +37,7 @@ class Reports:
         self._scraper._get = session._get  # massively hacky but we need to send the jk_hash stuff through
         self.session: Logon = session
 
-    def get_report(self, report_type: str) -> bytes:
+    def get_report(self, report_type: TYPES_REPORTS) -> bytes:
         # GET Report Page
         # POST Location Update
         # GET CSV data
@@ -35,10 +45,11 @@ class Reports:
         # Get token for report type & role running said report:
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
-            run_report_url = self._scraper.get_report_token(ReportTypes[report_type.lower().replace(" ", "_")].value, self.session.mrn)
+            rt_key = report_type.lower().replace(" ", "_")
+            run_report_url = self._scraper.get_report_token(ReportTypes[rt_key].value, self.session.mrn)
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
-            types = [rt.name.title().replace('_', ' ') for rt in ReportTypes]
+            types = [rt.name.title().replace("_", " ") for rt in ReportTypes]
             raise CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
 
         # Get initial reports page, for export URL and config:
