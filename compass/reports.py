@@ -4,6 +4,7 @@ import datetime
 import enum
 from pathlib import Path
 import re
+import time
 from typing import Tuple
 
 from lxml import html
@@ -68,6 +69,18 @@ class Reports:
 
         return export_url_path, report_export_url_data
 
+    def download_report_normal(self, url: str, params: dict, filename: str):
+        start = time.time()
+        csv_export = self.session._get(url, params=params)
+        print(f"Exporting took {time.time() - start}s")
+        print("Saving report")
+        Path(filename).write_bytes(csv_export.content)  # TODO Debug check
+        print("Report Saved")
+
+        print(len(csv_export.content))
+
+        return csv_export
+
     def get_report(self, report_type: str) -> bytes:
         # GET Report Page
         # POST Location Update
@@ -131,15 +144,11 @@ class Reports:
 
         logger.info("Exporting report")
         export_url_path, export_url_params = self.get_report_export_url(report_page.text)
-        csv_export = self.session._get(f"{Settings.base_url}/{export_url_path}", params=export_url_params)
 
         # TODO Debug check
-        logger.info("Saving report")
         time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
         filename = f"{time_string} - {self.session.cn} ({self.session.current_role}).csv"
-        Path(filename).write_bytes(csv_export.content)  # TODO Debug check
 
-        logger.debug(len(csv_export.content))
-        logger.info("Report Saved")
+        csv_export = self.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
 
         return csv_export.content
