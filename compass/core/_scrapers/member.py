@@ -6,13 +6,13 @@ from typing import get_args, Literal, TYPE_CHECKING, Union
 
 from lxml import html
 
-from compass.interface_base import InterfaceBase
-from compass.logging import logger
-from compass.schemas import member as schema
-from compass.settings import Settings
-from compass.utility import cast
-from compass.utility import maybe_int
-from compass.utility import parse
+from compass.core.interface_base import InterfaceBase
+from compass.core.logging import logger
+from compass.core.schemas import member as schema
+from compass.core.settings import Settings
+from compass.core.utility import cast
+from compass.core.utility import maybe_int
+from compass.core.utility import parse
 
 if TYPE_CHECKING:
     import requests

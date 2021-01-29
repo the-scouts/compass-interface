@@ -7,10 +7,10 @@ from typing import Literal, TYPE_CHECKING, Union
 from lxml import html
 import pydantic
 
-from compass.interface_base import InterfaceBase
-from compass.schemas import hierarchy as schema
-from compass.settings import Settings
-from compass.utility import compass_restify
+from compass.core.interface_base import InterfaceBase
+from compass.core.schemas import hierarchy as schema
+from compass.core.settings import Settings
+from compass.core.utility import compass_restify
 
 if TYPE_CHECKING:
     import requests

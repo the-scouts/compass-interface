@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 from typing import Generator, Iterable, Literal, Optional, Union
 
-from compass._scrapers.hierarchy import HierarchyScraper
-from compass.logging import logger
-from compass.logon import Logon
-from compass.schemas import hierarchy as schema
+from compass.core._scrapers.hierarchy import HierarchyScraper
+from compass.core.logging import logger
+from compass.core.logon import Logon
+from compass.core.schemas import hierarchy as schema
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 

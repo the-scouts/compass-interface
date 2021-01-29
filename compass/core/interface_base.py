@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from compass.settings import Settings
+from compass.core.settings import Settings
 
 if TYPE_CHECKING:
     import requests
