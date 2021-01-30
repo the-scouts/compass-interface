@@ -1,4 +1,5 @@
 import compass as ci
+from compass.util import hierarchy
 
 # Exporting Appointments report: 14.39s 13.73s 13.26s
 
@@ -10,7 +11,7 @@ if __name__ == '__main__':
     # compass_role_to_use = 'County Executive Committee Member'
     # compass_read(auth_keys)
     c_logon = ci.Logon(auth_keys, compass_role_to_use)
-    hierarchy = ci.Hierarchy(c_logon)
+    c_hierarchy = ci.Hierarchy(c_logon)
     # people = CompassPeople(c_logon.session)
     # b = people.get_member_data(12047820)
     # a = people._scraper.get_roles_detail(2155910)
@@ -35,19 +36,20 @@ if __name__ == '__main__':
     cook_meth_id = 10013849
 
     # members_json = get_members_with_roles_in_unit(cook_meth_id)
-    org_hierarchy = hierarchy.get_hierarchy(10000001, "Organisation")
-    # a = hierarchy.get_hierarchy(10013849, "Group")
+    org_hierarchy = c_hierarchy.get_hierarchy(10000001, "Organisation")
+    # a = c_hierarchy.get_hierarchy(10013849, "Group")
 
+    u_hierarchy = hierarchy.HierarchyUtility(c_logon)
     # surrey_county_id = 10000115
     # cook_meth_id = 10013849
-    # surrey_hierarchy = hierarchy.get_hierarchy(cook_meth_id, "Group")
-    # table_surrey = hierarchy.hierarchy_to_dataframe(surrey_hierarchy)
-    table_org = hierarchy.hierarchy_to_dataframe(org_hierarchy)
+    # surrey_hierarchy = u_hierarchy.get_hierarchy(cook_meth_id, "Group")
+    # table_surrey = u_hierarchy.hierarchy_to_dataframe(surrey_hierarchy)
+    table_org = u_hierarchy.hierarchy_to_dataframe(org_hierarchy)
     # print(table_surrey)
 
     # Get all members within that OU  (5020s ~= 1.5 hours for FULL ORG)
-    # surrey_members = hierarchy.get_all_members_table(cook_meth_id, table_surrey["compass"])
-    all_members = hierarchy.get_all_members_table(cook_meth_id, table_org["compass"])
+    # surrey_members = u_hierarchy.get_all_members_table(cook_meth_id, table_surrey["compass"])
+    all_members = u_hierarchy.get_all_members_table(cook_meth_id, table_org["compass"])
 
     # Get all roles within that OU (0.25s per unique member)
     # surrey_roles = people.get_roles_from_members(cook_meth_id, surrey_members["contact_number"])
