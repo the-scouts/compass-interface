@@ -5,6 +5,8 @@ import os
 from typing import Optional
 
 from aioredis import Redis
+from api.plugins.redis import depends_redis
+from api.schemas.auth import User
 from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import status
@@ -14,9 +16,6 @@ from jose import JWTError
 
 import compass as ci
 
-from api.plugins.redis import depends_redis
-from api.schemas.auth import User
-
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -25,9 +24,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/token")
 
 
 def custom_bearer_auth_exception(detail: str, code: int = status.HTTP_401_UNAUTHORIZED) -> HTTPException:
-    return HTTPException(
-        status_code=code, detail=detail, headers={"WWW-Authenticate": "Bearer"}
-    )
+    return HTTPException(status_code=code, detail=detail, headers={"WWW-Authenticate": "Bearer"})
 
 
 def authenticate_user(username: str, password: str) -> User:
