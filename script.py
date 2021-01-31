@@ -3,9 +3,9 @@ from compass.util import hierarchy
 
 # Exporting Appointments report: 14.39s 13.73s 13.26s
 
-if __name__ == '__main__':
-    auth_keys = ('user', 'pass')
-    compass_role_to_use = 'Regional Administrator'
+if __name__ == "__main__":
+    auth_keys = ("user", "pass")
+    compass_role_to_use = "Regional Administrator"
     # compass_role_to_use = 'HQ Committee Member - Scout Grants Committee'
     # compass_role_to_use = 'Country Scout Active Support Member'
     # compass_role_to_use = 'County Executive Committee Member'
