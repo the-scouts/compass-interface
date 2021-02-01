@@ -1,12 +1,11 @@
 from functools import reduce
 from pathlib import Path
 
+from api.utility import tables
 import numba
 import pandas as pd
 
 import compass as ci
-
-from api.utility import tables
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent.parent.parent
 
@@ -37,12 +36,12 @@ def sub(sub_list):
 
 
 def report_to_sql():
-    session = ci.Logon(("user", "pass"), 'Regional Administrator')
+    session = ci.Logon(("user", "pass"), "Regional Administrator")
     # csv_content: bytes = get_report(session, "Region Appointments Report")
     # rep: pd.DataFrame = pd.read_csv(io.BytesIO(csv_content), skiprows=[2])
-    rep: pd.DataFrame = pd.read_csv(PROJECT_ROOT.parent / "2020-08-02T00-02-34 - 12047820 (Regional Administrator).csv", skiprows=[2])
+    rep = pd.read_csv(PROJECT_ROOT.parent / "2020-08-02T00-02-34 - 12047820 (Regional Administrator).csv", skiprows=[2])
     rep.columns = [tables.MemberFields[c].value for c in rep.columns]
-    rep["name"] = rep['forenames'] + ' ' + rep['surname']
+    rep["name"] = rep["forenames"] + " " + rep["surname"]
     section_cols = ["county_section", "district_section", "scout_group_section"]
     rep["section"] = pd.Series(map(sub, rep[section_cols].to_numpy().tolist()), index=rep.index).astype("string")
     rep["organisation"] = "The Scout Association"
@@ -55,12 +54,12 @@ def report_to_sql():
 
 
 def get_members(df: pd.DataFrame, skip: int = 0, limit: int = 100) -> list:
-    columns = ["name", "known_as", "forenames", "surname", "postcode", "phone_number", "email", ]
+    columns = ["name", "known_as", "forenames", "surname", "postcode", "phone_number", "email"]
     return df[columns].iloc[skip:limit].to_dict("records")
 
 
 def get_member(df: pd.DataFrame, user_id: int) -> dict:
-    columns = ["membership_number", "name", "known_as", "forenames", "surname", "postcode", "phone_number", "email", ]
+    columns = ["membership_number", "name", "known_as", "forenames", "surname", "postcode", "phone_number", "email"]
     try:
         row = df.loc[first(user_id, df["membership_number"].to_numpy()), columns]
     except KeyError:
@@ -70,12 +69,14 @@ def get_member(df: pd.DataFrame, user_id: int) -> dict:
 
 
 def get_member_roles(df: pd.DataFrame, user_id: int):
+    # fmt: off
     columns = [
-        'membership_number', 'role_name', 'role_start', 'role_end', 'role_status', 'line_manager_number', 'line_manager', 'review_date',
-        'organisation', 'country', 'region', 'county', 'district', 'group', 'section', 'ce_check', 'appointment_panel_approval',
-        'commissioner_approval', 'committee_approval', 'references', 'module_01', 'module_02', 'module_03', 'training_completion_date',
+        "membership_number", "role_name", "role_start", "role_end", "role_status", "line_manager_number", "line_manager", "review_date",
+        "organisation", "country", "region", "county", "district", "group", "section", "ce_check", "appointment_panel_approval",
+        "commissioner_approval", "committee_approval", "references", "module_01", "module_02", "module_03", "training_completion_date",
     ]
-    numeric_columns = ['line_manager_number']
+    # fmt: on
+    numeric_columns = ["line_manager_number"]
     string_columns = [c for c in columns if c not in numeric_columns]
     try:
         row = df.loc[df["membership_number"].to_numpy() == user_id].reindex(columns=columns)
@@ -91,8 +92,8 @@ def get_member_roles(df: pd.DataFrame, user_id: int):
 
 
 def get_member_ongoing(df: pd.DataFrame, user_id: int):
-    date_cols = ['safety', 'safeguarding', 'first_aid', 'gdpr']
-    columns = ['membership_number'] + date_cols
+    date_cols = ["safety", "safeguarding", "first_aid", "gdpr"]
+    columns = ["membership_number"] + date_cols
     try:
         rows = df.loc[df["membership_number"].to_numpy() == user_id].reindex(columns=columns)
         rows[date_cols] = rows[date_cols].astype("datetime64[D]")
@@ -103,5 +104,5 @@ def get_member_ongoing(df: pd.DataFrame, user_id: int):
     return {k: v.to_pydatetime() if k in date_cols else v for k, v in row.to_dict().items() if v is not pd.NaT}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     report_to_sql()

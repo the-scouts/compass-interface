@@ -1,10 +1,9 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
-import uvicorn
-
 from routes import authentication
 from routes import members
 from utility import redis_handler
+import uvicorn
 
 open_api_tag_metadata = [
     {
@@ -13,8 +12,8 @@ open_api_tag_metadata = [
     },
     {
         "name": "Authentication",
-        "description": "OAuth2 **authentication** operations."
-    }
+        "description": "OAuth2 **authentication** operations.",
+    },
 ]
 
 long_description = """
@@ -46,23 +45,23 @@ version_one.include_router(
     prefix="/members",
     tags=["Members"],
     dependencies=[],  # can't currently put auth here as we want the logon object directly...
-    responses={404: {"description": "Not found!"}}
+    responses={404: {"description": "Not found!"}},
 )
 version_one.include_router(
     authentication.router,
     prefix="/token",
     tags=["Authentication"],
-    responses={404: {"description": "Not found!"}}
+    responses={404: {"description": "Not found!"}},
 )
 
 app.include_router(
     version_one,
     prefix="/v1",
-    dependencies=[]
+    dependencies=[],
 )
 
 
-@app.on_event('startup')
+@app.on_event("startup")
 async def on_startup() -> None:
     await redis_handler.on_startup(app)
 
@@ -104,8 +103,8 @@ async def on_startup() -> None:
 #    /
 
 
-if __name__ == '__main__':
-    uvicorn.run("app:app", host='0.0.0.0', port=8000)
+if __name__ == "__main__":
+    uvicorn.run("app:app", host="0.0.0.0", port=8000)
     print()
 
 
