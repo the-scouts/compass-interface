@@ -10,7 +10,7 @@ from compass.core import schemas
 from compass.core.errors import CompassAuthenticationError
 from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceBase
-from compass.core.logging import logger
+from compass.core.logger import logger
 from compass.core.settings import Settings
 from compass.core.utility import cast
 from compass.core.utility import compass_restify

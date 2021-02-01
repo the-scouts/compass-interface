@@ -12,7 +12,7 @@ from lxml import html
 from compass.core.errors import CompassReportError
 from compass.core.errors import CompassReportPermissionError
 from compass.core.interface_base import InterfaceBase
-from compass.core.logging import logger
+from compass.core.logger import logger
 from compass.core.settings import Settings
 
 if TYPE_CHECKING:
