@@ -6,7 +6,7 @@ from typing import Literal
 
 from compass.core._scrapers.reports import ReportsScraper
 from compass.core.errors import CompassReportError
-from compass.core.logging import logger
+from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.settings import Settings
 

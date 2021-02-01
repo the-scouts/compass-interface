@@ -7,7 +7,7 @@ from typing import get_args, Literal, TYPE_CHECKING, Union
 from lxml import html
 
 from compass.core.interface_base import InterfaceBase
-from compass.core.logging import logger
+from compass.core.logger import logger
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
 from compass.core.utility import cast
