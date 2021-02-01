@@ -118,11 +118,3 @@ class PeriodicTimer:
     def cancel(self):
         self.thread.cancel()
         return self
-
-
-if __name__ == "__main__":
-    import requests
-
-    thread = PeriodicTimer(1, lambda: (print(requests.get("https://httpbin.org/uuid").text) or True)).start()
-    print(requests.get("http://slowwly.robertomurray.co.uk/delay/3000/url/https://www.bbc.co.uk", allow_redirects=False).headers)
-    # thread.cancel()
