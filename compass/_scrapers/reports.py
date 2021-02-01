@@ -122,7 +122,7 @@ class ReportsScraper(InterfaceBase):
             raise CompassReportError("Compass Error!")
 
     def report_keep_alive(self, report_page: str):
-        print(f"Extending Report Session {datetime.datetime.now()}")
+        logger.info(f"Extending Report Session {datetime.datetime.now()}")
         keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
         response = self._post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841
 
@@ -130,7 +130,6 @@ class ReportsScraper(InterfaceBase):
 
     def download_report_streaming(self, url: str, params: dict, filename: str):
         with self._get(url, params=params, stream=True) as r:
-            print("")
             r.raise_for_status()
             with open(filename, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
@@ -139,11 +138,11 @@ class ReportsScraper(InterfaceBase):
     def download_report_normal(self, url: str, params: dict, filename: str) -> bytes:
         start = time.time()
         csv_export = self._get(url, params=params)
-        print(f"Exporting took {time.time() - start}s")
-        print("Saving report")
+        logger.debug(f"Exporting took {time.time() - start}s")
+        logger.info("Saving report")
         Path(filename).write_bytes(csv_export.content)  # TODO Debug check
-        print("Report Saved")
+        logger.info("Report Saved")
 
-        print(len(csv_export.content))
+        logger.debug(len(csv_export.content))
 
         return csv_export.content

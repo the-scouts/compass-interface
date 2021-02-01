@@ -100,7 +100,7 @@ class Logon(InterfaceBase):
 
     def _extend_session_timeout(self, sto: Literal[None, "0", "5", "X"] = "0"):
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
-        print(f"Extending session length {datetime.datetime.now()}")
+        logger.debug(f"Extending session length {datetime.datetime.now()}")
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
 
     def _do_logon(self, credentials: tuple[str, str] = None, role_to_use: str = None) -> requests.Session:
