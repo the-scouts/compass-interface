@@ -8,6 +8,7 @@ from typing import Optional
 
 from compass import core
 from compass.core import errors
+from compass.core import logger
 from compass.core.hierarchy import Hierarchy
 from compass.core.logon import Logon
 from compass.core.people import People
@@ -17,6 +18,7 @@ __all__ = (
     # sub-packages: CI-Core
     "core",
     "errors",
+    "logger",
     # public classes
     "Hierarchy",
     "Logon",
