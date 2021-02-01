@@ -7,6 +7,7 @@ import threading
 from typing import Any, Optional, Union
 
 import certifi
+import requests
 
 from compass.logging import logger
 
