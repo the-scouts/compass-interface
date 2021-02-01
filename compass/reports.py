@@ -113,11 +113,11 @@ class Reports:
         # try:
         #     self.download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
         # except (ConnectionResetError, requests.ConnectionError):
-        #     print(f"Stopped at {datetime.datetime.now()}")
+        #     logger.info(f"Stopped at {datetime.datetime.now()}")
         #     p.cancel()
         #     self.session.sto_thread.cancel()
         #     raise
-        # print(f"Exporting took {time.time() -start}s")
+        # logger.debug(f"Exporting took {time.time() -start}s")
 
         csv_export = self._scraper.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
 
