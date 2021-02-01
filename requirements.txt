@@ -2,7 +2,6 @@
 requests
 certifi
 lxml
-pandas
 # core-typing
 pydantic
 email-validator
