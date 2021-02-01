@@ -37,7 +37,6 @@ pip install compass-interface-core
 - [requests](https://github.com/psf/requests) - for intuitive HTTP requests
 - [certifi](https://github.com/certifi/python-certifi) - for SSL/TLS certificate management
 - [lxml](https://lxml.de/) - for parsing HTML documents
-- [pandas](https://github.com/pandas-dev/pandas) - for data management and transformation
 - [pydantic](https://github.com/samuelcolvin/pydantic/), 
   [email-validator](https://github.com/JoshData/python-email-validator), 
   [phonenumbers](https://github.com/daviddrysdale/python-phonenumbers) - for data validation and parsing

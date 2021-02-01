@@ -13,9 +13,6 @@ dependencies:
   # For parsing results
   - lxml
 
-  # Data arrangement (util)
-  - pandas
-
   # Type validation
   - pydantic
   - email-validator
