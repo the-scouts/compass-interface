@@ -12,13 +12,11 @@ from compass.core.hierarchy import Hierarchy
 from compass.core.logon import Logon
 from compass.core.people import People
 from compass.core.reports import Reports
-from compass import util
 
 __all__ = (
     # sub-packages: CI-Core
     "core",
     "errors",
-    "util",
     # public classes
     "Hierarchy",
     "Logon",
