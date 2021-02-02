@@ -131,7 +131,10 @@ class Logon(InterfaceBase):
         session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
 
         if not session.cookies:
-            raise CompassError("No cookie found, terminating.")
+            raise CompassError(
+                "Could not create a session with Compass. Please check that this programme can "
+                "access Compass (including firewalls etc.) and that Compass is currently online. "
+            )
 
         return session
 
