@@ -82,7 +82,7 @@ class Hierarchy:
         else:
             raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
 
-        logger.debug(f"found unit data: id: {unit_level.id}, level: {unit_level.level}")
+        logger.debug(f"found unit data: id: {data.id}, level: {data.level}")
 
         return data
 
