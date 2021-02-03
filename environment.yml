@@ -18,6 +18,9 @@ dependencies:
   - email-validator
   - phonenumbers  # phonenumberslite?
 
+  # Testing
+  - pytest
+
   # Development (Tools, Style, Linting)
   - ipython
   - black
