@@ -22,7 +22,7 @@ class TestSettings:
         data = Settings.date_format
 
         # When
-        result = _strptime._TimeRE_cache.pattern(data)
+        result = _strptime._TimeRE_cache.pattern(data)  # pylint: disable=protected-access
 
         # Then
         assert isinstance(data, str)
