@@ -8,15 +8,15 @@ from compass.core import utility
 class TestUtility:
     def test_hash_code(self):
         # Given
-        pass
+        data = "testing"
 
         # When
-        hash_code = utility.hash_code("testing")
+        result = utility.hash_code(data)
 
         # Then
-        assert isinstance(hash_code, int)
+        assert isinstance(result, int)
         # TODO Aim for property based aspects instead of fixed values!
-        assert hash_code == -1422446064  # TODO max/min = +/- 2**32?
+        assert result == -1422446064  # TODO max/min = +/- 2**32?
 
     def test_compass_restify(self):
         # Given

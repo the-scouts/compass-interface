@@ -14,7 +14,7 @@ class TestInterfaceBase:
         # When
         s = requests.Session()
         monkeypatch.setattr(s, "get", lambda *args, **kwargs: dict(args=args, kwargs=kwargs))
-        result = InterfaceBase(s)._get(data)
+        result = InterfaceBase(s)._get(data)  # pylint: disable=protected-access
 
         # Then
         assert result["args"][0] == data
@@ -29,7 +29,7 @@ class TestInterfaceBase:
         # When
         s = requests.Session()
         monkeypatch.setattr(s, "post", lambda *args, **kwargs: dict(args=args, kwargs=kwargs))
-        result = InterfaceBase(s)._post(data, json=json)
+        result = InterfaceBase(s)._post(data, json=json)  # pylint: disable=protected-access
 
         # Then
         assert result["args"][0] == data
@@ -44,7 +44,7 @@ class TestInterfaceBase:
         # When
         s = requests.Session()
         monkeypatch.setattr(s, "head", lambda *args, **kwargs: dict(args=args, kwargs=kwargs))
-        result = InterfaceBase(s)._head(data)
+        result = InterfaceBase(s)._head(data)  # pylint: disable=protected-access
 
         # Then
         assert result["args"][0] == data
@@ -56,7 +56,7 @@ class TestInterfaceBase:
 
         # When
         ib = InterfaceBase(requests.Session())
-        ib._update_headers(data)
+        ib._update_headers(data)  # pylint: disable=protected-access
 
         # Then
         assert data.items() <= ib.s.headers.items()
