@@ -27,6 +27,6 @@ jobs:
       - name: Test with pytest
         run: |          
           python -m pytest --cov=./
-      - uses: actions/checkout@master
+
       - name: Upload to CodeCov
         uses: codecov/codecov-action@v1
