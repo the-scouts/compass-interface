@@ -42,6 +42,7 @@ class Logon(InterfaceBase):
       c. Update data for authorisation headers for requests to Compass.
 
     """
+
     def __init__(self, credentials: tuple[str, str], role_to_use: str = None):
         """Constructor for Logon."""
         self._member_role_number = 0
@@ -209,8 +210,8 @@ class Logon(InterfaceBase):
 
         # Update current role properties
         self.current_role = self.roles_dict[self.mrn]
-        location = next((row[2].text_content().strip() for row in form.xpath(f"//tbody/tr") if int(row.get("data-pk")) == self.mrn), "")
-        logger.debug(f"Using Role: {self.current_role} ({location})")
+        location = next(row[2].text_content() for row in form.xpath(f"//tbody/tr") if int(row.get("data-pk")) == self.mrn)
+        logger.debug(f"Using Role: {self.current_role} ({location.strip()})")
 
         # Verify role number against test value
         if check_role_number is not None:
