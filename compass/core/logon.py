@@ -1,6 +1,6 @@
 import datetime
 import time
-from typing import Literal, Optional
+from typing import Literal
 
 import certifi
 from lxml import html
@@ -21,6 +21,27 @@ TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", 
 
 
 class Logon(InterfaceBase):
+    """Create connection to Compass and authenticate. Holds session state.
+
+    Logon flow is:
+    1. Create a persistent state object (Session) to hold headers, cookies etc.
+      a. Check and verify that TLS certificates for Compass have been set up.
+      b. Get ASP.NET session cookie from Compass. (HTTP request #1)
+    2. Post login data to Compass. (HTTP request #2)
+    3. Get sample page from Compass. (HTTP request #3)
+    4. Verify login was successful
+      a. Create dict of compass internal variables, e.g. Master.User.CN (POST_CTRL).
+      b. Create dict of user's role title to internal role number
+      c. Update data for authorisation headers for requests to Compass.
+    IF Role title specified:
+    5. Post new role number to Compass (HTTP request #4)
+    6. Get sample page from Compass. (HTTP request #5)
+    7. Get currently active role number, and check this equals the requested role number.
+      a. Create dict of compass internal variables, e.g. Master.User.CN (POST_CTRL).
+      b. Create dict of user's role title to internal role number
+      c. Update data for authorisation headers for requests to Compass.
+
+    """
     def __init__(self, credentials: tuple[str, str], role_to_use: str = None):
         """Constructor for Logon."""
         self._member_role_number = 0
