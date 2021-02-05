@@ -29,7 +29,6 @@ class Logon(InterfaceBase):
         self.role_to_use: str = role_to_use
 
         self.current_role: str = ""
-        self.current_role_number: int = 0
         self.roles_dict: dict = {}
 
         super().__init__(self._do_logon(credentials))
@@ -168,14 +167,14 @@ class Logon(InterfaceBase):
     def _verify_success_update_properties(self, session: requests.Session, check_role_number: int = None) -> requests.Session:
         """Confirms success and updates authorisation."""
         # Test 'get' for an exemplar page that needs authorisation.
-        portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"  # TODO use roles page for roles dict?
+        portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
         response = self._get(portal_url, session=session)
 
-        # Naive check for error, Compass redirects to an error page when something goes wrong
-        # TODO what is the error page URL - what do we expect? From memory Error.aspx
         # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
         # if int(post_response.headers.get("content-length", 901)) > 900:
         #     raise CompassAuthenticationError("Login has failed")
+        # Naive check for error, Compass redirects to an error page when something goes wrong
+        # TODO what is the error page URL - what do we expect? From memory Error.aspx
         if response.url != portal_url:
             raise CompassAuthenticationError("Login has failed")
 
@@ -194,16 +193,15 @@ class Logon(InterfaceBase):
         session.headers.update(auth_headers)
 
         # Update current role properties
-        # TODO is this get role bit needed given that we change the role?
-        self.current_role = self.roles_dict[int(self.mrn)]
-        self.current_role_number = self._get_active_role_number(form)  # TODO mrn property?
-        logger.debug(f"Using Role: {self.current_role}")
+        self.current_role = self.roles_dict[self.mrn]
+        location = next((row[2].text_content().strip() for row in form.xpath(f"//tbody/tr") if int(row.get("data-pk")) == self.mrn), "")
+        logger.debug(f"Using Role: {self.current_role} ({location})")
 
         # Verify role number against test value
         if check_role_number is not None:
             logger.debug("Confirming role has been changed")
             # Check that the role has been changed to the desired role. If not, raise exception.
-            if not (check_role_number == self.current_role_number == self.mrn):
+            if check_role_number != self.mrn:
                 raise CompassAuthenticationError("Role failed to update in Compass")
 
         return session
@@ -214,8 +212,8 @@ class Logon(InterfaceBase):
         compass_dict = {}
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
         for pair in compass_vars.split("~"):
-            key, value, *_ = pair.split("#")
-            compass_dict[key] = cast(value)
+            key, value = pair.split("#", 1)
+            compass_dict[key] = cast(value)  # int or str
 
         return compass_dict
 
@@ -224,11 +222,6 @@ class Logon(InterfaceBase):
         """Generate role number to role name mapping."""
         roles_selector = form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"]  # get roles from compass page (list of option tags)
         return {int(role.get("value")): role.text.strip() for role in roles_selector}
-
-    @staticmethod
-    def _get_active_role_number(form_tree: html.FormElement) -> int:
-        """Gets active (selected) role from FormElement."""
-        return int(form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"].value)
 
     def change_role(self, new_role: str) -> None:
         """Update role information.
@@ -239,7 +232,8 @@ class Logon(InterfaceBase):
 
         # Change role to the specified role number
         member_role_number = next(num for num, name in self.roles_dict.items() if name == new_role.strip())
-        self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})
+        response = self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+        logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
         # Confirm Compass is reporting the changed role number, update auth headers
         self._verify_success_update_properties(self.s, check_role_number=member_role_number)
