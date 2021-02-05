@@ -37,6 +37,8 @@ class Logon(InterfaceBase):
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
 
+    # properties/accessors code:
+
     @property
     def mrn(self) -> int:
         return self.compass_dict["Master.User.MRN"]  # Member Role Number
@@ -70,6 +72,8 @@ class Logon(InterfaceBase):
 
         return schemas.hierarchy.HierarchyLevel(id=unit_number, level=level_map[unit_level])
 
+    # _get override code:
+
     def _get(self, url: str, auth_header: bool = False, session: Optional[requests.Session] = None, **kwargs) -> requests.Response:
         """Override get method with custom auth_header logic."""
         # pylint: disable=arguments-differ
@@ -98,10 +102,14 @@ class Logon(InterfaceBase):
         self._post(f"{Settings.base_url}/System/Preflight", json=data)
         return key_hash
 
+    # Timeout code:
+
     def _extend_session_timeout(self, sto: Literal[None, "0", "5", "X"] = "0"):
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
+
+    # Core login code:
 
     def _do_logon(self, credentials: tuple[str, str] = None, role_to_use: str = None) -> requests.Session:
         """Log in to Compass, change role and confirm success."""
@@ -109,7 +117,7 @@ class Logon(InterfaceBase):
 
         # Log in and try to confirm success
         self._logon_remote(credentials, session)
-        self._confirm_login_success(session)
+        self._verify_success_update_properties(session)
 
         # Session contains updated auth headers from role change
         session = self.change_role(role_to_use, session=session)
@@ -156,33 +164,46 @@ class Logon(InterfaceBase):
         response = session.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
         return response
 
-    def change_role(self, new_role: Optional[str], session: Optional[requests.Session] = None) -> requests.Session:
-        """Update role information."""
-        if session is None:
-            try:
-                session = self.s
-            except AttributeError:
-                raise ValueError("No session! session object must be passed or self.s set.") from None
+    def _verify_success_update_properties(self, session: requests.Session, check_role_number: int = None) -> requests.Session:
+        """Confirms success and updates authorisation."""
+        # Test 'get' for an exemplar page that needs authorisation.
+        portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"  # TODO use roles page for roles dict?
+        response = self._get(portal_url, session=session)
 
-        if new_role is not None:
-            logger.info("Changing role")
-            new_role = new_role.strip()
+        # Naive check for error, Compass redirects to an error page when something goes wrong
+        # TODO what is the error page URL - what do we expect? From memory Error.aspx
+        # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
+        # if int(post_response.headers.get("content-length", 901)) > 900:
+        #     raise CompassAuthenticationError("Login has failed")
+        if response.url != portal_url:
+            raise CompassAuthenticationError("Login has failed")
 
-            # Change role to the specified role number
-            member_role_number = {v: k for k, v in self.roles_dict.items()}[new_role]
-            session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": str(member_role_number)})
-        else:
-            logger.info("not changing role")
-            member_role_number = self.current_role_number
+        # Create lxml html.FormElement
+        form = html.fromstring(response.content).forms[0]
 
-        # Confirm Compass is reporting the changed role number, update auth headers
-        form_tree = self._confirm_role_change(session, member_role_number)
-        session = self._update_authorisation(form_tree, session)
+        # Update session dicts with new role
+        self.compass_dict = self._create_compass_dict(form)  # Updates MRN property etc.
+        self.roles_dict = self._create_roles_dict(form)
 
-        if member_role_number != self.mrn:
-            raise CompassAuthenticationError("Compass Authentication failed to update")
+        # Set auth headers for new role
+        auth_headers = {
+            "Authorization": f"{self.cn}~{self.mrn}",
+            "SID": self.compass_dict["Master.Sys.SessionID"],  # Session ID
+        }
+        session.headers.update(auth_headers)
 
-        logger.info(f"Role updated successfully! Role is now {self.current_role}.")
+        # Update current role properties
+        # TODO is this get role bit needed given that we change the role?
+        self.current_role = self.roles_dict[int(self.mrn)]
+        self.current_role_number = self._get_active_role_number(form)  # TODO mrn property?
+        logger.debug(f"Using Role: {self.current_role}")
+
+        # Verify role number against test value
+        if check_role_number is not None:
+            logger.debug("Confirming role has been changed")
+            # Check that the role has been changed to the desired role. If not, raise exception.
+            if self.current_role_number != check_role_number:
+                raise CompassError("Role failed to update in Compass")
 
         return session
 
@@ -208,48 +229,31 @@ class Logon(InterfaceBase):
         """Gets active (selected) role from FormElement."""
         return int(form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"].value)
 
-    def _confirm_login_success(self, session: requests.Session) -> None:
-        """Confirms success and updates authorisation."""
-        portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"
-        response = self._get(portal_url, session=session)
+    def change_role(self, new_role: Optional[str], session: Optional[requests.Session] = None) -> requests.Session:
+        """Update role information."""
+        if session is None:
+            try:
+                session = self.s
+            except AttributeError:
+                raise ValueError("No session! session object must be passed or self.s set.") from None
 
-        # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
-        # if int(post_response.headers.get("content-length", 901)) > 900:
-        #     raise CompassAuthenticationError("Login has failed")
-        if response.url != portal_url:
-            raise CompassAuthenticationError("Login has failed")
+        if new_role is not None:
+            logger.info("Changing role")
+            new_role = new_role.strip()
 
-        form = html.fromstring(response.content).forms[0]
-        self._update_authorisation(form, session)
+            # Change role to the specified role number
+            member_role_number = {v: k for k, v in self.roles_dict.items()}[new_role]
+            session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": str(member_role_number)})
+        else:
+            logger.info("not changing role")
+            member_role_number = self.current_role_number
 
-    def _confirm_role_change(self, session: requests.Session, check_role_number: int) -> html.FormElement:
-        """Confirms success and updates authorisation."""
-        portal_url = f"{Settings.base_url}/ScoutsPortal.aspx"
-        response = self._get(portal_url, session=session)
-        form = html.fromstring(response.content).forms[0]
+        # Confirm Compass is reporting the changed role number, update auth headers
+        session = self._verify_success_update_properties(session, check_role_number=member_role_number)
 
-        logger.debug("Confirming role has been changed")
-        # Check that the role has been changed to the desired role. If not, raise exception.
-        if self._get_active_role_number(form) != check_role_number:
-            raise CompassError("Role failed to update in Compass")
+        if member_role_number != self.mrn:
+            raise CompassAuthenticationError("Compass Authentication failed to update")
 
-        return form
-
-    def _update_authorisation(self, form: html.FormElement, session: requests.Session) -> requests.Session:
-        """Update authorisation data."""
-        self.compass_dict = self._create_compass_dict(form)  # Updates MRN property etc.
-        self.roles_dict = self._create_roles_dict(form)
-
-        # Set auth headers for new role
-        auth_headers = {
-            "Authorization": f"{self.cn}~{self.mrn}",
-            "SID": self.compass_dict["Master.Sys.SessionID"],  # Session ID
-        }
-        session.headers.update(auth_headers)
-
-        # TODO is this get role bit needed given that we change the role?
-        self.current_role = self.roles_dict[int(self.mrn)]
-        self.current_role_number = self._get_active_role_number(form)
-        logger.debug(f"Using Role: {self.current_role}")
+        logger.info(f"Role updated successfully! Role is now {self.current_role}.")
 
         return session
