@@ -211,7 +211,7 @@ class Logon(InterfaceBase):
 
         # Update current role properties
         self.current_role = self.roles_dict[self.mrn]
-        location = next(row[2].text_content() for row in form.xpath(f"//tbody/tr") if int(row.get("data-pk")) == self.mrn)
+        location = next(row[2].text_content() for row in form.xpath("//tbody/tr") if int(row.get("data-pk")) == self.mrn)
         logger.debug(f"Using Role: {self.current_role} ({location.strip()})")
 
         # Verify role number against test value
