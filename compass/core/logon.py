@@ -32,7 +32,11 @@ class Logon(InterfaceBase):
         self.current_role_number: int = 0
         self.roles_dict: dict = {}
 
-        super().__init__(self._do_logon(credentials, role_to_use))
+        super().__init__(self._do_logon(credentials))
+
+        if role_to_use is not None:
+            # Session contains updated auth headers from role change
+            self.change_role(role_to_use)
 
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
@@ -111,16 +115,13 @@ class Logon(InterfaceBase):
 
     # Core login code:
 
-    def _do_logon(self, credentials: tuple[str, str] = None, role_to_use: str = None) -> requests.Session:
+    def _do_logon(self, credentials: tuple[str, str] = None) -> requests.Session:
         """Log in to Compass, change role and confirm success."""
         session = self._create_session()
 
         # Log in and try to confirm success
         self._logon_remote(credentials, session)
         self._verify_success_update_properties(session)
-
-        # Session contains updated auth headers from role change
-        session = self.change_role(role_to_use, session=session)
 
         return session
 
@@ -202,8 +203,8 @@ class Logon(InterfaceBase):
         if check_role_number is not None:
             logger.debug("Confirming role has been changed")
             # Check that the role has been changed to the desired role. If not, raise exception.
-            if self.current_role_number != check_role_number:
-                raise CompassError("Role failed to update in Compass")
+            if not (check_role_number == self.current_role_number == self.mrn):
+                raise CompassAuthenticationError("Role failed to update in Compass")
 
         return session
 
@@ -229,31 +230,18 @@ class Logon(InterfaceBase):
         """Gets active (selected) role from FormElement."""
         return int(form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"].value)
 
-    def change_role(self, new_role: Optional[str], session: Optional[requests.Session] = None) -> requests.Session:
-        """Update role information."""
-        if session is None:
-            try:
-                session = self.s
-            except AttributeError:
-                raise ValueError("No session! session object must be passed or self.s set.") from None
+    def change_role(self, new_role: str) -> None:
+        """Update role information.
 
-        if new_role is not None:
-            logger.info("Changing role")
-            new_role = new_role.strip()
+        If the user has multiple roles with the same role title, the first is used.
+        """
+        logger.info("Changing role")
 
-            # Change role to the specified role number
-            member_role_number = {v: k for k, v in self.roles_dict.items()}[new_role]
-            session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": str(member_role_number)})
-        else:
-            logger.info("not changing role")
-            member_role_number = self.current_role_number
+        # Change role to the specified role number
+        member_role_number = next(num for num, name in self.roles_dict.items() if name == new_role.strip())
+        self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})
 
         # Confirm Compass is reporting the changed role number, update auth headers
-        session = self._verify_success_update_properties(session, check_role_number=member_role_number)
-
-        if member_role_number != self.mrn:
-            raise CompassAuthenticationError("Compass Authentication failed to update")
+        self._verify_success_update_properties(self.s, check_role_number=member_role_number)
 
         logger.info(f"Role updated successfully! Role is now {self.current_role}.")
-
-        return session
