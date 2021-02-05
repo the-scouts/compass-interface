@@ -31,7 +31,11 @@ class Logon(InterfaceBase):
         self.current_role: str = ""
         self.roles_dict: dict = {}
 
-        super().__init__(self._do_logon(credentials))
+        # Create session
+        super().__init__(self._create_session())
+
+        # Log in and try to confirm success
+        self._logon_remote(credentials)
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
@@ -77,7 +81,7 @@ class Logon(InterfaceBase):
 
     # _get override code:
 
-    def _get(self, url: str, auth_header: bool = False, session: Optional[requests.Session] = None, **kwargs) -> requests.Response:
+    def _get(self, url: str, auth_header: bool = False, **kwargs) -> requests.Response:
         """Override get method with custom auth_header logic."""
         # pylint: disable=arguments-differ
         if auth_header:
@@ -90,10 +94,7 @@ class Logon(InterfaceBase):
             kwargs["headers"] = {**kwargs.get("headers", {}), **headers}
             kwargs["params"] = {**kwargs.get("params", {}), **params}
 
-        if session is not None:
-            return session.get(url, **kwargs)
-        else:
-            return super(Logon, self)._get(url, **kwargs)
+        return super(Logon, self)._get(url, **kwargs)
 
     def _jk_hash(self) -> str:
         """Generate JK Hash needed by Compass."""
@@ -113,16 +114,6 @@ class Logon(InterfaceBase):
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
 
     # Core login code:
-
-    def _do_logon(self, credentials: tuple[str, str] = None) -> requests.Session:
-        """Log in to Compass, change role and confirm success."""
-        session = self._create_session()
-
-        # Log in and try to confirm success
-        self._logon_remote(credentials, session)
-        self._verify_success_update_properties(session)
-
-        return session
 
     @staticmethod
     def _create_session() -> requests.Session:
@@ -146,9 +137,8 @@ class Logon(InterfaceBase):
 
         return session
 
-    @staticmethod
-    def _logon_remote(auth: tuple[str, str], session: requests.Session) -> requests.Response:
-        """Interface code with Compass."""
+    def _logon_remote(self, auth: tuple[str, str]) -> requests.Response:
+        """Log in to Compass and confirm success."""
         # Referer is genuinely needed otherwise login doesn't work
         headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
 
@@ -161,14 +151,18 @@ class Logon(InterfaceBase):
 
         # log in
         logger.info("Logging in")
-        response = session.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
+        response = self._post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
+
+        # verify log in was successful
+        self._verify_success_update_properties()
+
         return response
 
-    def _verify_success_update_properties(self, session: requests.Session, check_role_number: int = None) -> requests.Session:
+    def _verify_success_update_properties(self, check_role_number: int = None) -> None:
         """Confirms success and updates authorisation."""
         # Test 'get' for an exemplar page that needs authorisation.
         portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
-        response = self._get(portal_url, session=session)
+        response = self._get(portal_url)
 
         # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
         # if int(post_response.headers.get("content-length", 901)) > 900:
@@ -190,7 +184,7 @@ class Logon(InterfaceBase):
             "Authorization": f"{self.cn}~{self.mrn}",
             "SID": self.compass_dict["Master.Sys.SessionID"],  # Session ID
         }
-        session.headers.update(auth_headers)
+        self._update_headers(auth_headers)
 
         # Update current role properties
         self.current_role = self.roles_dict[self.mrn]
@@ -203,8 +197,6 @@ class Logon(InterfaceBase):
             # Check that the role has been changed to the desired role. If not, raise exception.
             if check_role_number != self.mrn:
                 raise CompassAuthenticationError("Role failed to update in Compass")
-
-        return session
 
     @staticmethod
     def _create_compass_dict(form_tree: html.FormElement) -> dict:
@@ -236,6 +228,6 @@ class Logon(InterfaceBase):
         logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
         # Confirm Compass is reporting the changed role number, update auth headers
-        self._verify_success_update_properties(self.s, check_role_number=member_role_number)
+        self._verify_success_update_properties(check_role_number=member_role_number)
 
         logger.info(f"Role updated successfully! Role is now {self.current_role}.")
