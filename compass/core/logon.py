@@ -18,6 +18,7 @@ from compass.core.utility import PeriodicTimer
 from compass.core.utility import setup_tls_certs
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
+TYPES_STO = Literal[None, "0", "5", "X"]
 
 
 class Logon(InterfaceBase):
@@ -130,7 +131,7 @@ class Logon(InterfaceBase):
 
     # Timeout code:
 
-    def _extend_session_timeout(self, sto: Literal[None, "0", "5", "X"] = "0"):
+    def _extend_session_timeout(self, sto: TYPES_STO = "0"):
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
