@@ -225,9 +225,9 @@ class MemberDetails(MemberBase):
 
         try:
             n = phonenumbers.parse(v, "GB")
-        except phonenumbers.NumberParseException as e:
+        except phonenumbers.NumberParseException as err:
             cn = values["membership_number"]
-            raise ValueError(f"Member No {cn}: phone number {v} is not valid!") from e
+            raise ValueError(f"Member No {cn}: phone number {v} is not valid!") from err
 
         if not phonenumbers.is_valid_number(n):
             cn = values["membership_number"]

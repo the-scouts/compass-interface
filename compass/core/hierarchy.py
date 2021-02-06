@@ -8,6 +8,7 @@ from compass.core._scrapers.hierarchy import HierarchyScraper
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
+from compass.core import utility
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
@@ -126,13 +127,11 @@ class Hierarchy:
         out = self._get_descendants_recursive(unit_level.id, hier_level=unit_level.level)
 
         # Try and write to a file for caching
-        try:
+        with utility.filesystem_guard("Unable to write cache file"):
             if self.validate:
                 filename.write_text(schema.UnitData.parse_obj(out).json(ensure_ascii=False), encoding="utf-8")
             else:
                 filename.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
-        except IOError as e:
-            logger.error(f"Unable to write cache file: {e.errno} - {e.strerror}")
 
         if self.validate:
             return schema.UnitData.parse_obj(out)
@@ -239,12 +238,13 @@ class Hierarchy:
     gamih_pydantic = schema.HierarchyUnitMembers
 
     def get_members_in_units(self, parent_id: int, compass_ids: Iterable) -> list[Union[gamih_pydantic, gamih_native]]:
+        filename = Path(f"all-members-{parent_id}.json")
+
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
-            with open(f"all-members-{parent_id}.json", "r", encoding="utf-8") as f:
-                all_members = json.load(f)
-                if all_members:
-                    return all_members
+            all_members = json.loads(filename.read_text(encoding="utf-8"))
+            if all_members:
+                return all_members
 
         # Fetch all members
         all_members = []
@@ -253,11 +253,8 @@ class Hierarchy:
             all_members.append(dict(compass_id=compass_id, member=self._scraper.get_members_with_roles_in_unit(compass_id)))
 
         # Try and write to a file for caching
-        try:
-            with open(f"all-members-{parent_id}.json", "w", encoding="utf-8") as f:
-                json.dump(all_members, f, ensure_ascii=False, indent=4)
-        except IOError as e:
-            logger.error(f"Unable to write cache file: {e.errno} - {e.strerror}")
+        with utility.filesystem_guard("Unable to write cache file"):
+            filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4), encoding="utf-8")
 
         if self.validate:
             return schema.HierarchyUnitMembersList.parse_obj(all_members).__root__

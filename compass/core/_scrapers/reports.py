@@ -9,6 +9,7 @@ import urllib.parse
 
 from lxml import html
 
+from compass.core import utility
 from compass.core.errors import CompassReportError
 from compass.core.errors import CompassReportPermissionError
 from compass.core.interface_base import InterfaceBase
@@ -129,24 +130,19 @@ class ReportsScraper(InterfaceBase):
         return keep_alive  # response
 
     def download_report_streaming(self, url: str, params: dict, filename: str):
-        try:
-            with self._get(url, params=params, stream=True) as r:
-                r.raise_for_status()
-                with open(filename, "wb") as f:
-                    for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
-                        f.write(chunk)
-        except IOError as e:
-            logger.error(f"Unable to write report export: {e.errno} - {e.strerror}")
+        with self._get(url, params=params, stream=True) as r:
+            r.raise_for_status()
+            with utility.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
+                for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
+                    f.write(chunk)
 
     def download_report_normal(self, url: str, params: dict, filename: str) -> bytes:
         start = time.time()
         csv_export = self._get(url, params=params)
         logger.debug(f"Exporting took {time.time() - start}s")
         logger.info("Saving report")
-        try:
+        with utility.filesystem_guard("Unable to write report export"):
             Path(filename).write_bytes(csv_export.content)  # TODO Debug check
-        except IOError as e:
-            logger.error(f"Unable to write report export: {e.errno} - {e.strerror}")
         logger.info("Report Saved")
 
         logger.debug(len(csv_export.content))
