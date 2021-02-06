@@ -1,4 +1,5 @@
 import ast
+import contextlib
 import ctypes
 import datetime
 import functools
@@ -94,6 +95,14 @@ def parse(date_time_str: str) -> Optional[datetime.datetime]:
             return datetime.datetime.strptime(date_time_str, "%d %B %Y")  # e.g. 01 January 2000
         except ValueError:
             return datetime.datetime.strptime(date_time_str, "%d %b %Y")  # e.g. 01 Jan 2000
+
+
+@contextlib.contextmanager
+def filesystem_guard(msg: str):
+    try:
+        yield
+    except IOError as err:
+        logger.error(f"{msg}: {err.errno} - {err.strerror}")
 
 
 class PeriodicTimer:
