@@ -156,7 +156,7 @@ class TestUtility:
         data = "abc"
 
         # Then
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=f"time data '{data}' does not match format '%d %b %Y'"):
             # When
             utility.parse(data)
 
