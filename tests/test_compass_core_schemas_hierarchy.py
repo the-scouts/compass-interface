@@ -1,5 +1,5 @@
-import pytest
 import pydantic
+import pytest
 
 from compass.core.schemas import hierarchy
 
@@ -92,7 +92,7 @@ class TestErrors:
 
     def test_unit_data_round_trip(self):
         # Given
-        section_data = dict(id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42, section_type="Beavers")
+        section_data = dict(id=1, name="name", parent_id=3, status="ACT", address="W1A", member_count=42, section_type="Beavers")
         data = dict(id=123, level="Group", child=None, sections=[section_data])
 
         # When
