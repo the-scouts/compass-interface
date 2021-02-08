@@ -22,6 +22,7 @@ dependencies:
 
   # Development (Tools, Style, Linting)
   - ipython
+  - mypy
   - black
   - isort
   #  - prospector
