@@ -24,8 +24,7 @@ class Logon(InterfaceBase):
 
     Logon flow is:
     1. Create a persistent state object (Session) to hold headers, cookies etc.
-      a. Check and verify that TLS certificates for Compass have been set up.
-      b. Get ASP.NET session cookie from Compass. (HTTP request #1)
+      a. Get ASP.NET session cookie from Compass. (HTTP request #1)
     2. Post login data to Compass. (HTTP request #2)
     3. Get sample page from Compass. (HTTP request #3)
     4. Verify login was successful
