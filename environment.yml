@@ -6,9 +6,8 @@ dependencies:
   - python>=3.9
   - pip
 
-  # For web requests & certificates
+  # For web requests
   - requests
-  - certifi
 
   # For parsing results
   - lxml

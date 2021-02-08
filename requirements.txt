@@ -1,6 +1,5 @@
 # core
 requests
-certifi
 lxml
 # core-typing
 pydantic
