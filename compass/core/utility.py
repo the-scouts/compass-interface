@@ -3,43 +3,10 @@ import contextlib
 import ctypes
 import datetime
 import functools
-from pathlib import Path
 import threading
 from typing import Any, Optional, Union
 
-import certifi
-import requests
-
 from compass.core.logger import logger
-
-
-def setup_tls_certs() -> None:
-    """Set up full TLS chain for Compass.
-
-    Compass currently (as of 14/11/20) doesn't pass the Intermediate certificate it uses.
-    This is at time of writing the 'Thawte RSA CA 2018', which is in turned signed by DigiCert Global Root CA.
-
-    This function includes the Thawte CA cert in the Certifi chain to allow certificate verification to pass.
-
-    Yes, it's horrid. TSA plz fix.
-    """
-    thawte_ca_cert_url = "https://thawte.tbs-certificats.com/Thawte_RSA_CA_2018.crt"
-
-    certifi_path = Path(certifi.where())
-    certifi_contents = certifi_path.read_text("UTF-8")
-
-    # Check for contents of Thawte CA, if not add
-    if "Thawte RSA CA 2018" not in certifi_contents:
-
-        logger.info("Intermediate Certificate for Compass not found - Installing")
-
-        # Fetch Thawte CA from known URL, rather than including PEM
-        ca_request = requests.get(thawte_ca_cert_url, allow_redirects=False)
-
-        # Write to certifi PEM
-        with filesystem_guard("Unable to write to certifi PEM"), certifi_path.open("a", encoding="utf-8") as f:
-            f.write('\n# Label: "Thawte RSA CA 2018"\n')
-            f.write(ca_request.text)
 
 
 def hash_code(text: str) -> int:
