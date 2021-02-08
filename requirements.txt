@@ -1,5 +1,5 @@
 # Compass-Interface Core
-compass-interface-core>=0.3.0
+compass-interface-core>=0.5.0
 
 # Transforming
 numba
