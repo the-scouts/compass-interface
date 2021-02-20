@@ -1,5 +1,3 @@
-# pylint: disable=protected-access
-
 import datetime
 import enum
 from typing import Literal

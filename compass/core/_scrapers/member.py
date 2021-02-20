@@ -61,6 +61,8 @@ class PeopleScraper(InterfaceBase):
 
         takes an initialised Session object from Logon
         """
+        # pylint: disable=useless-super-delegation
+        # Want to keep this method for future use
         super().__init__(session)
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
@@ -343,6 +345,9 @@ class PeopleScraper(InterfaceBase):
 
         """
         # pylint: disable=too-many-locals,too-many-statements
+        # Want to keep all functionality in one place, to reduce the number of
+        # calls to Compass.
+        # TODO could refactor some internals into helper functions
         response = self._get_member_profile_tab(membership_num, "Training")
         tree = html.fromstring(response)
 
@@ -586,6 +591,9 @@ class PeopleScraper(InterfaceBase):
 
         """
         # pylint: disable=too-many-locals,too-many-statements
+        # Want to keep all functionality in one place, to reduce the number of
+        # calls to Compass.
+        # TODO could refactor some internals into helper functions
         renamed_levels = {
             "County / Area / Scottish Region / Overseas Branch": "County",
         }

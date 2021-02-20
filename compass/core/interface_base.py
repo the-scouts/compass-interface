@@ -27,7 +27,7 @@ class InterfaceBase:
         **kwargs: Any,
     ) -> requests.Response:
         Settings.total_requests += 1
-        return self.s.get(url, params=params, stream=stream, **kwargs)
+        return self.s.get(url, params=params, headers=headers, stream=stream, **kwargs)
 
     def _post(
         self,
