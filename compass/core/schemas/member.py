@@ -406,7 +406,7 @@ class MemberDisclosure(pydantic.BaseModel):
     country: Optional[Literal["England & Wales", "Scotland", "The Scout Association"]]
     provider: TYPES_DISCLOSURE_PROVIDERS
     type: Literal["Enhanced with Barring"]
-    number: Union[Optional[int], pydantic.constr(regex=r"^\d{7}R$")]  # If Application Withdrawn, no disclosure number
+    number: Union[Optional[int], pydantic.constr(regex=r"^\d{7}R$")]  # NoQA: F722 # If Application Withdrawn, no disclosure number
     issuer: Optional[TYPES_DISCLOSURE_PROVIDERS]
     issue_date: Optional[datetime.date]  # If Application Withdrawn, maybe no issue date
     status: TYPES_DISCLOSURE_STATUSES
