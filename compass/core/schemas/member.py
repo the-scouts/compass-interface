@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import datetime
-from typing import Generic, Literal, Optional, TypeVar, Union
+from typing import Any, Generic, Literal, Optional, TYPE_CHECKING, TypeVar, Union
 import warnings
 
 import phonenumbers
@@ -8,6 +10,9 @@ from pydantic import generics
 
 # Must use typing.Dict etc for generics not native as of pydantic 1.7.3
 from typing import List, Dict  # isort: skip
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
 
 DataT = TypeVar("DataT")
 
@@ -147,34 +152,34 @@ TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory"]
 class MemberGenericDict(generics.GenericModel, Generic[DataT]):
     __root__: Dict[int, DataT]  # Must use typing.Dict not dict as of pydantic 1.7.3
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[int, DataT]]:
         """Iterate over model items."""
         yield from self.__root__.items()
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> DataT:
         """Get item by key."""
         return self.__root__[item]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Get number of items."""
         return len(self.__root__)
 
-    def items(self):
+    def items(self) -> Iterator[tuple[int, DataT]]:
         yield from iter(self)
 
 
 class MemberGenericList(generics.GenericModel, Generic[DataT]):
     __root__: List[DataT]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[DataT]:
         """Iterate over model items."""
-        return iter(self.__root__)
+        yield from self.__root__
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> DataT:
         """Get item by index."""
         return self.__root__[item]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Get number of items."""
         return len(self.__root__)
 
@@ -219,7 +224,7 @@ class MemberDetails(MemberBase):
     # TODO - potential disabilities, qualifications, hobbies sections
 
     @pydantic.validator("main_phone")
-    def check_phone_number(cls, v, values):
+    def check_phone_number(cls, v: Optional[str], values: dict[str, Any]) -> Optional[str]:
         if v is None or not v or v == "0":
             return None
 
@@ -234,7 +239,7 @@ class MemberDetails(MemberBase):
             warnings.warn(f"Member No {cn}: phone number {v} is not valid!", RuntimeWarning)
 
         fmt = phonenumbers.PhoneNumberFormat.NATIONAL if n.country_code == 44 else phonenumbers.PhoneNumberFormat.INTERNATIONAL
-        return phonenumbers.format_number(n, fmt)
+        return str(phonenumbers.format_number(n, fmt))
 
 
 # Roles Tab (Main List - item)

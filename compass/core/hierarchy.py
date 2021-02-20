@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import contextlib
 import enum
 import json
 from pathlib import Path
-from typing import Generator, Iterable, Literal, Optional, Union
+from typing import Iterable, Literal, Optional, TYPE_CHECKING, Union
 
 from compass.core import utility
 from compass.core._scrapers.hierarchy import HierarchyScraper
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
@@ -40,17 +45,16 @@ class UnitSections(enum.IntEnum):
 
 
 class Hierarchy:
-    def __init__(self, session: Logon, validate: bool = False):
+    def __init__(self, session: Logon):
         """Constructor for Hierarchy."""
         self._scraper: HierarchyScraper = HierarchyScraper(session.s)
-        self.validate: bool = validate
         self.session: Logon = session
 
     def get_unit_data(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         _id: Optional[int] = None,
-        level: Optional[str] = None,
+        level: Optional[TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
     ) -> schema.HierarchyLevel:
         """Helper function to construct unit level data.
@@ -76,7 +80,7 @@ class Hierarchy:
         """
         if unit_level is not None:
             data = unit_level
-        elif id is not None and level is not None:
+        elif _id is not None and level is not None:
             data = schema.HierarchyLevel(id=_id, level=level)
         elif use_default:
             data = self.session.hierarchy  # as this is a property, it will update when roles change
@@ -92,9 +96,9 @@ class Hierarchy:
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
-        level: Optional[str] = None,
+        level: Optional[TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
-    ) -> Union[dict, schema.UnitData]:
+    ) -> schema.UnitData:
         """Gets all units at given level and below, including sections.
 
         Unit data can be specified as a pre-constructed model, by passing literals, or
@@ -117,82 +121,91 @@ class Hierarchy:
         # Attempt to see if the hierarchy has been fetched already and is on the local system
         with contextlib.suppress(FileNotFoundError):
             out = json.loads(filename.read_text(encoding="utf-8"))
-            if out:
-                if self.validate:
-                    return schema.UnitData.parse_obj(out)
-                else:
-                    return out
+            if isinstance(out, dict):
+                return schema.UnitData.parse_obj(out)
 
         # Fetch the hierarchy
         out = self._get_descendants_recursive(unit_level.id, hier_level=unit_level.level)
 
         # Try and write to a file for caching
         with utility.filesystem_guard("Unable to write cache file"):
-            if self.validate:
-                filename.write_text(schema.UnitData.parse_obj(out).json(ensure_ascii=False), encoding="utf-8")
-            else:
-                filename.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+            filename.write_text(schema.UnitData.parse_obj(out).json(ensure_ascii=False), encoding="utf-8")
 
-        if self.validate:
-            return schema.UnitData.parse_obj(out)
-        else:
-            return out
+        return schema.UnitData.parse_obj(out)
 
     # See recurseRetrieve in PGS\Needle
     def _get_descendants_recursive(
         self, compass_id: int, hier_level: Optional[TYPES_UNIT_LEVELS] = None, hier_num: Optional[Levels] = None
-    ) -> dict[str, Union[int, str, None]]:
+    ) -> dict[str, object]:
         """Recursively get all children from given unit ID and level name/number, with caching."""
-        if hier_level is hier_num is None:
+        if hier_num is not None:
+            level_numeric = hier_num
+        elif hier_level is not None:
+            try:
+                level_numeric = Levels[hier_level]
+            except KeyError:
+                valid_levels = [level.name for level in Levels]
+                raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_levels}")
+        else:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
-        try:
-            level_numeric = hier_num or Levels[hier_level]  # If hier_num is None, hier_level will be used
-        except KeyError:
-            raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {[level.name for level in Levels]}")
 
         logger.debug(f"getting data for unit {compass_id}")
         descendants = level_numeric in set(UnitChildren)  # Do child units exist? (i.e. is this level != group)
 
         # All to handle as Group doesn't have grand-children
-        descendant_data = {
-            "id": compass_id,
-            "level": level_numeric.name,
-            "child": self._scraper.get_units_from_hierarchy(compass_id, UnitChildren(level_numeric).name) if descendants else None,
-            "sections": self._scraper.get_units_from_hierarchy(compass_id, UnitSections(level_numeric).name),
-        }
+        descendant_data = {"id": compass_id, "level": level_numeric.name}
 
         child_level = Levels(level_numeric + 1) if descendants else None
-        for child in descendant_data.get("child") or []:
-            grandchildren = self._get_descendants_recursive(child["id"], hier_num=child_level)
-            child.update(grandchildren)
+        if descendants:
+            children = self._scraper.get_units_from_hierarchy(compass_id, UnitChildren(level_numeric).name)
+            children_updated = []
+            for child in children:
+                if not child:
+                    continue
+                grandchildren = self._get_descendants_recursive(child.id, hier_num=child_level)
+                children_updated.append(child.dict() | grandchildren)
+            descendant_data["child"] = children_updated
+        descendant_data["sections"] = self._scraper.get_units_from_hierarchy(compass_id, UnitSections(level_numeric).name)
 
         return descendant_data
 
     @staticmethod
-    def flatten_hierarchy(hierarchy_dict: dict) -> Generator:
-        def flatten(d: dict, hierarchy_state: Optional[dict] = None) -> Generator:
+    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[dict[str, Union[int, str]]]:
+        """Flattens a hierarchy tree / graph to a flat sequence of mappings.
+
+        Args:
+            hierarchy_dict:
+                The current object to be flattened. The user will pass in a `schema.UnitData`
+                object, whilst all recursion will be on `schema.DescendantData` objects.
+
+        """
+
+
+        def flatten(
+            d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: dict[str, Union[int, str]]
+        ) -> Iterator[dict[str, Union[int, str]]]:
             """Generator expresion to recursively flatten hierarchy."""
-            level_name = d["level"]
-            compass_id = d["id"]
-            name = d.get("name")
+            level_name = d.level
+            compass_id = d.id
+            name = d.name if "name" in hierarchy_dict.__fields__ else None  # ~900ns
             level_data = {
                 **hierarchy_state,
                 f"{level_name}_ID": compass_id,
                 f"{level_name}_name": name,
             }
             yield {"compass": compass_id, "name": name, **level_data}
-            for val in d["child"] or []:
+            for val in d.child or []:
                 yield from flatten(val, level_data)
-            for val in d["sections"]:
-                yield {"compass": val["id"], "name": val["name"], **level_data}
+            for val in d.sections:
+                yield {"compass": val.id, "name": val.name, **level_data}  # TODO section=True flag?
 
-        return flatten(hierarchy_dict, {})
+        return flatten(hierarchy_dict, dict())
 
     def get_unique_members(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
-        level: Optional[str] = None,
+        level: Optional[TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
     ) -> set[int]:
         """Get all unique members for a given level and its descendants.
@@ -219,9 +232,6 @@ class Hierarchy:
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(unit_level)
 
-        if self.validate:
-            hierarchy_dict = hierarchy_dict.dict()
-
         # flatten tree
         flat_hierarchy = self.flatten_hierarchy(hierarchy_dict)
 
@@ -232,18 +242,15 @@ class Hierarchy:
         units_members = self.get_members_in_units(unit_level.id, compass_ids)
 
         # return a set of membership numbers
-        return {members["contact_number"] for unit_members in units_members for members in unit_members["member"]}
+        return {members.contact_number for unit_members in units_members for members in unit_members.member}
 
-    gamih_native = dict[str, Union[int, list[dict[str, Union[int, str]]]]]
-    gamih_pydantic = schema.HierarchyUnitMembers
-
-    def get_members_in_units(self, parent_id: int, compass_ids: Iterable) -> list[Union[gamih_pydantic, gamih_native]]:
+    def get_members_in_units(self, parent_id: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
         filename = Path(f"all-members-{parent_id}.json")
 
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
             all_members = json.loads(filename.read_text(encoding="utf-8"))
-            if all_members:
+            if isinstance(all_members, list):
                 return all_members
 
         # Fetch all members
@@ -256,7 +263,4 @@ class Hierarchy:
         with utility.filesystem_guard("Unable to write cache file"):
             filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4), encoding="utf-8")
 
-        if self.validate:
-            return schema.HierarchyUnitMembersList.parse_obj(all_members).__root__
-        else:
-            return all_members
+        return schema.HierarchyUnitMembersList.parse_obj(all_members).__root__

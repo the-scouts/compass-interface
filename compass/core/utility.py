@@ -4,7 +4,7 @@ import ctypes
 import datetime
 import functools
 import threading
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from compass.core.logger import logger
 
@@ -17,7 +17,7 @@ def hash_code(text: str) -> int:
     return functools.reduce(lambda code, char: ctypes.c_int32(31 * code + ord(char)).value, list(text), 0)
 
 
-def compass_restify(data: dict) -> list:
+def compass_restify(data: dict[str, Any]) -> list[dict[str, str]]:
     """Format a dictionary of key-value pairs into the correct format for Compass.
 
     It seems that JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair.
@@ -25,7 +25,7 @@ def compass_restify(data: dict) -> list:
     return [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
 
-def cast(value, ast_eval: bool = False) -> Union[int, str, Any]:
+def cast(value: Any, ast_eval: bool = False) -> Union[int, str, Any]:
     """Casts values to native Python types.
 
     lxml ETree return types don't do this automatically, and by using
@@ -43,7 +43,7 @@ def cast(value, ast_eval: bool = False) -> Union[int, str, Any]:
             return value
 
 
-def maybe_int(value) -> Optional[int]:
+def maybe_int(value: Any) -> Optional[int]:
     """Casts value to int or None."""
     try:
         return int(value)
@@ -70,25 +70,68 @@ def filesystem_guard(msg: str):
 
 
 class PeriodicTimer:
-    def __init__(self, interval, callback):
+    def __init__(self, interval: float, callback: Callable[..., Any]):
         """Constructor for PeriodicTimer."""
-        self.thread = None
         self.interval = interval
 
         @functools.wraps(callback)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> None:
             result = callback(*args, **kwargs)
             if result is not None:
                 self.thread = threading.Timer(self.interval, self.callback)
                 self.thread.start()
 
         self.callback = wrapper
+        self.thread: threading.Timer = threading.Timer(0.0, self.callback)
 
-    def start(self):
-        self.thread = threading.Thread(target=self.callback)
+    def start(self) -> "PeriodicTimer":
         self.thread.start()
         return self
 
-    def cancel(self):
+    def cancel(self) -> "PeriodicTimer":
         self.thread.cancel()
         return self
+
+
+#
+# def set_interval(interval: int):
+#     def decorator(function: Callable):
+#         def wrapper(*args, **kwargs):
+#             stopped = threading.Event()
+#
+#             def loop():  # executed in another thread
+#                 while not stopped.wait(interval):  # until stopped
+#                     function(*args, **kwargs)
+#
+#             t = threading.Thread(target=loop)
+#             t.daemon = True  # stop if the program exits
+#             t.start()
+#             return stopped
+#         return wrapper
+#     return decorator
+#
+#
+# import asyncio
+#
+#
+# async def periodic(n):
+#     print('periodic')  # run immediately
+#     while await asyncio.sleep(n, result=True):
+#         print('periodic')
+#
+# loop = asyncio.get_event_loop()
+# task = loop.create_task(periodic(0.5))
+# loop.call_later(5, task.cancel)
+# with contextlib.suppress(asyncio.CancelledError):
+#     loop.run_until_complete(task)
+#
+#
+# # wrapper:
+# def periodic(period: int):
+#     def scheduler(function: Callable):
+#         async def wrapper(*args, **kwargs):
+#             asyncio.create_task(function(*args, **kwargs))  # run immediately
+#             while await asyncio.sleep(period, result=True):
+#                 asyncio.create_task(function(*args, **kwargs))
+#         return wrapper
+#     return scheduler

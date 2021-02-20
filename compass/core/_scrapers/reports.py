@@ -4,7 +4,7 @@ import datetime
 from pathlib import Path
 import re
 import time
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 import urllib.parse
 
 from lxml import html
@@ -31,14 +31,14 @@ class ReportsScraper(InterfaceBase):
 
     def get_report_token(self, report_number: int, role_number: int) -> str:
         params = {
-            "pReportNumber": report_number,
-            "pMemberRoleNumber": role_number,
+            "pReportNumber": str(report_number),
+            "pMemberRoleNumber": str(role_number),
         }
         logger.debug("Getting report token")
         response = self._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
         response.raise_for_status()
 
-        report_token_uri = response.json().get("d")
+        report_token_uri = str(response.json().get("d"))
         if report_token_uri not in {"-1", "-2", "-3", "-4"}:
             return report_token_uri
         elif report_token_uri in {"-2", "-3"}:
@@ -49,13 +49,13 @@ class ReportsScraper(InterfaceBase):
         raise CompassReportError("Report aborted")
 
     @staticmethod
-    def get_report_export_url(report_page: str, filename: str = None) -> tuple[str, dict]:
+    def get_report_export_url(report_page: str, filename: Optional[str] = None) -> tuple[str, dict[str, str]]:
         full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
         fragments = urllib.parse.urlparse(full_url)
         export_url_path = fragments.path[1:]  # strip leading `/`
         report_export_url_data = dict(urllib.parse.parse_qsl(fragments.query, keep_blank_values=True))
         report_export_url_data["Format"] = "CSV"
-        if filename:
+        if filename is not None:
             report_export_url_data["FileName"] = filename
 
         return export_url_path, report_export_url_data
@@ -71,7 +71,7 @@ class ReportsScraper(InterfaceBase):
 
         return report_page.content
 
-    def update_form_data(self, report_page: bytes, run_report: str):
+    def update_form_data(self, report_page: bytes, run_report: str) -> None:
         form = html.fromstring(report_page).forms[0]
         elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
@@ -122,21 +122,21 @@ class ReportsScraper(InterfaceBase):
         if "compass.scouts.org.uk%2fError.aspx|" in report.text:
             raise CompassReportError("Compass Error!")
 
-    def report_keep_alive(self, report_page: str):
+    def report_keep_alive(self, report_page: str) -> str:
         logger.info(f"Extending Report Session {datetime.datetime.now()}")
         keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
         response = self._post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841
 
         return keep_alive  # response
 
-    def download_report_streaming(self, url: str, params: dict, filename: str):
+    def download_report_streaming(self, url: str, params: dict[str, str], filename: str) -> None:
         with self._get(url, params=params, stream=True) as r:
             r.raise_for_status()
-            with utility.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
+            with utility.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:  # TODO swap `with` stmts?
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                     f.write(chunk)
 
-    def download_report_normal(self, url: str, params: dict, filename: str) -> bytes:
+    def download_report_normal(self, url: str, params: dict[str, str], filename: str) -> bytes:
         start = time.time()
         csv_export = self._get(url, params=params)
         logger.debug(f"Exporting took {time.time() - start}s")
