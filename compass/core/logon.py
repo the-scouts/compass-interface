@@ -18,7 +18,7 @@ from compass.core.utility import compass_restify
 from compass.core.utility import PeriodicTimer
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping
+    pass
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 TYPES_STO = Literal[None, "0", "5", "X"]
@@ -81,7 +81,7 @@ class Logon(InterfaceBase):
 
     @property
     def jk(self) -> int:
-        return self.compass_dict["Master.User.JK"]  # ???? Key?
+        return self.compass_dict["Master.User.JK"]  # ???? Key?  # Join Key??? SHA2-512
 
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:

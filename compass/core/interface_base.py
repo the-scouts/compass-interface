@@ -5,7 +5,6 @@ from typing import Any, Optional, TYPE_CHECKING, Union
 from compass.core.settings import Settings
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
     from collections.abc import Mapping
     from collections.abc import MutableMapping
 

@@ -84,6 +84,7 @@ class People:
 
         Returns:
             A MemberTrainingTab object containing all data.
+
         """
         return self._scraper.get_training_tab(membership_num, ongoing_only=False)
 
@@ -95,6 +96,7 @@ class People:
 
         Returns:
             A MemberPermitsList object containing all data.
+
         """
         return self._scraper.get_permits_tab(membership_num)
 
@@ -106,6 +108,7 @@ class People:
 
         Returns:
             A list of MemberDisclosure objects containing all data.
+
         """
         return self._scraper.get_disclosures_tab(membership_num)
 
