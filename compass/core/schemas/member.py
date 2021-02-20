@@ -147,7 +147,7 @@ TYPES_PERMIT_CATEGORIES = Literal[
     "Without Compound Bows",
 ]
 TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory"]
-TYPES_DISCLOSURE_PROVIDERS = Literal["Atlantic Data", "DBS Paper Application", "Other"]
+TYPES_DISCLOSURE_PROVIDERS = Literal["Atlantic Data", "DBS Paper Application", "Disclosure Scotland", "Other"]
 TYPES_DISCLOSURE_STATUSES = Literal[
     "Application Withdrawn",
     "Application submitted - in progress",
@@ -402,7 +402,8 @@ MemberPermitsList = MemberGenericList[MemberPermit]
 
 
 class MemberDisclosure(pydantic.BaseModel):
-    country: Optional[Literal["England & Wales", "The Scout Association"]]  # TODO Scot, Wales, NI, BSO, Branches, Channel Islands
+    # TODO Scot, Wales, NI, BSO, Branches, Channel Islands
+    country: Optional[Literal["England & Wales", "Scotland", "The Scout Association"]]
     provider: TYPES_DISCLOSURE_PROVIDERS
     type: Literal["Enhanced with Barring"]
     number: Optional[int]  # If Application Withdrawn, no disclosure number
