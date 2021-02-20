@@ -33,19 +33,17 @@ endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOIN
 
 
 class HierarchyScraper(InterfaceBase):
-    def __init__(self, session: requests.Session, validate: bool = False):
+    def __init__(self, session: requests.Session):
         """Constructor for HierarchyScraper.
 
         takes an initialised Session object from Logon
         """
         super().__init__(session)
-        self.validate = validate
-
-    gufh_native = list[dict[str, Union[int, str, None]]]
-    gufh_pydantic = Union[schema.HierarchySection, schema.HierarchyUnit]
 
     # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
-    def get_units_from_hierarchy(self, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> Union[gufh_native, gufh_pydantic, None]:
+    def get_units_from_hierarchy(
+        self, parent_unit: int, level: TYPES_ENDPOINT_LEVELS
+    ) -> list[Union[schema.HierarchySection, schema.HierarchyUnit, None]]:
         """Get all children of a given unit.
 
         If LiveData=Y is passed, the resulting JSON additionally contains:
@@ -86,7 +84,7 @@ class HierarchyScraper(InterfaceBase):
 
         # Handle unauthorised access TODO raise???
         if result_json == {"Message": "Authorization has been denied for this request."}:
-            return [{"id": None, "name": None}]
+            return list()
 
         result_units = []
         for unit_dict in result_json:
@@ -106,17 +104,13 @@ class HierarchyScraper(InterfaceBase):
 
             result_units.append(parsed)
 
-        if self.validate:
-            return pydantic.parse_obj_as(list[schema.HierarchySection if is_sections else schema.HierarchyUnit], result_units)
-        else:
-            return result_units
-
-    gmwriu_native = dict[str, Union[int, str]]
-    gmwriu_pydantic = schema.HierarchyMember
+        if is_sections:
+            return pydantic.parse_obj_as(list[schema.HierarchySection], result_units)
+        return pydantic.parse_obj_as(list[schema.HierarchyUnit], result_units)
 
     def get_members_with_roles_in_unit(
         self, unit_number: int, include_name: bool = False, include_primary_role: bool = False
-    ) -> list[Union[gmwriu_native, gmwriu_pydantic]]:
+    ) -> list[schema.HierarchyMember]:
         """Get details of members with roles in a given unit.
 
         Keys within the member_data JSON are (as at 13/01/220):
@@ -144,7 +138,7 @@ class HierarchyScraper(InterfaceBase):
             raises?
 
         """
-        keys_to_keep = ("contact_number",)
+        keys_to_keep: tuple[str, ...] = ("contact_number",)
         if include_name:
             keys_to_keep = (*keys_to_keep, "name")
         if include_primary_role:
@@ -178,7 +172,4 @@ class HierarchyScraper(InterfaceBase):
 
         # parse the data and return it as a usable Python object (list)
         member_data = json.loads(member_data_string)
-        if self.validate:
-            return [schema.HierarchyMember(**{key: member[key] for key in keys_to_keep}) for member in member_data]
-        else:
-            return [{key: member[key] for key in keys_to_keep} for member in member_data]
+        return [schema.HierarchyMember(**{key: member[key] for key in keys_to_keep}) for member in member_data]

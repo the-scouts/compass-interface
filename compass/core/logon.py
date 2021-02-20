@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime
 import time
-from typing import Literal
+from typing import Any, Literal, Optional, TYPE_CHECKING, Union
 
 from lxml import html
 import requests
@@ -14,6 +16,9 @@ from compass.core.settings import Settings
 from compass.core.utility import cast
 from compass.core.utility import compass_restify
 from compass.core.utility import PeriodicTimer
+
+if TYPE_CHECKING:
+    from collections.abc import MutableMapping
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 TYPES_STO = Literal[None, "0", "5", "X"]
@@ -41,15 +46,15 @@ class Logon(InterfaceBase):
 
     """
 
-    def __init__(self, credentials: tuple[str, str], role_to_use: str = None):
+    def __init__(self, credentials: tuple[str, str], role_to_use: Optional[str] = None):
         """Constructor for Logon."""
         self._member_role_number = 0
-        self.compass_dict = {}
+        self.compass_dict: dict[str, Union[int, str]] = {}
 
-        self.role_to_use: str = role_to_use
+        self.role_to_use: Optional[str] = role_to_use
 
         self.current_role: str = ""
-        self.roles_dict: dict = {}
+        self.roles_dict: dict[int, str] = {}
 
         # Create session
         super().__init__(self._create_session())
@@ -101,20 +106,31 @@ class Logon(InterfaceBase):
 
     # _get override code:
 
-    def _get(self, url: str, auth_header: bool = False, **kwargs) -> requests.Response:
+    def _get(
+        self,
+        url: str,
+        params: Union[None, dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
+        stream: Optional[bool] = None,
+        auth_header: bool = False,
+        **kwargs: Any,
+    ) -> requests.Response:
         """Override get method with custom auth_header logic."""
         # pylint: disable=arguments-differ
         if auth_header:
-            headers = {"Auth": self._jk_hash()}
-            params = {
+            if headers is None:
+                headers = {}
+            headers = headers | {"Auth": self._jk_hash()}
+
+            if params is None:
+                params = {}
+            params = params | {
                 "x1": f"{self.cn}",
                 "x2": f"{self.jk}",
                 "x3": f"{self.mrn}",
             }
-            kwargs["headers"] = {**kwargs.get("headers", {}), **headers}
-            kwargs["params"] = {**kwargs.get("params", {}), **params}
 
-        return super(Logon, self)._get(url, **kwargs)
+        return super(Logon, self)._get(url, params=params, headers=headers, stream=stream, **kwargs)
 
     def _jk_hash(self) -> str:
         """Generate JK Hash needed by Compass."""
@@ -128,9 +144,10 @@ class Logon(InterfaceBase):
 
     # Timeout code:
 
-    def _extend_session_timeout(self, sto: TYPES_STO = "0"):
+    def _extend_session_timeout(self, sto: TYPES_STO = "0") -> requests.Response:
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
+        # TODO check STO.js etc for what happens when STO is None/undefined
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
 
     # Core login code:
@@ -171,7 +188,7 @@ class Logon(InterfaceBase):
 
         return response
 
-    def _verify_success_update_properties(self, check_role_number: int = None) -> None:
+    def _verify_success_update_properties(self, check_role_number: Optional[int] = None) -> None:
         """Confirms success and updates authorisation."""
         # Test 'get' for an exemplar page that needs authorisation.
         portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
@@ -212,7 +229,7 @@ class Logon(InterfaceBase):
                 raise CompassAuthenticationError("Role failed to update in Compass")
 
     @staticmethod
-    def _create_compass_dict(form_tree: html.FormElement) -> dict:
+    def _create_compass_dict(form_tree: html.FormElement) -> dict[str, Union[int, str]]:
         """Create Compass info dict from FormElement."""
         compass_dict = {}
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
@@ -223,7 +240,7 @@ class Logon(InterfaceBase):
         return compass_dict
 
     @staticmethod
-    def _create_roles_dict(form_tree: html.FormElement) -> dict:
+    def _create_roles_dict(form_tree: html.FormElement) -> dict[int, str]:
         """Generate role number to role name mapping."""
         roles_selector = form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"]  # get roles from compass page (list of option tags)
         return {int(role.get("value")): role.text.strip() for role in roles_selector}

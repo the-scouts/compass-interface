@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import get_args, Literal, TYPE_CHECKING, Union
+from typing import get_args, Literal, overload, TYPE_CHECKING, Union
 
 from lxml import html
 
@@ -15,6 +15,8 @@ from compass.core.utility import maybe_int
 from compass.core.utility import parse
 
 if TYPE_CHECKING:
+    import datetime
+
     import requests
 
 MEMBER_PROFILE_TAB_TYPES = Literal[
@@ -54,13 +56,12 @@ class PeopleScraper(InterfaceBase):
     All functions in the class output native types.
     """
 
-    def __init__(self, session: requests.Session, validate: bool = False):
+    def __init__(self, session: requests.Session):
         """Constructor for PeopleScraper.
 
         takes an initialised Session object from Logon
         """
         super().__init__(session)
-        self.validate = validate
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
         """Returns data from a given tab in MemberProfile for a given member.
@@ -83,20 +84,20 @@ class PeopleScraper(InterfaceBase):
             Other possible exceptions? i.e. from Requests
 
         """
-        profile_tab = profile_tab.upper()
+        tab_upper: str = profile_tab.upper()  # No longer type MEMBER_PROFILE_TAB_TYPES as upper case
         tabs = tuple(tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES))
         url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_num}"
-        if profile_tab == "PERSONAL":  # Personal tab has no key so is a special case
+        if tab_upper == "PERSONAL":  # Personal tab has no key so is a special case
             response = self._get(url)
-        elif profile_tab in tabs:
-            url += f"&Page={profile_tab}&TAB"
+        elif tab_upper in tabs:
+            url += f"&Page={tab_upper}&TAB"
             response = self._get(url)
         else:
             raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs}")
 
         return response.content
 
-    def get_personal_tab(self, membership_num: int) -> Union[schema.MemberDetails, dict]:
+    def get_personal_tab(self, membership_num: int) -> schema.MemberDetails:
         """Returns data from Personal Details tab for a given member.
 
         Args:
@@ -141,7 +142,7 @@ class PeopleScraper(InterfaceBase):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
-        details = dict()
+        details: dict[str, Union[None, int, str, datetime.date]] = dict()
 
         # ### Extractors
         # ## Core:
@@ -188,12 +189,9 @@ class PeopleScraper(InterfaceBase):
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
-        if self.validate:
-            return schema.MemberDetails.parse_obj(details)
-        else:
-            return details
+        return schema.MemberDetails.parse_obj(details)
 
-    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> Union[schema.MemberRolesDict, dict]:
+    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> schema.MemberRolesDict:
         """Returns data from Roles tab for a given member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
@@ -283,14 +281,23 @@ class PeopleScraper(InterfaceBase):
 
             roles_data[role_number] = role_details
 
-        if self.validate:
-            return schema.MemberRolesDict.parse_obj(roles_data)
-        else:
-            return roles_data
+        return schema.MemberRolesDict.parse_obj(roles_data)
+
+    @overload
+    def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMOGLList:
+        ...
+
+    @overload
+    def get_training_tab(self, membership_num: int, ongoing_only: Literal[False]) -> schema.MemberTrainingTab:
+        ...
+
+    @overload
+    def get_training_tab(self, membership_num: int, ongoing_only: bool) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList]:
+        ...
 
     def get_training_tab(
         self, membership_num: int, ongoing_only: bool = False
-    ) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList, dict]:
+    ) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList]:
         """Returns data from Training tab for a given member.
 
         Args:
@@ -353,17 +360,18 @@ class PeopleScraper(InterfaceBase):
                     if module_row.get("class") != "msTR trMTMN":
                         continue
 
-                    module_data = {}
+                    module_data: dict[str, Union[None, int, str, datetime.date]] = {}
                     child_nodes = list(module_row)
                     module_data["pk"] = int(module_row.get("data-pk"))
                     module_data["module_id"] = int(child_nodes[0].get("id")[4:])
                     matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
                     if matches:
-                        module_data["code"] = str(matches[0])
+                        code = str(matches[0])
+                        module_data["code"] = code
                         module_data["name"] = matches[1]
 
                         # Skip processing if we only want ongoing learning data and the module is not GDPR.
-                        if ongoing_only and "gdpr" not in module_data["code"].lower():
+                        if ongoing_only and "gdpr" not in code.lower():
                             continue
 
                     learning_required = child_nodes[1].text_content().lower()
@@ -390,7 +398,7 @@ class PeopleScraper(InterfaceBase):
 
                 child_nodes = list(role)
 
-                info = {}  # NoQA
+                info: dict[str, Union[None, str, int, datetime.date]] = {}  # NoQA
 
                 info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
                 info["role_title"] = child_nodes[0].text_content()
@@ -449,7 +457,7 @@ class PeopleScraper(InterfaceBase):
             # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
         if ongoing_only:
-            return schema.MemberMOGLList.parse_obj(training_ogl) if self.validate else training_ogl
+            return schema.MemberMOGLList.parse_obj(training_ogl)
 
         training_data = {
             "roles": training_roles,
@@ -457,9 +465,9 @@ class PeopleScraper(InterfaceBase):
             "mandatory": training_ogl,
         }
 
-        return schema.MemberTrainingTab.parse_obj(training_data) if self.validate else training_data
+        return schema.MemberTrainingTab.parse_obj(training_data)
 
-    def get_permits_tab(self, membership_num: int) -> Union[schema.MemberPermitsList, list]:
+    def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
         """Returns data from Permits tab for a given member.
 
         If a permit has been revoked, the expires value is None and the status is PERM_REV
@@ -485,7 +493,7 @@ class PeopleScraper(InterfaceBase):
 
         permits = []
         for row in rows:
-            permit = dict(membership_number=membership_num)
+            permit: dict[str, Union[None, int, str, datetime.date]] = dict(membership_number=membership_num)
             child_nodes = list(row)
             permit["permit_type"] = child_nodes[1].text_content()
             permit["category"] = child_nodes[2].text_content()
@@ -497,15 +505,12 @@ class PeopleScraper(InterfaceBase):
 
             permits.append(permit)
 
-        if self.validate:
-            return schema.MemberPermitsList.parse_obj(permits)
-        else:
-            return permits
+        return schema.MemberPermitsList.parse_obj(permits)
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(
-        self, role_number: int, response: Union[str, requests.Response] = None
-    ) -> Union[schema.MemberRolePopup, dict]:
+        self, role_number: int, response: Union[None, str, bytes, requests.Response] = None
+    ) -> schema.MemberRolePopup:
         """Returns detailed data from a given role number.
 
         Args:
@@ -601,7 +606,7 @@ class PeopleScraper(InterfaceBase):
         member_string = form.fields.get("ctl00$workarea$txt_p1_membername")
         ref_code = form.fields.get("ctl00$workarea$cbo_p2_referee_status")
 
-        role_details = dict()
+        role_details: dict[str, Union[None, int, str, datetime.date]] = dict()
         # Approval and Role details
         role_details["role_number"] = role_number
         role_details["organisation_level"] = form.fields.get("ctl00$workarea$cbo_p1_level")
@@ -689,7 +694,4 @@ class PeopleScraper(InterfaceBase):
             "details": role_details,
             "getting_started": modules_output,
         }
-        if self.validate:
-            return schema.MemberRolePopup.parse_obj(full_details)
-        else:
-            return full_details
+        return schema.MemberRolePopup.parse_obj(full_details)
