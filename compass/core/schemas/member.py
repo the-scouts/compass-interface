@@ -12,7 +12,7 @@ from pydantic import generics
 from typing import List, Dict  # isort: skip
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterator
+    from collections.abc import Iterator
 
 DataT = TypeVar("DataT")
 
@@ -147,6 +147,16 @@ TYPES_PERMIT_CATEGORIES = Literal[
     "Without Compound Bows",
 ]
 TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory"]
+TYPES_DISCLOSURE_PROVIDERS = Literal["Atlantic Data", "DBS Paper Application", "Other"]
+TYPES_DISCLOSURE_STATUSES = Literal[
+    "Application Withdrawn",
+    "Application submitted - in progress",
+    "Disclosure Expired",
+    "Disclosure Issued",
+    "Expired",
+    "ID check required",
+    "ID selection required",
+]
 
 
 class MemberGenericDict(generics.GenericModel, Generic[DataT]):
@@ -389,3 +399,14 @@ class MemberPermit(MemberBase):
 
 # Permits Tab - collection
 MemberPermitsList = MemberGenericList[MemberPermit]
+
+
+class MemberDisclosure(pydantic.BaseModel):
+    country: Optional[Literal["England & Wales", "The Scout Association"]]  # TODO Scot, Wales, NI, BSO, Branches, Channel Islands
+    provider: TYPES_DISCLOSURE_PROVIDERS
+    type: Literal["Enhanced with Barring"]
+    number: Optional[int]  # If Application Withdrawn, no disclosure number
+    issuer: Optional[TYPES_DISCLOSURE_PROVIDERS]
+    issue_date: Optional[datetime.date]  # If Application Withdrawn, maybe no issue date
+    status: TYPES_DISCLOSURE_STATUSES
+    expiry_date: Optional[datetime.date]  # If Application Withdrawn, no expiry date
