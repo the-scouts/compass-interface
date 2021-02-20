@@ -5,6 +5,7 @@ logger = logging.getLogger("compass_interface")
 
 def enable_debug_logging() -> None:
     import sys  # pylint: disable=import-outside-toplevel
+
     # Only want to import sys if needed
 
     logger.setLevel(logging.DEBUG)
