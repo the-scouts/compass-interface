@@ -23,6 +23,13 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
 ]
 
+mogl_map = dict(
+    SA="safety",
+    SG="safeguarding",
+    FA="first_aid",
+)
+mogl_types = {"gdpr", *mogl_map.values()}
+
 
 class PeopleScraper(InterfaceBase):
     """Class directly interfaces with Compass operations to extract member data.
@@ -441,21 +448,18 @@ class PeopleScraper(InterfaceBase):
         # Handle GDPR:
         # Get latest GDPR date
         gdpr_dates = [mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR"]
-        training_ogl = {
-            "GDPR": dict(
-                name="GDPR",
-                completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None),
-            ),
-        }
+        training_ogl = {"gdpr": dict(completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None))}
         for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
             cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
 
-            training_ogl[ongoing_learning.get("data-ng_code")] = dict(
-                name=cell_text.get("<None>"),
+            training_ogl[mogl_map[ongoing_learning.get("data-ng_code")]] = dict(
                 completed_date=parse(cell_text.get("tdLastComplete")),
                 renewal_date=parse(cell_text.get("tdRenewal")),
             )
             # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
+
+        # Update training_ogl with missing mandatory ongoing learning types
+        training_ogl |= {missing_mogl_type: dict() for missing_mogl_type in mogl_types - training_ogl.keys()}
 
         if ongoing_only:
             return schema.MemberMOGLList.parse_obj(training_ogl)
