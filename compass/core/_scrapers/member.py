@@ -440,15 +440,11 @@ class PeopleScraper(InterfaceBase):
 
         # Handle GDPR:
         # Get latest GDPR date
+        gdpr_dates = [mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR"]
         training_ogl = {
             "GDPR": dict(
                 name="GDPR",
-                completed_date=next(
-                    reversed(
-                        sorted(mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR")
-                    ),
-                    None,
-                ),
+                completed_date=next(reversed(sorted(date for date in gdpr_dates if isinstance(date, datetime.date))), None),
             ),
         }
         for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
