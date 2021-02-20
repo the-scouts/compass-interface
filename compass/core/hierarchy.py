@@ -170,7 +170,7 @@ class Hierarchy:
         return descendant_data
 
     @staticmethod
-    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[dict[str, Union[int, str]]]:  # NoQA: D417
+    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[dict[str, Union[int, str]]]:  # noqa: D417
         """Flattens a hierarchy tree / graph to a flat sequence of mappings.
 
         Args:

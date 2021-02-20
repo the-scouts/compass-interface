@@ -27,6 +27,7 @@ class ReportsScraper(InterfaceBase):
         takes an initialised Session object from Logon
         """
         # pylint: disable=useless-super-delegation
+        # Want to keep this method for future use
         super().__init__(session)
 
     def get_report_token(self, report_number: int, role_number: int) -> str:

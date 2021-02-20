@@ -116,7 +116,10 @@ class Logon(InterfaceBase):
         **kwargs: Any,
     ) -> requests.Response:
         """Override get method with custom auth_header logic."""
-        # pylint: disable=arguments-differ
+        # pylint: disable=arguments-differ, too-many-arguments
+        # We override the base requests.get with the custom auth logic, but
+        # pylint complains that arguments differ. Also complains that we have
+        # more than 5 arguments, so turn off that check too.
         if auth_header:
             if headers is None:
                 headers = {}
