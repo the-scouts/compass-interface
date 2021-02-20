@@ -24,7 +24,7 @@ dependencies:
   - ipython
   - mypy
   - black
-  - isort
+  - isort>=5
   #  - prospector
     # prospector currently pins to pylint==2.5.3, which itself pins to isort<5.
     # To use isort>=5.0.0, we must use pylint>=2.6.0, and wait for prospector to update.
