@@ -13,6 +13,7 @@ from compass.core.settings import Settings
 from compass.core.utility import cast
 from compass.core.utility import maybe_int
 from compass.core.utility import parse
+from compass.core.utility import validation_errors_logging
 
 if TYPE_CHECKING:
     import datetime
@@ -198,7 +199,8 @@ class PeopleScraper(InterfaceBase):
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
-        return schema.MemberDetails.parse_obj(details)
+        with validation_errors_logging(membership_num):
+            return schema.MemberDetails.parse_obj(details)
 
     def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> schema.MemberRolesDict:
         """Returns data from Roles tab for a given member.
@@ -290,7 +292,8 @@ class PeopleScraper(InterfaceBase):
 
             roles_data[role_number] = role_details
 
-        return schema.MemberRolesDict.parse_obj(roles_data)
+        with validation_errors_logging(membership_num):
+            return schema.MemberRolesDict.parse_obj(roles_data)
 
     @overload
     def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMOGLList:
@@ -462,7 +465,8 @@ class PeopleScraper(InterfaceBase):
         training_ogl |= {missing_mogl_type: dict() for missing_mogl_type in mogl_types - training_ogl.keys()}
 
         if ongoing_only:
-            return schema.MemberMOGLList.parse_obj(training_ogl)
+            with validation_errors_logging(membership_num):
+                return schema.MemberMOGLList.parse_obj(training_ogl)
 
         training_data = {
             "roles": training_roles,
@@ -470,7 +474,8 @@ class PeopleScraper(InterfaceBase):
             "mandatory": training_ogl,
         }
 
-        return schema.MemberTrainingTab.parse_obj(training_data)
+        with validation_errors_logging(membership_num):
+            return schema.MemberTrainingTab.parse_obj(training_data)
 
     def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
         """Returns data from Permits tab for a given member.
@@ -510,7 +515,8 @@ class PeopleScraper(InterfaceBase):
 
             permits.append(permit)
 
-        return schema.MemberPermitsList.parse_obj(permits)
+        with validation_errors_logging(membership_num):
+            return schema.MemberPermitsList.parse_obj(permits)
 
     def get_disclosures_tab(self, membership_num: int) -> list[schema.MemberDisclosure]:
         response = self._get_member_profile_tab(membership_num, "Disclosures")
@@ -521,22 +527,23 @@ class PeopleScraper(InterfaceBase):
 
         disclosures = []
         rows = tree.xpath("//tbody/tr")
-        for row in rows:
-            # Get children (cells in row)
-            cells = list(row)
+        with validation_errors_logging(membership_num):
+            for row in rows:
+                # Get children (cells in row)
+                cells = list(row)
 
-            disclosure = schema.MemberDisclosure(
-                country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
-                provider=cells[1].text_content(),
-                type=cells[2].text_content(),
-                number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
-                issuer=cells[4].text_content() or None,
-                issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
-                status=cells[6].text_content(),
-                expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
-            )
+                disclosure = schema.MemberDisclosure(
+                    country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
+                    provider=cells[1].text_content(),
+                    type=cells[2].text_content(),
+                    number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
+                    issuer=cells[4].text_content() or None,
+                    issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
+                    status=cells[6].text_content(),
+                    expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
+                )
 
-            disclosures.append(disclosure)
+                disclosures.append(disclosure)
 
         return disclosures
 
@@ -730,4 +737,5 @@ class PeopleScraper(InterfaceBase):
             "details": role_details,
             "getting_started": modules_output,
         }
-        return schema.MemberRolePopup.parse_obj(full_details)
+        with validation_errors_logging(role_number, name="Role Number"):
+            return schema.MemberRolePopup.parse_obj(full_details)
