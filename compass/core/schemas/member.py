@@ -51,6 +51,7 @@ TYPES_RELIGION = Union[
     ],
     pydantic.constr(regex=r"^Christian.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^Any other religion.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
+    pydantic.constr(regex=r"^No religion.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
 ]
 TYPES_OCCUPATION = Union[
     Literal[
@@ -235,7 +236,7 @@ class MemberDetails(MemberBase):
 
     @pydantic.validator("main_phone")
     def check_phone_number(cls, v: Optional[str], values: dict[str, Any]) -> Optional[str]:
-        if v is None or not v or v == "0":
+        if v is None or not v or v == "0" or len(v) < 2:
             return None
 
         try:
