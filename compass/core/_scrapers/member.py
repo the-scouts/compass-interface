@@ -444,7 +444,7 @@ class PeopleScraper(InterfaceBase):
         training_ogl = {
             "GDPR": dict(
                 name="GDPR",
-                completed_date=next(reversed(sorted(date for date in gdpr_dates if isinstance(date, datetime.date))), None),
+                completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None),
             ),
         }
         for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
