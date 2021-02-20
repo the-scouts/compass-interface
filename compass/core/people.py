@@ -66,22 +66,48 @@ class People:
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
 
-        :param membership_num:
-        :param keep_non_volunteer_roles:
-        :return:
+        Args:
+            membership_num: Membership Number to use
+            keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
+
+        Returns:
+            A MemberRolesDict object containing all data.
+
         """
         return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
 
     def _training_tab(self, membership_num: int) -> schema.MemberTrainingTab:
         """Gets training tab data for a given member.
 
-        :param membership_num: Compass ID
-        :return:
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A MemberTrainingTab object containing all data.
         """
         return self._scraper.get_training_tab(membership_num, ongoing_only=False)
 
     def _permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
+        """Gets permits tab data for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A MemberPermitsList object containing all data.
+        """
         return self._scraper.get_permits_tab(membership_num)
+
+    def _disclosures_tab(self, membership_num: int) -> list[schema.MemberDisclosure]:
+        """Gets disclosures tab data for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A list of MemberDisclosure objects containing all data.
+        """
+        return self._scraper.get_disclosures_tab(membership_num)
 
 
 # class Member:
