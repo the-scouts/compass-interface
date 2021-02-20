@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Iterable, Literal, Optional, TYPE_CHECKING, Union
 
+from pydantic.json import pydantic_encoder
+
 from compass.core import utility
 from compass.core._scrapers.hierarchy import HierarchyScraper
 from compass.core.logger import logger
@@ -262,6 +264,6 @@ class Hierarchy:
 
         # Try and write to a file for caching
         with utility.filesystem_guard("Unable to write cache file"):
-            filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4), encoding="utf-8")
+            filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4, default=pydantic_encoder), encoding="utf-8")
 
         return schema.HierarchyUnitMembersList.parse_obj(all_members).__root__
