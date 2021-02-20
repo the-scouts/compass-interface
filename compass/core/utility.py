@@ -6,6 +6,8 @@ import functools
 import threading
 from typing import Any, Callable, Optional, Union
 
+import pydantic
+
 from compass.core.logger import logger
 
 
@@ -67,6 +69,15 @@ def filesystem_guard(msg: str):
         yield
     except IOError as err:
         logger.error(f"{msg}: {err.errno} - {err.strerror}")
+
+
+@contextlib.contextmanager
+def validation_errors_logging(id_value: int, name: str = "Member No"):
+    try:
+        yield
+    except pydantic.ValidationError as err:
+        logger.error(f"Parsing Error! {name}: {id_value}")
+        raise err
 
 
 class PeriodicTimer:
