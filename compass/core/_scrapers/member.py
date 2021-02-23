@@ -564,9 +564,7 @@ class PeopleScraper(InterfaceBase):
                     status=cells[6].text_content(),
                     expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
                 )
-
                 disclosures.append(disclosure)
-
         return disclosures
 
     # See getAppointment in PGS\Needle
