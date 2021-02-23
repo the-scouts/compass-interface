@@ -51,7 +51,7 @@ class Logon(InterfaceBase):
         self._member_role_number = 0
         self.compass_dict: dict[str, Union[int, str]] = {}
 
-        self.current_role: tuple[str, str] = "", ""
+        self.current_role: tuple[str, str] = ("", "")
         self.roles_dict: dict[int, str] = {}
 
         # Create session
