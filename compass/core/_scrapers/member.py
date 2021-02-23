@@ -518,6 +518,27 @@ class PeopleScraper(InterfaceBase):
         with validation_errors_logging(membership_num):
             return schema.MemberPermitsList.parse_obj(permits)
 
+    def get_awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
+        response = self._get_member_profile_tab(membership_num, "Awards")
+        tree = html.fromstring(response)
+
+        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
+            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+
+        awards = []
+        rows = tree.xpath("//table[@class='msAward']/tr")
+        with validation_errors_logging(membership_num):
+            for row in rows:
+                award_props = row[1][0]  # Properties are stored as yet another sub-table
+                award_data = schema.MemberAward(
+                    membership_number=membership_num,
+                    type=award_props[0][1].text_content(),
+                    location=award_props[1][1].text_content() or None,
+                    date=parse(award_props[2][1].text_content() or ""),
+                )
+                awards.append(award_data)
+        return awards
+
     def get_disclosures_tab(self, membership_num: int) -> list[schema.MemberDisclosure]:
         response = self._get_member_profile_tab(membership_num, "Disclosures")
         tree = html.fromstring(response)
@@ -533,6 +554,7 @@ class PeopleScraper(InterfaceBase):
                 cells = list(row)
 
                 disclosure = schema.MemberDisclosure(
+                    membership_number=membership_num,
                     country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
                     provider=cells[1].text_content(),
                     type=cells[2].text_content(),
