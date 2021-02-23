@@ -202,7 +202,11 @@ class PeopleScraper(InterfaceBase):
         address = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
         addr_main, addr_code = address.rsplit(". ", 1)
         postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
-        street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
+        try:
+            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
+        except ValueError:
+            street, town = addr_main.rsplit(", ", 1)
+            county = None
         details["address"] = address
         details["country"] = country
         details["postcode"] = postcode
