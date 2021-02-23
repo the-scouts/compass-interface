@@ -251,10 +251,14 @@ class MemberDetails(MemberBase):
     join_date: Optional[datetime.date] = None
 
     # Contact Details
-    postcode: Optional[str] = None
     main_phone: Optional[str] = None
     main_email: Optional[pydantic.EmailStr] = None
-    # TODO address
+    address: Optional[str] = None  # this is the unmodified address string
+    country: Optional[str] = None
+    postcode: Optional[str] = None
+    county: Optional[str] = None
+    town: Optional[str] = None
+    street: Optional[str] = None
 
     # Additional / miscellaneous details
     # TODO - potential disabilities, qualifications, hobbies sections
