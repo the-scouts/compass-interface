@@ -8,6 +8,7 @@ build-backend = "setuptools.build_meta"
 line-length = 132  # 120*1.1
 target-version = ["py38"]  # Remember to change this if we change pins from Python 3.9!  TODO black does not yet support 3.9 (13-01-2021)
 
+# isort configuration
 [tool.isort]
 line_length = 132
 profile = "google"
