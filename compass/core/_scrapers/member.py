@@ -199,7 +199,16 @@ class PeopleScraper(InterfaceBase):
         # Occupation
         details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
         # Address
-        details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
+        address = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
+        addr_main, addr_code = address.rsplit(". ", 1)
+        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
+        street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
+        details["address"] = address
+        details["country"] = country
+        details["postcode"] = postcode
+        details["county"] = county
+        details["town"] = town
+        details["street"] = street
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
