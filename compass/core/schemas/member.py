@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 DataT = TypeVar("DataT")
 
-TYPES_SEX = Literal["Male", "Female"]  # also 'Unknown'
+TYPES_SEX = Literal["Male", "Female", "Unknown"]
 TYPES_ETHNICITY = Literal[
     "1.English/Welsh/Scottish/Northern Irish/British",
     "2.Irish",
@@ -66,6 +66,7 @@ TYPES_OCCUPATION = Union[
     pydantic.constr(regex=r"^Employed.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^Unemployed.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^Retired.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
+    pydantic.constr(regex=r"^Student.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^Long term sick or disabled.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^Looking after home of family.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^Other.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
