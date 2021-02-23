@@ -148,6 +148,31 @@ TYPES_PERMIT_CATEGORIES = Literal[
     "Without Compound Bows",
 ]
 TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory"]
+TYPES_AWARD_TYPE = Literal[
+    "Chief Scout's 5 years Service Award",
+    "Chief Scout's 10 years Service Award",
+    "Chief Scout's 15 years Service Award",
+    "Chief Scout's 20 years Service Award",
+    "Chief Scout's 25 years Service Award",
+    "Chief Scout's 30 years Service Award",
+    "Chief Scout's 40 years Service Award",
+    "Chief Scout's 50 years Service Award",
+    "Chief Scout's 60 years Service Award",
+    "Chief Scout's 70 years Service Award",
+    # Local / less formal awards
+    'Commissioners Commendation',
+    # Formal awards process - lower good service
+    "Chief Scout's Commendation for Good Service",
+    'Award for Merit',
+    'Bar to the Award for Merit',
+    'Silver Acorn',
+    # Formal awards process - higher good service
+    'Bar to the Silver Acorn',
+    'Silver Wolf',
+    # ???
+    'Medal of Merit',
+    'Bar to the Medal of Merit',
+]
 TYPES_DISCLOSURE_PROVIDERS = Literal["Atlantic Data", "DBS Paper Application", "Disclosure Scotland", "Other"]
 TYPES_DISCLOSURE_STATUSES = Literal[
     "Application Withdrawn",
@@ -401,7 +426,14 @@ class MemberPermit(MemberBase):
 MemberPermitsList = MemberGenericList[MemberPermit]
 
 
-class MemberDisclosure(pydantic.BaseModel):
+class MemberAward(MemberBase):
+    type: TYPES_AWARD_TYPE
+    location: Optional[str]
+    date: datetime.date
+    # image_url: Optional[pydantic.HttpUrl] = None
+
+
+class MemberDisclosure(MemberBase):
     # TODO Scot, Wales, NI, BSO, Branches, Channel Islands
     country: Optional[Literal["England & Wales", "Scotland", "The Scout Association"]]
     provider: TYPES_DISCLOSURE_PROVIDERS
