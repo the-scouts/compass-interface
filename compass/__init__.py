@@ -29,9 +29,9 @@ __all__ = (
 )
 
 
-def login(username: str, password: str, compass_role: Optional[str] = None) -> Logon:
+def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
     """Log in to compass, return a compass.logon.Logon object.
 
     This function is provided as a convenient interface to the logon module.
     """
-    return Logon((username, password), compass_role)
+    return Logon((username, password), role, location)
