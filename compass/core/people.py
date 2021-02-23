@@ -100,6 +100,18 @@ class People:
         """
         return self._scraper.get_permits_tab(membership_num)
 
+    def _awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
+        """Gets awards tab data for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A MemberAward object containing all data.
+
+        """
+        return self._scraper.get_awards_tab(membership_num)
+
     def _disclosures_tab(self, membership_num: int) -> list[schema.MemberDisclosure]:
         """Gets disclosures tab data for a given member.
 
