@@ -18,7 +18,7 @@ from compass.core.utility import compass_restify
 from compass.core.utility import PeriodicTimer
 
 if TYPE_CHECKING:
-    pass
+    from collections.abc import Iterator
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 TYPES_STO = Literal[None, "0", "5", "X"]
@@ -46,14 +46,12 @@ class Logon(InterfaceBase):
 
     """
 
-    def __init__(self, credentials: tuple[str, str], role_to_use: Optional[str] = None):
+    def __init__(self, credentials: tuple[str, str], role_to_use: Optional[str] = None, role_location: Optional[str] = None):
         """Constructor for Logon."""
         self._member_role_number = 0
         self.compass_dict: dict[str, Union[int, str]] = {}
 
-        self.role_to_use: Optional[str] = role_to_use
-
-        self.current_role: str = ""
+        self.current_role: tuple[str, str] = "", ""
         self.roles_dict: dict[int, str] = {}
 
         # Create session
@@ -64,7 +62,7 @@ class Logon(InterfaceBase):
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
-            self.change_role(role_to_use)
+            self.change_role(role_to_use, role_location)
 
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
@@ -210,7 +208,7 @@ class Logon(InterfaceBase):
 
         # Update session dicts with new role
         self.compass_dict = self._create_compass_dict(form)  # Updates MRN property etc.
-        self.roles_dict = self._create_roles_dict(form)
+        self.roles_dict = dict(self._roles_iterator(form))
 
         # Set auth headers for new role
         auth_headers = {
@@ -221,8 +219,7 @@ class Logon(InterfaceBase):
 
         # Update current role properties
         self.current_role = self.roles_dict[self.mrn]
-        location = next(row[2].text_content() for row in form.xpath("//tbody/tr") if int(row.get("data-pk")) == self.mrn)
-        logger.debug(f"Using Role: {self.current_role} ({location.strip()})")
+        logger.debug(f"Using Role: {self.current_role[0]} ({self.current_role[1]})")
 
         # Verify role number against test value
         if check_role_number is not None:
@@ -243,24 +240,32 @@ class Logon(InterfaceBase):
         return compass_dict
 
     @staticmethod
-    def _create_roles_dict(form_tree: html.FormElement) -> dict[int, str]:
+    def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, tuple[str, str]]]:
         """Generate role number to role name mapping."""
-        roles_selector = form_tree.inputs["ctl00$UserTitleMenu$cboUCRoles"]  # get roles from compass page (list of option tags)
-        return {int(role.get("value")): role.text.strip() for role in roles_selector}
+        roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
+        for row in roles_rows:
+            if "Full" in row[5].text_content():  # TODO do prov roles show up in selector???
+                yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
 
-    def change_role(self, new_role: str) -> None:
+    def change_role(self, new_role: str, location: Optional[str] = None) -> None:
         """Update role information.
 
         If the user has multiple roles with the same role title, the first is used.
         """
         logger.info("Changing role")
 
+        new_role = new_role.strip()
+
         # Change role to the specified role number
-        member_role_number = next(num for num, name in self.roles_dict.items() if name == new_role.strip())
+        if location is not None:
+            location = location.strip()
+            member_role_number = next(num for num, name in self.roles_dict.items() if name == (new_role, location))
+        else:
+            member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
         response = self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
         logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
         # Confirm Compass is reporting the changed role number, update auth headers
         self._verify_success_update_properties(check_role_number=member_role_number)
 
-        logger.info(f"Role updated successfully! Role is now {self.current_role}.")
+        logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
