@@ -160,18 +160,18 @@ TYPES_AWARD_TYPE = Literal[
     "Chief Scout's 60 years Service Award",
     "Chief Scout's 70 years Service Award",
     # Local / less formal awards
-    'Commissioners Commendation',
+    "Commissioners Commendation",
     # Formal awards process - lower good service
     "Chief Scout's Commendation for Good Service",
-    'Award for Merit',
-    'Bar to the Award for Merit',
-    'Silver Acorn',
+    "Award for Merit",
+    "Bar to the Award for Merit",
+    "Silver Acorn",
     # Formal awards process - higher good service
-    'Bar to the Silver Acorn',
-    'Silver Wolf',
+    "Bar to the Silver Acorn",
+    "Silver Wolf",
     # ???
-    'Medal of Merit',
-    'Bar to the Medal of Merit',
+    "Medal of Merit",
+    "Bar to the Medal of Merit",
 ]
 TYPES_DISCLOSURE_PROVIDERS = Literal["Atlantic Data", "DBS Paper Application", "Disclosure Scotland", "Other"]
 TYPES_DISCLOSURE_STATUSES = Literal[
