@@ -1,11 +1,6 @@
 from compass.api.plugins import redis
 
-
-class RedisConfig(redis.RedisSettings):
-    pass
-
-
-redis_plugin = redis.RedisPlugin(config=RedisConfig())
+redis_plugin = redis.RedisPlugin(config=redis.RedisSettings())
 
 
 async def on_startup(app) -> None:

@@ -54,10 +54,10 @@ class RedisPlugin:
             raise RedisError("Redis is not initialized")
         return self.redis
 
-    async def setup(self, app: FastAPI):
+    async def setup(self, app: FastAPI) -> None:
         app.state.REDIS = self
 
-    async def init(self):
+    async def init(self) -> None:
         if self.redis is not None:
             return self.redis
 
@@ -78,7 +78,7 @@ class RedisPlugin:
 
         self.redis = await create_redis_pool(address, **options)
 
-    async def terminate(self):
+    async def terminate(self) -> None:
         self.config = None
         if self.redis is not None:
             self.redis.close()
