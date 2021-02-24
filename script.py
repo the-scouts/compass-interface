@@ -1,5 +1,14 @@
+import csv
+from pathlib import Path
+import time
+
+import requests
+
 import compass as ci
-from compass.util import hierarchy
+from compass.core._scrapers.member import PeopleScraper
+from compass.core.schemas.member import MemberRolePopup
+from compass.interface import compass_read
+from compass.util.hierarchy import HierarchyUtility
 
 # Exporting Appointments report: 14.39s 13.73s 13.26s
 

@@ -5,8 +5,6 @@ import os
 from typing import Optional
 
 from aioredis import Redis
-from api.plugins.redis import depends_redis
-from api.schemas.auth import User
 from fastapi import Depends
 from fastapi import HTTPException
 from fastapi import status
@@ -15,6 +13,8 @@ from jose import jwt
 from jose import JWTError
 
 import compass as ci
+from compass.api.plugins.redis import depends_redis
+from compass.api.schemas.auth import User
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 ALGORITHM = "HS256"

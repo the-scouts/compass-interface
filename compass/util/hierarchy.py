@@ -1,8 +1,15 @@
-from typing import Iterable
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from compass import Hierarchy
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from compass.core.schemas.hierarchy import UnitData
 
 
 class HierarchyUtility(Hierarchy):
