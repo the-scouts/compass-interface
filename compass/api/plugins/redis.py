@@ -27,7 +27,8 @@ class RedisSettings(BaseSettings):
     redis_pool_min_size: int = 1
     redis_pool_max_size: int = 10
 
-    def get_redis_address(self) -> str:
+    @property
+    def redis_address(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     class Config:
@@ -63,7 +64,7 @@ class RedisPlugin:
         if self.config.redis_type != REDIS_TYPE:
             raise NotImplementedError(f"Invalid Redis type '{self.config.redis_type}' selected!")
 
-        address = self.config.get_redis_address()
+        address = self.config.redis_address
         if not address:
             raise ValueError("Redis address is blank")
 
