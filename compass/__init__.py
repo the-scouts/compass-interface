@@ -14,6 +14,10 @@ from compass.core.logon import Logon
 from compass.core.people import People
 from compass.core.reports import Reports
 
+__path__ = __import__("pkgutil").extend_path(__path__, __name__)  # NoQA
+# https://stackoverflow.com/a/53486554
+# We want to expose names on the global namespace, but also use namespace packages.
+
 __all__ = (
     # sub-packages: CI-Core
     "core",
