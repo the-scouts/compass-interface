@@ -24,6 +24,14 @@ TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", 
 TYPES_STO = Literal[None, "0", "5", "X"]
 
 
+def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
+    """Log in to compass, return a compass.logon.Logon object.
+
+    This function is provided as a convenient interface to the logon module.
+    """
+    return Logon((username, password), role, location)
+
+
 class Logon(InterfaceBase):
     """Create connection to Compass and authenticate. Holds session state.
 
