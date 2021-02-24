@@ -1,16 +1,14 @@
-from typing import List
-
-from api.utility import reports_interface
-from api.utility.compass_people_interface import get_ongoing_learning_scraper
-from api.utility.oauth2 import get_current_user
-from api.utility.reports_interface import get_df
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
 import pandas as pd
 
 import compass as ci
-from compass.schemas import member
+from compass.api.utility import reports_interface
+from compass.api.utility.compass_people_interface import get_ongoing_learning_scraper
+from compass.api.utility.oauth2 import get_current_user
+from compass.api.utility.reports_interface import get_df
+from compass.core.schemas import member
 
 router = APIRouter()
 

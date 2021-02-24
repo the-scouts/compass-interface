@@ -1,4 +1,4 @@
-from api.plugins import redis
+from compass.api.plugins import redis
 
 
 class RedisConfig(redis.RedisSettings):

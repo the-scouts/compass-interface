@@ -1,11 +1,11 @@
 from functools import reduce
 from pathlib import Path
 
-from api.utility import tables
-import numba
+# import numba
 import pandas as pd
 
 import compass as ci
+from compass.api.utility import tables
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent.parent.parent
 
@@ -18,7 +18,7 @@ def get_df():
         del df
 
 
-@numba.njit
+# @numba.njit
 def first(item, vec):
     """return the index of the first occurrence of item in vec"""
     for i, v in enumerate(vec):

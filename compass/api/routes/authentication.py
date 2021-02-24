@@ -1,16 +1,17 @@
 from datetime import timedelta
 
 from aioredis import Redis
-from api.plugins.redis import depends_redis
-from api.schemas.auth import Token
-from api.utility.oauth2 import ACCESS_TOKEN_EXPIRE_MINUTES
-from api.utility.oauth2 import authenticate_user
-from api.utility.oauth2 import create_access_token
-from api.utility.oauth2 import custom_bearer_auth_exception
-from api.utility.oauth2 import store_session
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordRequestForm
+
+from compass.api.plugins.redis import depends_redis
+from compass.api.schemas.auth import Token
+from compass.api.utility.oauth2 import ACCESS_TOKEN_EXPIRE_MINUTES
+from compass.api.utility.oauth2 import authenticate_user
+from compass.api.utility.oauth2 import create_access_token
+from compass.api.utility.oauth2 import custom_bearer_auth_exception
+from compass.api.utility.oauth2 import store_session
 
 router = APIRouter()
 
