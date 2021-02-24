@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 
 import compass as ci
-from compass.api.utility import tables
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent.parent.parent
 
@@ -35,12 +34,12 @@ def sub(sub_list):
     return reduce(or_, sub_list)
 
 
-def report_to_sql():
-    session = ci.Logon(("user", "pass"), "Regional Administrator")
-    # csv_content: bytes = get_report(session, "Region Appointments Report")
+def report_to_feather():
+    # session = ci.login("user", "pass", role="Regional Administrator")
+    # csv_content: bytes = ci.Reports(session).get_report("Region Appointments Report")
     # rep: pd.DataFrame = pd.read_csv(io.BytesIO(csv_content), skiprows=[2])
     rep = pd.read_csv(PROJECT_ROOT.parent / "2020-08-02T00-02-34 - 12047820 (Regional Administrator).csv", skiprows=[2])
-    rep.columns = [tables.MemberFields[c].value for c in rep.columns]
+    # rep.columns = [tables.MemberFields[c].value for c in rep.columns]  # normalise columns (see Comp Asst)
     rep["name"] = rep["forenames"] + " " + rep["surname"]
     section_cols = ["county_section", "district_section", "scout_group_section"]
     rep["section"] = pd.Series(map(sub, rep[section_cols].to_numpy().tolist()), index=rep.index).astype("string")
@@ -105,4 +104,4 @@ def get_member_ongoing(df: pd.DataFrame, user_id: int):
 
 
 if __name__ == "__main__":
-    report_to_sql()
+    report_to_feather()

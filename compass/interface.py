@@ -1,7 +1,7 @@
 import compass as ci
 
 
-def compass_read(auth: tuple):
+def compass_read(auth: tuple[str, str]):
     logon = ci.Logon(auth)
     people = ci.People(logon)
 

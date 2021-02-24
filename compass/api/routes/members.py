@@ -5,7 +5,6 @@ import pandas as pd
 
 import compass as ci
 from compass.api.utility import reports_interface
-from compass.api.utility.compass_people_interface import get_ongoing_learning_scraper
 from compass.api.utility.oauth2 import get_current_user
 from compass.api.utility.reports_interface import get_df
 from compass.core.schemas import member
@@ -15,28 +14,22 @@ router = APIRouter()
 
 @router.get("/", response_model=list[member.MemberDetails])
 def get_members(skip: int = 0, limit: int = 100, df: pd.DataFrame = Depends(get_df)):
-    users = reports_interface.get_members(df, skip=skip, limit=limit)
-    return users
+    return reports_interface.get_members(df, skip=skip, limit=limit)
 
 
 @router.get("/me", response_model=member.MemberDetails)
 def get_current_member(logon: ci.Logon = Depends(get_current_user)):
-    people_scraper = ci.People(logon)._scraper
-    personal_data = people_scraper.get_personal_tab(logon.cn)
-    return personal_data
+    return ci.People(logon)._scraper.get_personal_tab(logon.cn)
 
 
 @router.get("/me/roles", response_model=list[member.MemberRole])
 def get_current_member_roles(logon: ci.Logon = Depends(get_current_user), volunteer_only: bool = False):
-    people = ci.People(logon)
-    roles_list = people.get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
-    return roles_list
+    return ci.People(logon).get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
 
 
 @router.get("/me/permits", response_model=list[member.MemberPermit])
 def get_current_member_permits(logon: ci.Logon = Depends(get_current_user)):
-    people_scraper = ci.People(logon)._scraper
-    permits = people_scraper.get_permits_tab(logon.cn)
+    permits = ci.People(logon)._permits_tab(logon.cn)
 
     if not permits:
         raise HTTPException(status_code=404, detail="Permit data were not found")
@@ -45,7 +38,7 @@ def get_current_member_permits(logon: ci.Logon = Depends(get_current_user)):
 
 @router.get("/me/ongoing-training", response_model=member.MemberMOGLList)
 def get_current_member_ongoing_training(logon: ci.Logon = Depends(get_current_user)):
-    ongoing = get_ongoing_learning_scraper(logon)
+    ongoing = ci.People(logon)._scraper.get_training_tab(logon.cn, ongoing_only=True)
 
     if not ongoing:
         raise HTTPException(status_code=404, detail="Ongoing training data were not found")
@@ -56,9 +49,9 @@ def get_current_member_ongoing_training(logon: ci.Logon = Depends(get_current_us
 def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     """Gets profile details for given member
 
-    :param df:
-    :param compass_id:
-    :return:
+    Args:
+        compass_id: Member to retrieve information for
+        df: DataFrame with cached member data
     """
     try:
         db_user = reports_interface.get_member(df, user_id=compass_id)
@@ -75,7 +68,7 @@ def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
 def get_member_roles(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     try:
         roles_list = reports_interface.get_member_roles(df, user_id=compass_id)
-    except (Exception,) as err:
+    except Exception as err:
         print(type(err))
         roles_list = None
 
@@ -93,7 +86,7 @@ def get_member_permits(compass_id: int):
 def get_ongoing_training(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     try:
         ongoing = reports_interface.get_member_ongoing(df, user_id=compass_id)
-    except (Exception,) as err:
+    except Exception as err:
         print(type(err))
         ongoing = None
 
