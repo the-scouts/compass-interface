@@ -60,7 +60,7 @@ import compass as ci
 ci.logger.enable_debug_logging()
 
 # Login to Compass
-compass_session = ci.login('username', 'password')
+compass_session = ci.login("username", "password")
 
 # Setup Compass Helpers
 hierarchy = ci.Hierarchy(compass_session)
