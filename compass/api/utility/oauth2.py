@@ -28,13 +28,13 @@ def custom_bearer_auth_exception(detail: str, code: int = status.HTTP_401_UNAUTH
 
 def authenticate_user(username: str, password: str) -> User:
     try:
-        user = ci.logon(username=username, password=password)
-    except ci.CompassError:
+        user = ci.login(username, password)
+    except ci.errors.CompassError:
         raise PermissionError from None
 
     return User(
         membership_number=user.cn,
-        selected_role=user.current_role,
+        selected_role=user.current_role[0],
         auth=[username, password],
     )
 
@@ -76,8 +76,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
         user_dict = json.loads(user_json)
         logon = ci.Logon(user_dict.get("auth", ("", "")))
         if int(payload.get("sub")) != int(logon.cn):
-            raise ci.CompassError()
-    except (ci.CompassError, ValueError):
+            raise ci.errors.CompassError()
+    except (ci.errors.CompassError, ValueError):
         raise credentials_exception from None
 
     return logon
