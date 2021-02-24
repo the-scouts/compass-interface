@@ -2,11 +2,10 @@
 
 This module exposes the public api for CI core
 """
-from typing import Optional
-
 from compass.core import errors
 from compass.core import logger
 from compass.core.hierarchy import Hierarchy
+from compass.core.logon import login
 from compass.core.logon import Logon
 from compass.core.people import People
 from compass.core.reports import Reports
@@ -23,11 +22,3 @@ __all__ = (
     # public functions
     "login",
 )
-
-
-def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
-    """Log in to compass, return a compass.logon.Logon object.
-
-    This function is provided as a convenient interface to the logon module.
-    """
-    return Logon((username, password), role, location)
