@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class HierarchyUtility(Hierarchy):
-    def hierarchy_to_dataframe(self, hierarchy_dict: dict) -> pd.DataFrame:
+    def hierarchy_to_dataframe(self, hierarchy_dict: UnitData) -> pd.DataFrame:
         flat_hierarchy = self.flatten_hierarchy(hierarchy_dict)
         dataframe = pd.DataFrame(flat_hierarchy)
         for field, dtype in dataframe.dtypes.items():

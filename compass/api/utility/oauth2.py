@@ -1,5 +1,4 @@
-from datetime import datetime
-from datetime import timedelta
+import datetime
 import json
 import os
 from typing import Optional
@@ -52,11 +51,11 @@ async def store_session(store: Redis, token: str, user: User, expiry: int):
     await store.set(f"session:{token}", json.dumps(user.dict()), expire=expiry)
 
 
-def create_access_token(subject: str, expires_delta: Optional[timedelta] = None):
+def create_access_token(subject: str, expires_delta: Optional[datetime.timedelta] = None):
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
     to_encode = {"sub": subject, "exp": expire}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

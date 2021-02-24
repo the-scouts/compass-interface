@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Optional
 
 from aioredis import create_redis_pool
 from aioredis import Redis
@@ -48,7 +48,7 @@ class RedisPlugin:
         if app:
             app.state.REDIS = self
 
-    async def __call__(self) -> Any:
+    async def __call__(self) -> Redis:
         if self.redis is None:
             raise RedisError("Redis is not initialized")
         return self.redis

@@ -1,7 +1,7 @@
 import compass as ci
 
 
-def compass_read(auth: list or tuple):
+def compass_read(auth: tuple):
     logon = ci.Logon(auth)
     scraper = ci.People(logon)._scraper
 
