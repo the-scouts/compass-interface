@@ -13,7 +13,7 @@ from compass.core.schemas import member
 router = APIRouter()
 
 
-@router.get("/", response_model=List[member.MemberDetails])
+@router.get("/", response_model=list[member.MemberDetails])
 def get_members(skip: int = 0, limit: int = 100, df: pd.DataFrame = Depends(get_df)):
     users = reports_interface.get_members(df, skip=skip, limit=limit)
     return users
@@ -26,14 +26,14 @@ def get_current_member(logon: ci.Logon = Depends(get_current_user)):
     return personal_data
 
 
-@router.get("/me/roles", response_model=List[member.MemberRole])
+@router.get("/me/roles", response_model=list[member.MemberRole])
 def get_current_member_roles(logon: ci.Logon = Depends(get_current_user), volunteer_only: bool = False):
     people = ci.People(logon)
     roles_list = people.get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
     return roles_list
 
 
-@router.get("/me/permits", response_model=List[member.MemberPermit])
+@router.get("/me/permits", response_model=list[member.MemberPermit])
 def get_current_member_permits(logon: ci.Logon = Depends(get_current_user)):
     people_scraper = ci.People(logon)._scraper
     permits = people_scraper.get_permits_tab(logon.cn)
@@ -71,7 +71,7 @@ def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     return db_user
 
 
-@router.get("/{compass_id}/roles", response_model=List[member.MemberRole])
+@router.get("/{compass_id}/roles", response_model=list[member.MemberRole])
 def get_member_roles(compass_id: int, df: pd.DataFrame = Depends(get_df)):
     try:
         roles_list = reports_interface.get_member_roles(df, user_id=compass_id)
