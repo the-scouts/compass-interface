@@ -1,24 +1,24 @@
+import binascii
 import datetime
 import os
-import binascii
 from typing import Optional
 
 from aioredis import Redis
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import Depends
 from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose import JWTError
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.exceptions import InvalidTag
 from starlette import status
 
-import compass.core as ci
 from compass.api.plugins.redis import depends_redis
 from compass.api.schemas.auth import User
+import compass.core as ci
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
-aes_gcm = AESGCM(binascii.unhexlify(SECRET_KEY))  # hard fail if key not in env
+aes_gcm = AESGCM(binascii.unhexlify(SECRET_KEY))
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -35,7 +35,8 @@ async def login_token_store_session(user: str, pw: str, role: Optional[str], loc
     except ci.errors.CompassError:
         raise custom_bearer_auth_exception("Incorrect username or password") from None
 
-    to_encode = dict(sub=f"{user.membership_number}", exp=datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    jwt_expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode = dict(sub=f"{user.membership_number}", exp=jwt_expiry_time)
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     nonce = os.urandom(12)  # GCM mode needs 12 fresh bytes every time
