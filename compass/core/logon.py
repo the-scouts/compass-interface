@@ -13,11 +13,11 @@ from compass.core.errors import CompassAuthenticationError
 from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
+import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
 from compass.core.utility import cast
 from compass.core.utility import compass_restify
 from compass.core.utility import PeriodicTimer
-import compass.core.schemas.logon as schema
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -56,7 +56,13 @@ class Logon(InterfaceBase):
 
     """
 
-    def __init__(self, credentials: Optional[tuple[str, str]] = None, role_to_use: Optional[str] = None, role_location: Optional[str] = None, session: Optional[requests.Session] = None):
+    def __init__(
+        self,
+        credentials: Optional[tuple[str, str]] = None,
+        role_to_use: Optional[str] = None,
+        role_location: Optional[str] = None,
+        session: Optional[requests.Session] = None,
+    ):
         """Constructor for Logon."""
         self.compass_props: schema.CompassProps
 
@@ -91,7 +97,7 @@ class Logon(InterfaceBase):
         logon.current_role = current_role
 
         auth_headers = {
-            "Authorization": f'{logon.cn}~{logon.mrn}',
+            "Authorization": f"{logon.cn}~{logon.mrn}",
             "SID": logon.compass_props.master.sys.session_id,  # Session ID
         }
         logon._update_headers(auth_headers)
