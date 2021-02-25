@@ -96,7 +96,7 @@ class Logon(InterfaceBase):
         logon.compass_props = schema.CompassProps(**{"master": {"user": dict(user_props)}})
         logon.current_role = current_role
 
-        logon._update_auth_headers(logon.cn, logon.mrn, logon.compass_props.master.sys.session_id)
+        logon._update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
 
         return logon
 
@@ -142,6 +142,10 @@ class Logon(InterfaceBase):
     @property
     def _asp_net_id(self) -> str:
         return self.s.cookies["ASP.NET_SessionId"]
+
+    @property
+    def _session_id(self) -> str:
+        return self.compass_props.master.sys.session_id
 
     # _get override code:
 
@@ -252,7 +256,7 @@ class Logon(InterfaceBase):
         self.roles_dict = dict(self._roles_iterator(form))
 
         # Set auth headers for new role
-        self._update_auth_headers(self.cn, self.mrn, self.compass_props.master.sys.session_id)
+        self._update_auth_headers(self.cn, self.mrn, self._session_id)
 
         # Update current role properties
         self.current_role = self.roles_dict[self.mrn]
