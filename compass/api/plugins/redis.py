@@ -1,10 +1,9 @@
-import os
 from typing import Optional
 
 from aioredis import create_redis_pool
 from aioredis import Redis
 from fastapi import FastAPI
-from pydantic import BaseSettings
+import pydantic
 from starlette.requests import Request
 
 REDIS_TYPE: str = "redis"
@@ -14,37 +13,32 @@ class RedisError(Exception):
     pass
 
 
-class RedisSettings(BaseSettings):
-    redis_type: str = REDIS_TYPE
+class RedisSettings(pydantic.BaseSettings):
+    type: str = REDIS_TYPE
 
-    redis_url: str = None
-    redis_host: str = os.getenv("REDIS_HOST", "localhost")
-    redis_port: int = os.getenv("REDIS_PORT", 6379)
-    redis_password: str = os.getenv("REDIS_PASS", None)
-    redis_db: int = 0
-    redis_connection_timeout: int = 2
+    url: str = None
+    host: str = "localhost"
+    port: int = 6379
+    password: Optional[str] = pydantic.Field(None, env="PASS")
+    db: int = 0
+    connection_timeout: int = 2
 
-    redis_pool_min_size: int = 1
-    redis_pool_max_size: int = 10
+    pool_min_size: int = 1
+    pool_max_size: int = 10
 
     @property
-    def redis_address(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
+    def address(self) -> str:
+        return pydantic.RedisDsn.build(scheme="redis", host=self.host, port=f"{self.port}", path=f"/{self.db}")
 
     class Config:
-        env_prefix = ""
-        use_enum_values = True
+        case_sensitive = False  # this is the default, but mark for clarity.
+        env_prefix = "redis_"  # env variables named `REDIS_HOST` etc
 
 
 class RedisPlugin:
-    def __init__(self, app: FastAPI = None, config: BaseSettings = None):
+    def __init__(self, app: FastAPI = None, config: RedisSettings = RedisSettings()):
         self.redis: Optional[Redis] = None
-        self.config = config or RedisSettings()
-
-        if self.config is None:
-            raise RedisError("Redis configuration is not initialized")
-        elif not isinstance(self.config, RedisSettings):
-            raise RedisError("Redis configuration is invalid")
+        self.config = config
 
         if app:
             app.state.REDIS = self
@@ -61,22 +55,17 @@ class RedisPlugin:
         if self.redis is not None:
             return self.redis
 
-        if self.config.redis_type != REDIS_TYPE:
-            raise NotImplementedError(f"Invalid Redis type '{self.config.redis_type}' selected!")
-
-        address = self.config.redis_address
-        if not address:
-            raise ValueError("Redis address is blank")
+        if self.config.type != REDIS_TYPE:
+            raise NotImplementedError(f"Invalid Redis type '{self.config.type}' selected!")
 
         options = {
-            "db": self.config.redis_db,
-            "password": self.config.redis_password,
-            "minsize": self.config.redis_pool_min_size,
-            "maxsize": self.config.redis_pool_max_size,
-            "timeout": self.config.redis_connection_timeout,
+            "db": self.config.db,
+            "password": self.config.password,
+            "minsize": self.config.pool_min_size,
+            "maxsize": self.config.pool_max_size,
+            "timeout": self.config.connection_timeout,
         }
-
-        self.redis = await create_redis_pool(address, **options)
+        self.redis = await create_redis_pool(self.config.address, **options)
 
     async def terminate(self) -> None:
         self.config = None
