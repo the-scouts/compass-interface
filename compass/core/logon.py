@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import time
 from typing import Any, Literal, Optional, TYPE_CHECKING, Union
+import urllib.parse
 
 from lxml import html
 import requests
@@ -16,6 +17,7 @@ from compass.core.settings import Settings
 from compass.core.utility import cast
 from compass.core.utility import compass_restify
 from compass.core.utility import PeriodicTimer
+import compass.core.schemas.logon as schema
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -56,8 +58,7 @@ class Logon(InterfaceBase):
 
     def __init__(self, credentials: tuple[str, str], role_to_use: Optional[str] = None, role_location: Optional[str] = None):
         """Constructor for Logon."""
-        self._member_role_number = 0
-        self.compass_dict: dict[str, Union[int, str]] = {}
+        self.compass_props: schema.CompassProps
 
         self.current_role: tuple[str, str] = ("", "")
         self.roles_dict: dict[int, str] = {}
@@ -79,20 +80,20 @@ class Logon(InterfaceBase):
 
     @property
     def mrn(self) -> int:
-        return self.compass_dict["Master.User.MRN"]  # Member Role Number
+        return self.compass_props.Master.User.MRN  # Member Role Number
 
     @property
     def cn(self) -> int:
-        return self.compass_dict["Master.User.CN"]  # Contact Number
+        return self.compass_props.Master.User.CN  # Contact Number
 
     @property
-    def jk(self) -> int:
-        return self.compass_dict["Master.User.JK"]  # ???? Key?  # Join Key??? SHA2-512
+    def jk(self) -> str:
+        return self.compass_props.Master.User.JK  # ???? Key?  # Join Key??? SHA2-512
 
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
-        unit_number = self.compass_dict["Master.User.ON"]  # Organisation Number
-        unit_level = self.compass_dict["Master.User.LVL"]  # Level
+        unit_number = self.compass_props.Master.User.ON  # Organisation Number
+        unit_level = self.compass_props.Master.User.LVL  # Level
         level_map = {
             "ORG": "Organisation",
             # "ORST": "Organisation Sections",
@@ -215,13 +216,13 @@ class Logon(InterfaceBase):
         form = html.fromstring(response.content).forms[0]
 
         # Update session dicts with new role
-        self.compass_dict = self._create_compass_dict(form)  # Updates MRN property etc.
+        self.compass_props = self._create_compass_props(form)  # Updates MRN property etc.
         self.roles_dict = dict(self._roles_iterator(form))
 
         # Set auth headers for new role
         auth_headers = {
             "Authorization": f"{self.cn}~{self.mrn}",
-            "SID": self.compass_dict["Master.Sys.SessionID"],  # Session ID
+            "SID": self.compass_props.Master.Sys.SessionID,  # Session ID
         }
         self._update_headers(auth_headers)
 
@@ -237,15 +238,26 @@ class Logon(InterfaceBase):
                 raise CompassAuthenticationError("Role failed to update in Compass")
 
     @staticmethod
-    def _create_compass_dict(form_tree: html.FormElement) -> dict[str, Union[int, str]]:
+    def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
         """Create Compass info dict from FormElement."""
-        compass_dict = {}
+        compass_props = {}
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
         for pair in compass_vars.split("~"):
             key, value = pair.split("#", 1)
-            compass_dict[key] = cast(value)  # int or str
+            cd_tmp = compass_props
+            levels = key.split(".")
+            for level in levels[:-1]:
+                cd_tmp = cd_tmp.setdefault(level, {})
+            cd_tmp[levels[-1]] = cast(value)  # int or str
 
-        return compass_dict
+        if "Sys" in compass_props.get("Master", {}):
+            cp_m_s = compass_props["Master"]["Sys"]
+            if "WebPath" in cp_m_s:
+                cp_m_s["WebPath"] = urllib.parse.unquote(cp_m_s["WebPath"])
+            if "HardTime" in cp_m_s:
+                cp_m_s["HardTime"] = datetime.time.fromisoformat(cp_m_s["HardTime"].replace(".", ":"))
+
+        return schema.CompassProps(**compass_props)
 
     @staticmethod
     def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, tuple[str, str]]]:
