@@ -6,6 +6,7 @@ from typing import Literal, Optional
 import pydantic
 
 TYPES_CRUD_STRING = pydantic.constr(regex=r"^[CRUD]{0,4}$")
+TYPES_ORG_LEVELS = Literal["ORG", "ORST", "CNTR", "CNST", "REG", "RGST", "CNTY", "CTST", "DIST", "DTST", "SGRP", "SGST"]
 
 
 class CompassPropsBase(pydantic.BaseModel):
@@ -51,7 +52,7 @@ class CompassPropsMasterUser(CompassPropsBase):
     cn: Optional[int] = pydantic.Field(None, alias="CN")
     mrn: Optional[int] = pydantic.Field(None, alias="MRN")
     on: Optional[int] = pydantic.Field(None, alias="ON")
-    lvl: Optional[Literal["ORG", "ORST", "CNTR", "CNST", "REG", "RGST", "CNTY", "CTST", "DIST", "DTST", "SGRP", "SGST"]] = pydantic.Field(None, alias="LVL")
+    lvl: Optional[TYPES_ORG_LEVELS] = pydantic.Field(None, alias="LVL")
     jk: Optional[str] = pydantic.Field(None, alias="JK")
 
 
