@@ -81,6 +81,26 @@ class Logon(InterfaceBase):
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
 
+    @classmethod
+    def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: tuple[str, str]) -> Logon:
+        session = requests.Session()
+
+        session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
+        logon = cls(session=session)
+        logon.compass_props = schema.CompassProps(**{"master": {"user": dict(user_props)}})
+        logon.current_role = current_role
+
+        auth_headers = {
+            "Authorization": f'{logon.cn}~{logon.mrn}',
+            "SID": logon.compass_props.master.sys.session_id,  # Session ID
+        }
+        logon._update_headers(auth_headers)
+
+        return logon
+
+    def __repr__(self) -> str:
+        return f"{self.__class__} Compass ID: {self.cn} ({' - '.join(self.current_role)})"
+
     # properties/accessors code:
 
     @property
@@ -284,6 +304,10 @@ class Logon(InterfaceBase):
         logger.info("Changing role")
 
         new_role = new_role.strip()
+
+        # If we don't have the roles dict, generate it.
+        if not self.roles_dict:
+            self._verify_success_update_properties()
 
         # Change role to the specified role number
         if location is not None:
