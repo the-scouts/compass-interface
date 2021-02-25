@@ -8,13 +8,19 @@ import pydantic
 TYPES_CRUD_STRING = pydantic.constr(regex=r"^[CRUD]{0,4}$")
 
 
-class CompassPropsNav(pydantic.BaseModel):
+class CompassPropsBase(pydantic.BaseModel):
+    class Config:
+        allow_population_by_field_name = True
+        extra = "allow"
+
+
+class CompassPropsNav(CompassPropsBase):
     action: Optional[Literal["None"]] = pydantic.Field(None, alias="Action")
     start_no: Optional[int] = pydantic.Field(None, alias="StartNo")
     start_page: Optional[int] = pydantic.Field(None, alias="StartPage")
 
 
-class CompassPropsPage(pydantic.BaseModel):
+class CompassPropsPage(CompassPropsBase):
     use_cn: Optional[int] = pydantic.Field(None, alias="UseCN")
     hide_badges: Optional[bool] = pydantic.Field(None, alias="HideBadges")
     croc: Optional[Literal["OK"]] = pydantic.Field(None, alias="Croc")
@@ -23,7 +29,7 @@ class CompassPropsPage(pydantic.BaseModel):
     fold_name: Optional[Literal["MP_"]] = pydantic.Field(None, alias="FoldName")
 
 
-class CompassPropsCRUD(pydantic.BaseModel):
+class CompassPropsCRUD(CompassPropsBase):
     mdis: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MDIS")
     roles: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="ROLES")
     pemd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PEMD")
@@ -33,15 +39,15 @@ class CompassPropsCRUD(pydantic.BaseModel):
     trn: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="TRN")
 
 
-class CompassPropsUser(pydantic.BaseModel):
+class CompassPropsUser(CompassPropsBase):
     is_me: Optional[bool] = pydantic.Field(None, alias="IsMe")
 
 
-class CompassPropsMasterSSO(pydantic.BaseModel):
+class CompassPropsMasterSSO(CompassPropsBase):
     on: Optional[int] = pydantic.Field(None, alias="ON")
 
 
-class CompassPropsMasterUser(pydantic.BaseModel):
+class CompassPropsMasterUser(CompassPropsBase):
     cn: Optional[int] = pydantic.Field(None, alias="CN")
     mrn: Optional[int] = pydantic.Field(None, alias="MRN")
     on: Optional[int] = pydantic.Field(None, alias="ON")
@@ -49,14 +55,14 @@ class CompassPropsMasterUser(pydantic.BaseModel):
     jk: Optional[str] = pydantic.Field(None, alias="JK")
 
 
-class CompassPropsMasterConst(pydantic.BaseModel):
+class CompassPropsMasterConst(CompassPropsBase):
     wales: Optional[int] = pydantic.Field(None, alias="Wales")
     scotland: Optional[int] = pydantic.Field(None, alias="Scotland")
     over_seas: Optional[int] = pydantic.Field(None, alias="OverSeas")
     hq: Optional[int] = pydantic.Field(None, alias="HQ")
 
 
-class CompassPropsMasterSys(pydantic.BaseModel):
+class CompassPropsMasterSys(CompassPropsBase):
     session_id: Optional[str] = pydantic.Field(None, alias="SessionID")
     safe_json: Optional[bool] = pydantic.Field(None, alias="SafeJSON")
     web_path: Optional[pydantic.HttpUrl] = pydantic.Field(None, alias="WebPath")
@@ -69,26 +75,26 @@ class CompassPropsMasterSys(pydantic.BaseModel):
     ping: Optional[int] = pydantic.Field(None, alias="Ping")
 
 
-class CompassPropsMaster(pydantic.BaseModel):
-    sso: CompassPropsMasterSSO = pydantic.Field(..., alias="SSO")
-    user: CompassPropsMasterUser = pydantic.Field(..., alias="User")
-    const: CompassPropsMasterConst = pydantic.Field(..., alias="Const")
-    sys: CompassPropsMasterSys = pydantic.Field(..., alias="Sys")
+class CompassPropsMaster(CompassPropsBase):
+    sso: CompassPropsMasterSSO = pydantic.Field(CompassPropsMasterSSO(), alias="SSO")
+    user: CompassPropsMasterUser = pydantic.Field(CompassPropsMasterUser(), alias="User")
+    const: CompassPropsMasterConst = pydantic.Field(CompassPropsMasterConst(), alias="Const")
+    sys: CompassPropsMasterSys = pydantic.Field(CompassPropsMasterSys(), alias="Sys")
 
 
-class CompassPropsConstSys(pydantic.BaseModel):
+class CompassPropsConstSys(CompassPropsBase):
     sto: Optional[int] = pydantic.Field(None, alias="STO")
     sto_ask: Optional[int] = pydantic.Field(None, alias="STO_ASK")
 
 
-class CompassPropsConst(pydantic.BaseModel):
-    sys: CompassPropsConstSys = pydantic.Field(..., alias="Sys")
+class CompassPropsConst(CompassPropsBase):
+    sys: CompassPropsConstSys = pydantic.Field(CompassPropsConstSys(), alias="Sys")
 
 
-class CompassProps(pydantic.BaseModel):
-    nav: CompassPropsNav = pydantic.Field(..., alias="Nav")
-    page: CompassPropsPage = pydantic.Field(..., alias="Page")
-    crud: CompassPropsCRUD = pydantic.Field(..., alias="CRUD")
-    user: CompassPropsUser = pydantic.Field(..., alias="User")
-    master: CompassPropsMaster = pydantic.Field(..., alias="Master")
-    const: CompassPropsConst = pydantic.Field(..., alias="Const")
+class CompassProps(CompassPropsBase):
+    nav: CompassPropsNav = pydantic.Field(CompassPropsNav(), alias="Nav")
+    page: CompassPropsPage = pydantic.Field(CompassPropsPage(), alias="Page")
+    crud: CompassPropsCRUD = pydantic.Field(CompassPropsCRUD(), alias="CRUD")
+    user: CompassPropsUser = pydantic.Field(CompassPropsUser(), alias="User")
+    master: CompassPropsMaster = pydantic.Field(CompassPropsMaster(), alias="Master")
+    const: CompassPropsConst = pydantic.Field(CompassPropsConst(), alias="Const")
