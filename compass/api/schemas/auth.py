@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 import pydantic
 
@@ -7,7 +7,7 @@ from compass.core.schemas.member import MemberBase
 
 class User(MemberBase):
     selected_role: tuple[str, str]
-    logon_info: tuple[str, str, str, str]
+    logon_info: tuple[str, str, Optional[str], Optional[str]]
 
 
 class Token(pydantic.BaseModel):
