@@ -56,22 +56,27 @@ class Logon(InterfaceBase):
 
     """
 
-    def __init__(self, credentials: tuple[str, str], role_to_use: Optional[str] = None, role_location: Optional[str] = None):
+    def __init__(self, credentials: Optional[tuple[str, str]] = None, role_to_use: Optional[str] = None, role_location: Optional[str] = None, session: Optional[requests.Session] = None):
         """Constructor for Logon."""
         self.compass_props: schema.CompassProps
 
         self.current_role: tuple[str, str] = ("", "")
-        self.roles_dict: dict[int, str] = {}
+        self.roles_dict: dict[int, tuple[str, str]] = {}
 
         # Create session
-        super().__init__(self._create_session())
+        if session is not None:
+            super().__init__(session)
+        elif credentials is not None:
+            super().__init__(self._create_session())
 
-        # Log in and try to confirm success
-        self._logon_remote(credentials)
+            # Log in and try to confirm success
+            self._logon_remote(credentials)
 
-        if role_to_use is not None:
-            # Session contains updated auth headers from role change
-            self.change_role(role_to_use, role_location)
+            if role_to_use is not None:
+                # Session contains updated auth headers from role change
+                self.change_role(role_to_use, role_location)
+        else:
+            raise CompassError("compass.core.Logon must be initialised with credentials or an existing session object!")
 
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
