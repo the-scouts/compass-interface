@@ -80,20 +80,20 @@ class Logon(InterfaceBase):
 
     @property
     def mrn(self) -> int:
-        return self.compass_props.Master.User.MRN  # Member Role Number
+        return self.compass_props.master.user.mrn  # Member Role Number
 
     @property
     def cn(self) -> int:
-        return self.compass_props.Master.User.CN  # Contact Number
+        return self.compass_props.master.user.cn  # Contact Number
 
     @property
     def jk(self) -> str:
-        return self.compass_props.Master.User.JK  # ???? Key?  # Join Key??? SHA2-512
+        return self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
 
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
-        unit_number = self.compass_props.Master.User.ON  # Organisation Number
-        unit_level = self.compass_props.Master.User.LVL  # Level
+        unit_number = self.compass_props.master.user.on  # Organisation Number
+        unit_level = self.compass_props.master.user.lvl  # Level
         level_map = {
             "ORG": "Organisation",
             # "ORST": "Organisation Sections",
@@ -110,6 +110,10 @@ class Logon(InterfaceBase):
         }
 
         return schemas.hierarchy.HierarchyLevel(id=unit_number, level=level_map[unit_level])
+
+    @property
+    def _asp_net_id(self) -> str:
+        return self.s.cookies["ASP.NET_SessionId"]
 
     # _get override code:
 
@@ -222,7 +226,7 @@ class Logon(InterfaceBase):
         # Set auth headers for new role
         auth_headers = {
             "Authorization": f"{self.cn}~{self.mrn}",
-            "SID": self.compass_props.Master.Sys.SessionID,  # Session ID
+            "SID": self.compass_props.master.sys.session_id,  # Session ID
         }
         self._update_headers(auth_headers)
 
