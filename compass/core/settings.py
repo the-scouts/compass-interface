@@ -1,5 +1,6 @@
 class Settings:
-    base_url = "https://compass.scouts.org.uk"
+    base_domain = "compass.scouts.org.uk"
+    base_url = f"https://{base_domain}"
     date_format = "%d %B %Y"  # dd Month YYYY
     org_number = 10000001
     total_requests = 0
