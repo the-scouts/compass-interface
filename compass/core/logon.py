@@ -96,15 +96,12 @@ class Logon(InterfaceBase):
         logon.compass_props = schema.CompassProps(**{"master": {"user": dict(user_props)}})
         logon.current_role = current_role
 
-        auth_headers = {
-            "Authorization": f"{logon.cn}~{logon.mrn}",
-            "SID": logon.compass_props.master.sys.session_id,  # Session ID
-        }
-        logon._update_headers(auth_headers)
+        logon._update_auth_headers(logon.cn, logon.mrn, logon.compass_props.master.sys.session_id)
 
         return logon
 
     def __repr__(self) -> str:
+        """String representation of the Logon class."""
         return f"{self.__class__} Compass ID: {self.cn} ({' - '.join(self.current_role)})"
 
     # properties/accessors code:
@@ -255,11 +252,7 @@ class Logon(InterfaceBase):
         self.roles_dict = dict(self._roles_iterator(form))
 
         # Set auth headers for new role
-        auth_headers = {
-            "Authorization": f"{self.cn}~{self.mrn}",
-            "SID": self.compass_props.master.sys.session_id,  # Session ID
-        }
-        self._update_headers(auth_headers)
+        self._update_auth_headers(self.cn, self.mrn, self.compass_props.master.sys.session_id)
 
         # Update current role properties
         self.current_role = self.roles_dict[self.mrn]
@@ -271,6 +264,13 @@ class Logon(InterfaceBase):
             # Check that the role has been changed to the desired role. If not, raise exception.
             if check_role_number != self.mrn:
                 raise CompassAuthenticationError("Role failed to update in Compass")
+
+    def _update_auth_headers(self, membership_number: int, role_number: int, session_id: str) -> None:
+        auth_headers = {
+            "Authorization": f"{membership_number}~{role_number}",
+            "SID": session_id,  # Session ID
+        }
+        self._update_headers(auth_headers)
 
     @staticmethod
     def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:

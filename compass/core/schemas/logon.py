@@ -10,7 +10,7 @@ TYPES_ORG_LEVELS = Literal["ORG", "ORST", "CNTR", "CNST", "REG", "RGST", "CNTY",
 
 
 class CompassPropsBase(pydantic.BaseModel):
-    class Config:
+    class Config:  # noqa: D106
         allow_population_by_field_name = True
         extra = "allow"
 
