@@ -36,7 +36,7 @@ async def login_token_store_session(user: str, pw: str, role: Optional[str], loc
         raise custom_bearer_auth_exception("Incorrect username or password") from None
 
     jwt_expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode = dict(sub=f"{user.membership_number}", exp=jwt_expiry_time)
+    to_encode = dict(sub=f"{user.props.cn}", exp=jwt_expiry_time)
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     nonce = os.urandom(12)  # GCM mode needs 12 fresh bytes every time
@@ -51,9 +51,11 @@ def authenticate_user(username: str, password: str, role: Optional[str], locatio
     user = ci.login(username, password, role=role, location=location)
 
     return User(
-        membership_number=user.cn,
         selected_role=user.current_role,
         logon_info=(username, password, role, location),
+        asp_net_id=user._asp_net_id,  # pylint: disable=protected-access
+        props=user.compass_props.master.user,
+        expires=datetime.datetime.utcnow() + datetime.timedelta(minutes=9.5),
     )
 
 
@@ -66,8 +68,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
     session_encoded = await store.get(f"session:{token}")
     try:
         session_decrypted = aes_gcm.decrypt(session_encoded[:12], session_encoded[12:], None)  # Maybe raises InvalidTag
-        logon_info = User.parse_raw(session_decrypted).logon_info  # Maybe raises KeyError
-        logon = ci.Logon(logon_info[:2], *logon_info[2:])
+        user = User.parse_raw(session_decrypted)  # Maybe raises KeyError
+        if datetime.datetime.utcnow() < user.expires:
+            logon = ci.Logon.from_session(user.asp_net_id, user.props.__dict__, user.selected_role)
+        else:
+            logon = ci.Logon(user.logon_info[:2], *user.logon_info[2:])
         if int(payload.get("sub", -1)) == int(logon.cn):  # Maybe raises ValueError
             return logon
     except (InvalidTag, KeyError, ValueError):
