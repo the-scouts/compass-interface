@@ -34,7 +34,7 @@ and is licensed under the **[MIT license](https://choosealicense.com/licenses/mi
 app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
     description=long_description,
-    version="0.22.0",
+    version="0.22.1",
     on_shutdown=[redis_handler.on_shutdown],
     openapi_tags=open_api_tag_metadata,
 )
