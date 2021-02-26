@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
-from routes import authentication
-from routes import members
-from utility import redis_handler
 import uvicorn
+
+from compass.api.routes import authentication
+from compass.api.routes import members
+from compass.api.utility import redis_handler
 
 open_api_tag_metadata = [
     {

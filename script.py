@@ -1,7 +1,41 @@
-import compass as ci
-from compass.util import hierarchy
+import csv
+from pathlib import Path
+import time
 
+import requests
+
+import compass.core as ci
+from compass.core._scrapers.member import PeopleScraper
+from compass.core.schemas.member import MemberRolePopup
+from compass.interface import compass_read
+from compass.util.hierarchy import HierarchyUtility
+
+start = time.time()
 # Exporting Appointments report: 14.39s 13.73s 13.26s
+
+
+def role_details_all_csv_to_json(filename: Path):
+    path_converted = filename.with_suffix(".converted.json")
+    path_converted.write_text("")  # clear the file
+    ps = PeopleScraper(requests.Session())
+    i = 0
+    st = time.time()
+    print(st)
+    with open(filename, "r", encoding="utf-8-sig") as csv_file, open(path_converted, "a", encoding="utf-8") as out_file:
+        out_file.write("[\n")
+        data_reader = csv.reader(csv_file)
+        next(data_reader)  # header row
+        for row in data_reader:
+            i += 1
+            if i % 50 == 0:
+                print(i)
+            parsed: MemberRolePopup = ps.get_roles_detail(int(row[1]), row[0])
+            out_file.write(parsed.json(exclude_unset=True) + ", \n")
+        out_file.write("]")
+    print(time.time() - st)
+
+
+# role_details_all_csv_to_json(Path("old exports/role_details_all 2019-08-31.csv"))
 
 if __name__ == "__main__":
     auth_keys = ("user", "pass")
@@ -18,7 +52,7 @@ if __name__ == "__main__":
     # a = people._scraper.get_roles_detail(760357)
     # a = people.get_member_data(760357)
 
-    ci.reports.get_report(c_logon, "Region Appointments Report")
+    ci.Reports(c_logon).get_report("Region Appointments Report")
     print(f"Took {time.time() - start}s")
 
     # SCRATCH #
@@ -36,10 +70,10 @@ if __name__ == "__main__":
     cook_meth_id = 10013849
 
     # members_json = get_members_with_roles_in_unit(cook_meth_id)
-    org_hierarchy = c_hierarchy.get_hierarchy(10000001, "Organisation")
+    org_hierarchy = c_hierarchy.get_hierarchy(unit_id=10000001, level="Organisation")
     # a = c_hierarchy.get_hierarchy(10013849, "Group")
 
-    u_hierarchy = hierarchy.HierarchyUtility(c_logon)
+    u_hierarchy = HierarchyUtility(c_logon)
     # surrey_county_id = 10000115
     # cook_meth_id = 10013849
     # surrey_hierarchy = u_hierarchy.get_hierarchy(cook_meth_id, "Group")

@@ -1,9 +1,8 @@
 # Compass-Interface Core
-compass-interface-core>=0.5.0
+compass-interface-core>=0.8.0
 
 # Transforming
-numba
-pandas
+pandas>=1.2.0
 pyarrow>=1.0.0
 
 # API
@@ -13,5 +12,5 @@ aioredis
 python-multipart>=0.0.5
 
 # Deployment
-gunicorn
-uvicorn
+gunicorn; platform_system != "Windows"
+uvicorn; platform_system == "Windows"

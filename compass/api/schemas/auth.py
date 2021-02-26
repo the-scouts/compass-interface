@@ -1,15 +1,19 @@
-from typing import List
+import datetime
+from typing import Literal, Optional
 
-from pydantic import BaseModel
+import pydantic
 
-from compass.schemas.member import MemberBase
-
-
-class User(MemberBase):
-    selected_role: str
-    auth: List[str]
+from compass.core.schemas.logon import CompassPropsMasterUser
 
 
-class Token(BaseModel):
+class User(pydantic.BaseModel):
+    selected_role: tuple[str, str]
+    logon_info: tuple[str, str, Optional[str], Optional[str]]
+    asp_net_id: str
+    props: CompassPropsMasterUser
+    expires: datetime.datetime
+
+
+class Token(pydantic.BaseModel):
     access_token: str
-    token_type: str
+    token_type: Literal["bearer"]

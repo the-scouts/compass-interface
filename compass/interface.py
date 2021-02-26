@@ -1,20 +1,20 @@
-import compass as ci
+import compass.core as ci
 
 
-def compass_read(auth: list or tuple):
+def compass_read(auth: tuple[str, str]):
     logon = ci.Logon(auth)
-    scraper = ci.People(logon)._scraper
+    people = ci.People(logon)
 
     member_number = logon.cn
-    training_data = scraper.get_training_tab(member_number)
-    permits_data = scraper.get_permits_tab(member_number)
-    roles_detail = {role: scraper.get_roles_detail(role) for role in training_data["roles"]}
+    training_data = people._training_tab(member_number)
+    permits_data = people._permits_tab(member_number)
+    roles_detail = {role: people._scraper.get_roles_detail(role) for role in training_data.roles}
 
     obj = {
         # **training_data,
-        "roles": training_data["roles"],
-        "plps": training_data["plps"],
-        "mandatory": training_data["mandatory"],
+        "roles": training_data.roles,
+        "plps": training_data.plps,
+        "mandatory": training_data.mandatory,
         "permits": permits_data,
         "hierarchies": {role_id: detail["hierarchy"] for role_id, detail in roles_detail.items()},
     }
