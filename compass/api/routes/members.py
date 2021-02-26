@@ -3,8 +3,8 @@ from fastapi import Depends
 from fastapi import HTTPException
 from starlette import status
 
-import compass as ci
 from compass.api.utility.oauth2 import get_current_user
+import compass.core as ci
 from compass.core.schemas import member
 
 router = APIRouter()
@@ -20,9 +20,9 @@ def get_current_member(logon: ci.Logon = Depends(get_current_user)):
     return ci.People(logon)._scraper.get_personal_tab(logon.cn)
 
 
-@router.get("/me/roles", response_model=list[member.MemberRole])
-def get_current_member_roles(logon: ci.Logon = Depends(get_current_user), volunteer_only: bool = False):
-    return ci.People(logon).get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
+# @router.get("/me/roles", response_model=list[member.MemberRole])
+# def get_current_member_roles(logon: ci.Logon = Depends(get_current_user), volunteer_only: bool = False):
+#     return ci.People(logon).get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
 
 
 @router.get("/me/permits", response_model=list[member.MemberPermit])
@@ -62,17 +62,17 @@ def get_member(compass_id: int, logon: ci.Logon = Depends(get_current_user)):
     return user
 
 
-@router.get("/{compass_id}/roles", response_model=list[member.MemberRole])
-def get_member_roles(compass_id: int, logon: ci.Logon = Depends(get_current_user)):
-    try:
-        roles_list = ci.People(logon).get_roles(compass_id, keep_non_volunteer_roles=False)
-    except Exception as err:
-        print(type(err))
-        roles_list = None
-
-    if not roles_list:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return roles_list
+# @router.get("/{compass_id}/roles", response_model=list[member.MemberRole])
+# def get_member_roles(compass_id: int, logon: ci.Logon = Depends(get_current_user)):
+#     try:
+#         roles_list = ci.People(logon).get_roles(compass_id, keep_non_volunteer_roles=False)
+#     except Exception as err:
+#         print(type(err))
+#         roles_list = None
+#
+#     if not roles_list:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+#     return roles_list
 
 
 @router.get("/{compass_id}/permits")
@@ -95,6 +95,7 @@ def get_ongoing_training(compass_id: int, logon: ci.Logon = Depends(get_current_
     if not ongoing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return ongoing
+
 
 # @router.get("/{compass_id}", response_model=member.MemberDetails)
 # def get_member(compass_id: int, df: pd.DataFrame = Depends(get_df)):

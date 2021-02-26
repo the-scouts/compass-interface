@@ -4,7 +4,7 @@ import time
 
 import requests
 
-import compass as ci
+import compass.core as ci
 from compass.core._scrapers.member import PeopleScraper
 from compass.core.schemas.member import MemberRolePopup
 from compass.interface import compass_read
