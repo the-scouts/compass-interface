@@ -72,8 +72,8 @@ licensed under the **[MIT license](https://choosealicense.com/licenses/mit/)**.
 
 ### Running the API
 
-To run the API either run `uvicorn src.api.app:app --reload` in the
-root directory, or run the app.py file in the `/src/api/` directory. This
+To run the API either run `uvicorn compass.api.app:app --reload` in the
+root directory, or run the app.py file in the `/compass/api/` directory. This
 second method also enables interactive debugging.
 
 Alternativley, use [Docker](#Docker)
