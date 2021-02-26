@@ -42,7 +42,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ steps.get_version.outputs.VERSION }}
           body: |
-            compass-interface-core v${{ steps.get_version.outputs.VERSION }}
+            compass-interface v${{ steps.get_version.outputs.VERSION }}
           draft: true
 
       - name: Upload Asset to GH Releases
@@ -51,8 +51,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/compass-interface-core-${{ steps.get_version.outputs.VERSION }}.tar.gz
-          asset_name: compass-interface-core-${{ steps.get_version.outputs.VERSION }}.tar.gz
+          asset_path: ./dist/compass-interface-${{ steps.get_version.outputs.VERSION }}.tar.gz
+          asset_name: compass-interface-${{ steps.get_version.outputs.VERSION }}.tar.gz
           asset_content_type: application/gzip
 
       - name: TESTING- upload files
