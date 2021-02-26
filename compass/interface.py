@@ -1,4 +1,4 @@
-import compass as ci
+import compass.core as ci
 
 
 def compass_read(auth: tuple[str, str]):
