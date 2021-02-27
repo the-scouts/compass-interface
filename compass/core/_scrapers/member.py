@@ -318,6 +318,47 @@ class PeopleScraper(InterfaceAuthenticated):
         with validation_errors_logging(membership_num):
             return schema.MemberRolesDict.parse_obj(roles_data)
 
+    def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
+        """Returns data from Permits tab for a given member.
+
+        If a permit has been revoked, the expires value is None and the status is PERM_REV
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A list of dicts mapping keys to the corresponding data from the
+            permits tab.
+
+            Keys will always be present.
+
+        Todo:
+            Other possible exceptions? i.e. from Requests
+
+        """
+        response = self._get_member_profile_tab(membership_num, "Permits")
+        tree = html.fromstring(response)
+
+        # Get rows with permit content
+        rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
+
+        permits = []
+        for row in rows:
+            permit: dict[str, Union[None, int, str, datetime.date]] = dict(membership_number=membership_num)
+            child_nodes = list(row)
+            permit["permit_type"] = child_nodes[1].text_content()
+            permit["category"] = child_nodes[2].text_content()
+            permit["type"] = child_nodes[3].text_content()
+            permit["restrictions"] = child_nodes[4].text_content()
+            expires = child_nodes[5].text_content()
+            permit["expires"] = parse(expires) if expires != "Revoked" else None
+            permit["status"] = child_nodes[5].get("class")
+
+            permits.append(permit)
+
+        with validation_errors_logging(membership_num):
+            return schema.MemberPermitsList.parse_obj(permits)
+
     @overload
     def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMOGLList:
         ...
@@ -499,47 +540,6 @@ class PeopleScraper(InterfaceAuthenticated):
 
         with validation_errors_logging(membership_num):
             return schema.MemberTrainingTab.parse_obj(training_data)
-
-    def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
-        """Returns data from Permits tab for a given member.
-
-        If a permit has been revoked, the expires value is None and the status is PERM_REV
-
-        Args:
-            membership_num: Membership Number to use
-
-        Returns:
-            A list of dicts mapping keys to the corresponding data from the
-            permits tab.
-
-            Keys will always be present.
-
-        Todo:
-            Other possible exceptions? i.e. from Requests
-
-        """
-        response = self._get_member_profile_tab(membership_num, "Permits")
-        tree = html.fromstring(response)
-
-        # Get rows with permit content
-        rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
-
-        permits = []
-        for row in rows:
-            permit: dict[str, Union[None, int, str, datetime.date]] = dict(membership_number=membership_num)
-            child_nodes = list(row)
-            permit["permit_type"] = child_nodes[1].text_content()
-            permit["category"] = child_nodes[2].text_content()
-            permit["type"] = child_nodes[3].text_content()
-            permit["restrictions"] = child_nodes[4].text_content()
-            expires = child_nodes[5].text_content()
-            permit["expires"] = parse(expires) if expires != "Revoked" else None
-            permit["status"] = child_nodes[5].get("class")
-
-            permits.append(permit)
-
-        with validation_errors_logging(membership_num):
-            return schema.MemberPermitsList.parse_obj(permits)
 
     def get_awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
         response = self._get_member_profile_tab(membership_num, "Awards")
