@@ -41,7 +41,17 @@ to isolate your packages.
 
 ```shell
 # or PyPI
-pip install -r requirements.txt 
+
+# create venv
+python -m venv venv
+
+# activate venv - windows
+.\venv\Scripts\activate
+# activate venv - unix-like (macOS, linux)
+source env/bin/activate 
+
+# install dependencies
+python -m pip install -r requirements.txt 
 ```
 
 ### Dependencies
