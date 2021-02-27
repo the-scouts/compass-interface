@@ -53,23 +53,12 @@ class InterfaceBase:
 
 
 class InterfaceAuthenticated(InterfaceBase, abc.ABC):
-    @property
-    @abc.abstractmethod
-    def mrn(self) -> int:
-        """Returns Member Role Number"""
-        ...
+    def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
+        super(InterfaceAuthenticated, self).__init__(session)
 
-    @property
-    @abc.abstractmethod
-    def cn(self) -> int:
-        """Returns Contact Number"""
-        ...
-
-    @property
-    @abc.abstractmethod
-    def jk(self) -> str:
-        """Returns ??? (J... Key? / Join Key - SHA2-512 encoded."""
-        ...
+        self.cn: int = member_number  # Contact Number
+        self.mrn: int = role_number  # Member Role Number
+        self.jk: str = jk  # ???? Key?  # Join Key??? SHA2-512
 
     def _get(
             self,
