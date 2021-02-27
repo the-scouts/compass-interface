@@ -36,12 +36,9 @@ class RedisSettings(pydantic.BaseSettings):
 
 
 class RedisPlugin:
-    def __init__(self, app: Optional[FastAPI] = None, config: RedisSettings = RedisSettings()):
+    def __init__(self, config: RedisSettings = RedisSettings()):
         self.redis: Optional[Redis] = None
         self.config = config
-
-        if app:
-            await self.setup_redis(app)
 
     async def setup_redis(self, app: FastAPI) -> None:
         logger.info("Setting up Redis plugin")
