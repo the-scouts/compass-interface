@@ -35,8 +35,8 @@ conda env create
 conda activate compass-interface
 ```
 
-If installing dependencies from  PyPI, please **strongly** consider
-[using a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
+If installing dependencies with `pip`, 
+[use a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 to isolate your packages. 
 
 ```shell
@@ -73,10 +73,10 @@ licensed under the **[MIT license](https://choosealicense.com/licenses/mit/)**.
 ### Running the API
 
 To run the API either run `uvicorn compass.api.app:app --reload` in the
-root directory, or run the app.py file in the `/compass/api/` directory. This
+root directory, or run the `app.py` file in the `/compass/api/` directory. This
 second method also enables interactive debugging.
 
-Alternativley, use [Docker](#Docker)
+Alternatively, use [Docker](#Docker)
 
 ### Running the Compass Interface files directly
 
@@ -86,16 +86,32 @@ credentials to git, as these are assumed public as soon as they are on
 GitHub.
 
 ### Docker
-To start docker compose, run `docker-compose up -d`.  
-To stop docker, run `docker-compose down`.  
-To rebuild the app, run `docker-compose build --no-cache backend`.  
-To access an interative shell, run `docker run -it backend bash`.
+To run Compass Interface locally, we provide docker templates in `/docker`.
 
-When the containers are running, Redis Insight is available at
-[localhost:8001](http://localhost:8001), the FastAPI app is reached at
-[localhost:8888](http://localhost:8888), and the Traefik reverse proxy is
-[localhost:80](http://localhost:80) for the app proxy and
-[localhost:8080](http://localhost:8080) for Traefik's dashboard.
+> **Note**: All commands below are run in the `/docker` directory. 
+
+#### Local hosting / development
+
+To start docker, run `docker-compose -f docker-compose.yml up -d`.  
+To rebuild the Compass Interface backend, run `docker-compose build backend`.  
+To access an interative shell, run `docker run -it backend bash`.  
+To stop docker, run `docker-compose down`.
+
+#### Deployment
+
+To start docker, run 
+`docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d`.  
+To stop docker, run `docker-compose down`.  
+
+#### Ports
+
+When the containers are running, the FastAPI app is reached at
+[localhost:8888](http://localhost:8888) and  Redis UI is available at
+[localhost:8001](http://localhost:8001). 
+
+If you are running the deployment configuration, you will also find the Traefik 
+reverse proxy at [localhost:80](http://localhost:80) and Traefik's dashboard at 
+[localhost:8080](http://localhost:8080).
 
 ## Support
 
