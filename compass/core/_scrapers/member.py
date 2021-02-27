@@ -266,6 +266,8 @@ class PeopleScraper(InterfaceAuthenticated):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
+        statuses_set = statuses is not None
+
         roles_data = {}
         rows = tree.xpath("//tbody/tr")
         for row in rows:
@@ -309,7 +311,7 @@ class PeopleScraper(InterfaceAuthenticated):
                 continue
 
             # Role status filter
-            if role_status not in statuses:
+            if statuses_set and role_status not in statuses:
                 continue
 
             roles_data[role_number] = role_details
