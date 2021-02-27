@@ -10,7 +10,6 @@ from compass.core.interface_base import InterfaceAuthenticated
 from compass.core.logger import logger
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
-from compass.core.utility import cast
 from compass.core.utility import maybe_int
 from compass.core.utility import parse
 from compass.core.utility import validation_errors_logging
@@ -814,7 +813,7 @@ class PeopleScraper(InterfaceAuthenticated):
                     "validated": parse(module[2][0].value),  # Save module validation date
                     "validated_by": module[1][1].value or None,  # Save who validated the module
                 }
-                mod_code = cast(module[2][0].get("data-ng_value"))  # int or str
+                mod_code: str = module[2][0].get("data-ng_value")
                 modules_output[renamed_modules[mod_code]] = info
 
         # Get all levels of the org hierarchy and select those that will have information:
