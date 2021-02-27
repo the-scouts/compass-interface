@@ -772,7 +772,8 @@ class PeopleScraper(InterfaceAuthenticated):
         # Review Date
         role_details["review_date"] = parse(fields.get("ctl00$workarea$txt_p2_review"))
         # CE (Confidential Enquiry) Check  # TODO if CE check date != current date then is valid
-        role_details["ce_check"] = parse(fields.get("ctl00$workarea$txt_p2_cecheck"))
+        ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")
+        role_details["ce_check"] = parse(ce_check) if ce_check != "Pending" else None
         # Disclosure Check
         disclosure_with_date = fields.get("ctl00$workarea$txt_p2_disclosure", "")
         if disclosure_with_date.startswith("Disclosure Issued : "):
