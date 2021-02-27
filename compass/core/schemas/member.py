@@ -97,6 +97,12 @@ TYPES_REFERENCES = Literal[
     "References Satisfactory",
     "References Unsatisfactory",
 ]
+TYPES_DISCLOSURES_APPOINTMENT = Literal[
+    "Application submitted - in progress",
+    "Disclosure Issued",
+    "ID check required",
+    "No Disclosure",
+]  # Disclosure statuses in role details popup
 TYPES_PERMIT = Literal[
     "Archery",
     "Bell Boating",
@@ -184,7 +190,7 @@ TYPES_DISCLOSURE_STATUSES = Literal[
     "Expired",
     "ID check required",
     "ID selection required",
-]
+]  # Disclosure statuses in disclosures tab
 
 
 class MemberGenericDict(generics.GenericModel, Generic[DataT]):
@@ -314,12 +320,12 @@ class MemberRoleDetail(MemberBase, MemberRoleBase):
     line_manager: Optional[str] = None
 
     # Approval information
-    ce_check: datetime.date
-    disclosure_check: Literal["Disclosure Issued"]
+    ce_check: Optional[datetime.date]  # Optional for Closed roles - e.g. #499, role closed 1976, or if Pending
+    disclosure_check: Optional[TYPES_DISCLOSURES_APPOINTMENT]
     disclosure_date: Optional[datetime.date]
     references: Optional[TYPES_REFERENCES] = None
-    appointment_panel_approval: Optional[Literal["S", "NC", "NR", "U"]] = None
-    commissioner_approval: Optional[Literal["S", "NR", "RR", "U"]] = None
+    appointment_panel_approval: Optional[Literal["NC", "NR", "S", "U"]] = None
+    commissioner_approval: Optional[Literal["NC", "NR", "RR", "S", "U"]] = None
     committee_approval: Optional[Literal["NC", "S", "U"]] = None
 
 
