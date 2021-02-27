@@ -31,24 +31,78 @@ class InterfaceBase:
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> requests.Response:
+        """Sends a HTTP GET request.
+
+        Pass-through method to requests.sessions.Session.get, also adding to
+        the counter of total requests sent by `ci.core`.
+
+        Args:
+            url: Request URL
+            params: Mapping to be sent in the query string for the request
+            headers: Mapping of HTTP Headers
+            stream: Whether to stream download the response content.
+            kwargs: Optional arguments to requests.sessions.Session.get
+
+        Returns:
+            requests.Response object from executing the request
+
+        Raises:
+            requests.exceptions.RequestException
+
+        """
         Settings.total_requests += 1
         return self.s.get(url, params=params, headers=headers, stream=stream, **kwargs)
 
     def _post(
         self,
         url: str,
-        data: Union[None, str, bytes, Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
         json: Optional[Any] = None,
         **kwargs: Any,
     ) -> requests.Response:
+        """Sends a HTTP POST request.
+
+        Pass-through method to requests.sessions.Session.post, also adding to
+        the counter of total requests sent by `ci.core`.
+
+        Args:
+            url: Request URL
+            data: Mapping to be sent in the query string for the request
+            json: Json to send in the request body
+            kwargs: Optional arguments to requests.sessions.Session.post
+
+        Returns:
+            requests.Response object from executing the request
+
+        Raises:
+            requests.exceptions.RequestException
+
+        """
         Settings.total_requests += 1
         return self.s.post(url, data=data, json=json, **kwargs)
 
     def _head(self, url: str, **kwargs: Any) -> requests.Response:
+        """Sends a HTTP HEAD request.
+
+        Pass-through method to requests.sessions.Session.head, also adding to
+        the counter of total requests sent by `ci.core`.
+
+        Args:
+            url: Request URL
+            kwargs: Optional arguments to requests.sessions.Session.post
+
+        Returns:
+            requests.Response object from executing the request
+
+        Raises:
+            requests.exceptions.RequestException
+
+        """
         Settings.total_requests += 1
         return self.s.head(url, **kwargs)
 
     def _update_headers(self, headers: dict[str, str]) -> None:
+        """Update common session headers dictionary."""
         self.s.headers.update(headers)
 
 
@@ -70,7 +124,40 @@ class InterfaceAuthenticated(InterfaceBase, abc.ABC):
         auth_header: bool = False,
         **kwargs: Any,
     ) -> requests.Response:
-        """Override get method with custom auth_header logic."""
+        """Sends a HTTP GET request.
+
+        Pass-through method to requests.sessions.Session.get, also adding to
+        the counter of total requests sent by `ci.core`.
+
+        Adds custom auth_header logic for certain Compass requests
+        See Scouts.js -> $.ajaxSetup -> beforeSend for details (links below)
+        https://github.com/the-scouts/compass-interface/blob/master/js/Scouts.js#L1122
+        https://github.com/the-scouts/compass-interface/blob/master/js/Scouts.js#L1128-L1129
+
+        Logic in source comments is auth_header logic is only added for **AJAX**
+        GET calls matching the following logic:
+
+        if method == "GET":
+            if compass_props.master.sys.safe_json is True and "system/preflight" not in url:
+                return True
+            elif url.lower().replace(Settings.web_service_path.lower(), "").startswith("sto_check")
+                return False
+            return True
+
+        Args:
+            url: Request URL
+            params: Mapping to be sent in the query string for the request
+            headers: Mapping of HTTP Headers
+            stream: Whether to stream download the response content.
+            kwargs: Optional arguments to requests.sessions.Session.get
+
+        Returns:
+            requests.Response object from executing the request
+
+        Raises:
+            requests.exceptions.RequestException
+
+        """
         # pylint: disable=arguments-differ, too-many-arguments
         # We override the base requests.get with the custom auth logic, but
         # pylint complains that arguments differ. Also complains that we have

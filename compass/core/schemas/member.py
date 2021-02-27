@@ -306,7 +306,7 @@ MemberRolesDict = MemberGenericDict[MemberRoleCore]
 # Roles Tab (Role Detail Popup - Main)
 class MemberRoleDetail(MemberBase, MemberRoleBase):
     organisation_level: str
-    birth_date: datetime.date
+    birth_date: Optional[datetime.date]
     name: str
 
     # Approval Process
@@ -436,7 +436,6 @@ class MemberAward(MemberBase):
     type: TYPES_AWARD_TYPE
     location: Optional[str]
     date: datetime.date
-    # image_url: Optional[pydantic.HttpUrl] = None
 
 
 class MemberDisclosure(MemberBase):
