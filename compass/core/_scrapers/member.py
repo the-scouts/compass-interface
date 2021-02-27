@@ -704,22 +704,26 @@ class PeopleScraper(InterfaceAuthenticated):
             "County / Area / Scottish Region / Overseas Branch": "County",
         }
         renamed_modules = {
-            1: "module_01",
+            "001": "module_01",
             "TRST": "trustee_intro",
-            2: "module_02",
-            3: "module_03",
-            4: "module_04",
+            "002": "module_02",
+            "003": "module_03",
+            "004": "module_04",
             "GDPR": "GDPR",
+            "SFTY": "safety",
+            "SAFE": "safeguarding",
         }
         unset_vals = {"--- Not Selected ---", "--- No Items Available ---", "--- No Line Manager ---"}
 
         module_names = {
             "Essential Information": "M01",
             "Trustee Introduction": "TRST",
-            "PersonalLearningPlan": "M02",
+            "Personal Learning Plan": "M02",
             "Tools for the Role (Section Leaders)": "M03",
             "Tools for the Role (Managers and Supporters)": "M04",
             "General Data Protection Regulations": "GDPR",
+            "Safety Training": "SFTY",
+            "Safeguarding Training": "SAFE",
         }
 
         references_codes = {
@@ -813,7 +817,7 @@ class PeopleScraper(InterfaceAuthenticated):
                 info = {
                     # "name": module_names[module_name],  # short_name
                     "validated": parse(module[2][0].value),  # Save module validation date
-                    "validated_by": module[1][1].value or None,  # Save who validated the module
+                    "validated_by": module[1][1].get("value") or None,  # Save who validated the module
                 }
                 mod_code: str = module[2][0].get("data-ng_value")
                 modules_output[renamed_modules[mod_code]] = info
