@@ -97,20 +97,6 @@ class People:
         """
         return self._scraper.get_roles_detail(role_number)
 
-    def training(self, membership_num: int) -> schema.MemberTrainingTab:
-        """Gets training tab data for a given member.
-
-        Args:
-            membership_num: Membership Number to use
-
-        Returns:
-            requests.exceptions.RequestException:
-                For errors while executing the HTTP call
-            A MemberTrainingTab object containing all data.
-
-        """
-        return self._scraper.get_training_tab(membership_num, ongoing_only=False)
-
     def permits(self, membership_num: int) -> schema.MemberPermitsList:
         """Gets permits tab data for a given member.
 
@@ -125,7 +111,32 @@ class People:
         """
         return self._scraper.get_permits_tab(membership_num)
 
+    def training(self, membership_num: int) -> schema.MemberTrainingTab:
+        """Gets training tab data for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+            A MemberTrainingTab object containing all data.
+
+        """
+        return self._scraper.get_training_tab(membership_num, ongoing_only=False)
+
     def ongoing_learning(self, membership_num: int) -> schema.MemberMOGLList:
+        """Gets ongoing learning data for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+            A MemberMOGLList object containing all data.
+
+        """
         return self._scraper.get_training_tab(membership_num, ongoing_only=True)
 
     def awards(self, membership_num: int) -> list[schema.MemberAward]:
