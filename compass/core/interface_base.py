@@ -54,6 +54,7 @@ class InterfaceBase:
 
 class InterfaceAuthenticated(InterfaceBase, abc.ABC):
     def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
+        """Constructor for InterfaceAuthenticated."""
         super(InterfaceAuthenticated, self).__init__(session)
 
         self.cn: int = member_number  # Contact Number
@@ -61,13 +62,13 @@ class InterfaceAuthenticated(InterfaceBase, abc.ABC):
         self.jk: str = jk  # ???? Key?  # Join Key??? SHA2-512
 
     def _get(
-            self,
-            url: str,
-            params: Union[None, dict[str, str]] = None,
-            headers: Optional[dict[str, str]] = None,
-            stream: Optional[bool] = None,
-            auth_header: bool = False,
-            **kwargs: Any,
+        self,
+        url: str,
+        params: Union[None, dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
+        stream: Optional[bool] = None,
+        auth_header: bool = False,
+        **kwargs: Any,
     ) -> requests.Response:
         """Override get method with custom auth_header logic."""
         # pylint: disable=arguments-differ, too-many-arguments

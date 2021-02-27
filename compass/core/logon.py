@@ -65,14 +65,13 @@ class Logon(InterfaceAuthenticated):
         session: Optional[requests.Session] = None,
     ):
         """Constructor for Logon."""
-
         self.compass_props: schema.CompassProps
         self.roles_dict: TYPES_ROLES_DICT = {}
         self.current_role: TYPES_ROLE = ("", "")
 
         # Create session
         if session is not None:
-            session = session  # Already set
+            pass  # As we assign to session below, we can't do an if session is None check to raise
         elif credentials is not None:
             worker = LogonCore()
             session = worker.s
