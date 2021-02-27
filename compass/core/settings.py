@@ -1,7 +1,7 @@
 import pydantic
 
 
-class Settings(pydantic.BaseSettings):
+class _SettingsModel(pydantic.BaseSettings):
     base_domain: str = "compass.scouts.org.uk"
     base_url: pydantic.HttpUrl = f"https://{base_domain}"
     date_format: str = "%d %B %Y"  # dd Month YYYY
@@ -14,3 +14,6 @@ class Settings(pydantic.BaseSettings):
     class Config:  # noqa: D106
         case_sensitive = False  # this is the default, but mark for clarity.
         env_prefix = "CI_"  # env variables named `REDIS_HOST` etc
+
+
+Settings = _SettingsModel()
