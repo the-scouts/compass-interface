@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 DataT = TypeVar("DataT")
 
+TYPES_ROLE_STATUS = Literal["Cancelled", "Closed", "Full", "Pre provisional", "Provisional"]
 TYPES_SEX = Literal["Male", "Female", "Unknown"]
 TYPES_ETHNICITY = Literal[
     "1.English/Welsh/Scottish/Northern Irish/British",
@@ -230,7 +231,7 @@ class MemberRoleBase(pydantic.BaseModel):
     role_number: int
     role_title: str  # role_name
     role_start: datetime.date
-    role_status: Literal["Cancelled", "Closed", "Full", "Pre provisional", "Provisional"]
+    role_status: TYPES_ROLE_STATUS
     review_date: Optional[datetime.date] = None
 
 

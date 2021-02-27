@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import get_args, Optional, TYPE_CHECKING
 
 from compass.core._scrapers.member import PeopleScraper
-from compass.core.logon import Logon
-from compass.core.schemas import member as schema
-from compass.core.utility import maybe_int
+from compass.core.schemas.member import TYPES_ROLE_STATUS
 
 if TYPE_CHECKING:
-    import datetime
+    from collections.abc import Iterable
 
-    TYPES_ISD = Union[int, str, datetime.date]
+    from compass.core.logon import Logon
+    from compass.core.schemas import member as schema
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
 # UTILITY CLASS - get_member_data, get_roles_from_members, etc
+
+STATUSES = set(get_args(TYPES_ROLE_STATUS))
 
 
 class People:
@@ -78,7 +79,13 @@ class People:
         return role_list
 
     # See getRole in PGS\Needle
-    def _roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> schema.MemberRolesDict:
+    def roles(
+        self,
+        membership_num: int,
+        keep_non_volunteer_roles: bool = False,
+        only_active: bool = False,
+        statuses: Optional[Iterable[TYPES_ROLE_STATUS]] = None,
+    ) -> schema.MemberRolesDict:
         """Gets the data from the Role tab in Compass for the specified member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
@@ -86,12 +93,21 @@ class People:
         Args:
             membership_num: Membership Number to use
             keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
+            only_active: Keep only active (Full, Provisional, Pre-Provisional) roles?
+            statuses: Explicit set of role statuses to keep
 
         Returns:
             A MemberRolesDict object containing all data.
 
+        Raises:
+            PermissionError:
+                If the current user does not have permission to view roles
+                data for the requested member.
+
         """
-        return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
+        if only_active:
+            statuses = STATUSES - {"Closed", "Cancelled"}
+        return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles, statuses)
 
     def training(self, membership_num: int) -> schema.MemberTrainingTab:
         """Gets training tab data for a given member.
