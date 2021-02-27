@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import abc
+import datetime
+import time
 from typing import Any, Optional, TYPE_CHECKING, Union
 
+from compass.core.logger import logger
 from compass.core.settings import Settings
+from compass.core.utility import compass_restify
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -45,3 +50,62 @@ class InterfaceBase:
 
     def _update_headers(self, headers: dict[str, str]) -> None:
         self.s.headers.update(headers)
+
+
+class InterfaceAuthenticated(InterfaceBase, abc.ABC):
+    @property
+    @abc.abstractmethod
+    def mrn(self) -> int:
+        """Returns Member Role Number"""
+        ...
+
+    @property
+    @abc.abstractmethod
+    def cn(self) -> int:
+        """Returns Contact Number"""
+        ...
+
+    @property
+    @abc.abstractmethod
+    def jk(self) -> str:
+        """Returns ??? (J... Key? / Join Key - SHA2-512 encoded."""
+        ...
+
+    def _get(
+            self,
+            url: str,
+            params: Union[None, dict[str, str]] = None,
+            headers: Optional[dict[str, str]] = None,
+            stream: Optional[bool] = None,
+            auth_header: bool = False,
+            **kwargs: Any,
+    ) -> requests.Response:
+        """Override get method with custom auth_header logic."""
+        # pylint: disable=arguments-differ, too-many-arguments
+        # We override the base requests.get with the custom auth logic, but
+        # pylint complains that arguments differ. Also complains that we have
+        # more than 5 arguments, so turn off that check too.
+        if auth_header:
+            if headers is None:
+                headers = {}
+            headers = headers | {"Auth": self._jk_hash()}
+
+            if params is None:
+                params = {}
+            params = params | {
+                "x1": f"{self.cn}",
+                "x2": f"{self.jk}",
+                "x3": f"{self.mrn}",
+            }
+
+        return super()._get(url, params=params, headers=headers, stream=stream, **kwargs)
+
+    def _jk_hash(self) -> str:
+        """Generate JK Hash needed by Compass."""
+        # hash_code(f"{time.time() * 1000:.0f}")
+        member_no = self.cn
+        key_hash = f"{time.time() * 1000:.0f}{self.jk}{self.mrn}{member_no}"  # JK, MRN & CN are all required.
+        data = compass_restify({"pKeyHash": key_hash, "pCN": member_no})
+        logger.debug(f"Sending preflight data {datetime.datetime.now()}")
+        self._post(f"{Settings.base_url}/System/Preflight", json=data)
+        return key_hash
