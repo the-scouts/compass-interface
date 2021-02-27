@@ -594,7 +594,7 @@ class PeopleScraper(InterfaceAuthenticated):
             membership_num: Membership Number to use
 
         Returns:
-            A MemberAward object with corresponding data from the disclosures 
+            A MemberAward object with corresponding data from the disclosures
             tab.
 
             E.g.:
@@ -617,7 +617,6 @@ class PeopleScraper(InterfaceAuthenticated):
                 For errors while executing the HTTP call
 
         """
-
         response = self._get_member_profile_tab(membership_num, "Disclosures")
         tree = html.fromstring(response)
 
