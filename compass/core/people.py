@@ -22,6 +22,23 @@ class People:
         """Constructor for People."""
         self._scraper = PeopleScraper(session.s, session.cn, session.mrn, session.jk)
 
+    def personal(self, membership_num: int) -> schema.MemberDetails:
+        """Gets personal tab data for a given member.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A MemberDetails object containing all data.
+
+        Raises:
+            PermissionError:
+                If the current user does not have permission to view personal
+                data for the requested member.
+
+        """
+        return self._scraper.get_personal_tab(membership_num)
+
     def get_roles(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> list[dict[str, object]]:  # TYPES_ISD
         response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
 
