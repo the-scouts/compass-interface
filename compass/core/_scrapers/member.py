@@ -6,7 +6,7 @@ from typing import get_args, Literal, overload, TYPE_CHECKING, Union
 
 from lxml import html
 
-from compass.core.interface_base import InterfaceBase
+from compass.core.interface_base import InterfaceAuthenticated
 from compass.core.logger import logger
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
@@ -32,7 +32,7 @@ mogl_map = dict(
 mogl_types = {"gdpr", *mogl_map.values()}
 
 
-class PeopleScraper(InterfaceBase):
+class PeopleScraper(InterfaceAuthenticated):
     """Class directly interfaces with Compass operations to extract member data.
 
     Compass's MemberProfile.aspx has 13 tabs:
@@ -64,14 +64,14 @@ class PeopleScraper(InterfaceBase):
     All functions in the class output native types.
     """
 
-    def __init__(self, session: requests.Session):
+    def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
         """Constructor for PeopleScraper.
 
         takes an initialised Session object from Logon
         """
         # pylint: disable=useless-super-delegation
         # Want to keep this method for future use
-        super().__init__(session)
+        super().__init__(session, member_number, role_number, jk)
 
     def _get_member_profile_tab(self, membership_num: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
         """Returns data from a given tab in MemberProfile for a given member.
