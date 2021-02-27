@@ -1,10 +1,9 @@
-import ast
 import contextlib
 import ctypes
 import datetime
 import functools
 import threading
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional
 
 import pydantic
 

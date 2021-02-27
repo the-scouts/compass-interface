@@ -259,6 +259,10 @@ class PeopleScraper(InterfaceAuthenticated):
             primary_role
 
         """
+        # pylint: disable=too-many-locals
+        # Want to keep all functionality in one place, to reduce the number of
+        # calls to Compass.
+        # TODO could refactor some internals into helper functions
         logger.debug(f"getting roles tab for member number: {membership_num}")
         response = self._get_member_profile_tab(membership_num, "Roles")
         tree = html.fromstring(response)
