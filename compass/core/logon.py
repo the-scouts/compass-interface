@@ -15,7 +15,6 @@ from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
-from compass.core.utility import cast
 from compass.core.utility import PeriodicTimer
 
 if TYPE_CHECKING:
@@ -299,7 +298,7 @@ class LogonCore(InterfaceBase):
             levels = key.split(".")
             for level in levels[:-1]:
                 cd_tmp = cd_tmp.setdefault(level, {})
-            cd_tmp[levels[-1]] = cast(value)  # int or str
+            cd_tmp[levels[-1]] = value  # int or str
 
         if "Sys" in compass_props.get("Master", {}):
             cp_m_s = compass_props["Master"]["Sys"]
