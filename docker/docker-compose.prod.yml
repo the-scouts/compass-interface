@@ -78,62 +78,17 @@ services:
         # to disable www redirection remove the section: ${STACK_NAME?Variable not set}-www-redirect,
         - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-http.middlewares=${STACK_NAME?Variable not set}-www-redirect,${STACK_NAME?Variable not set}-https-redirect
 
-  redis:
-    container_name: redis-cont
-    image: "redis:alpine"
-    environment:
-      - REDIS_REPLICATION_MODE=master
-    ports:
-      - "6379:6379"
-    volumes:
-      # save redisearch data to your current working directory
-      - ./redis-data:/data
-    command:
-      # Set password
-#      - "--requirepass ${REDIS_PASSWORD}"
-      # Enable persistence
-      - "--appendonly yes"
-      - "--appendfsync everysec"
-
-#  redisinsight: # redis db visualization dashboard
-#    container_name: redisinsight-cont
-#    image: redislabs/redisinsight
-#    ports:
-#      - 8001:8001
-#    volumes:
-#      - redisinsight:/db
-#
   p3x-redis-ui: # redis db visualization dashboard
     container_name: p3x-redis-ui
     image: patrikx3/p3x-redis-ui:latest
     restart: always
     ports:
-      - 8008:8008
+      - 8001:8001
     volumes:
       # here you can set your own `p3x-redis-ui-settings` folder
       - ./p3x-redis-ui-settings:/settings
 
   backend:
-    container_name: backend-cont
-    ports:
-      - 8888:8888
-    volumes:
-      - ./compass:/app/compass
-    image: scouts/compass-interface-backend
-    depends_on:
-      - redis
-    env_file:
-      - .env
-    environment:
-      - SECRET_KEY=${SECRET_KEY?Variable not set}
-      - PORT=8888
-      - REDIS_HOST=redis
-      - REDIS_PASS=ubuntu
-    build:
-      context: ./
-      dockerfile: compass/api/backend.dockerfile
-#      args:
-#        INSTALL_DEV: ${INSTALL_DEV-false}
     labels:
       - traefik.enable=true
       - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
