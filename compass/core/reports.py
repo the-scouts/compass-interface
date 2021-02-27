@@ -30,8 +30,7 @@ class ReportTypes(enum.IntEnum):
 class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
-        self._scraper = ReportsScraper(session.s)
-        self._scraper._get = session._get  # massively hacky but we need to send the jk_hash stuff through
+        self._scraper = ReportsScraper(session.s, session.cn, session.mrn, session.jk)
         self.session: Logon = session
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
