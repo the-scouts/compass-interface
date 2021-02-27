@@ -93,7 +93,7 @@ class People:
         """
         return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
 
-    def _training_tab(self, membership_num: int) -> schema.MemberTrainingTab:
+    def training(self, membership_num: int) -> schema.MemberTrainingTab:
         """Gets training tab data for a given member.
 
         Args:
@@ -105,7 +105,7 @@ class People:
         """
         return self._scraper.get_training_tab(membership_num, ongoing_only=False)
 
-    def _permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
+    def permits(self, membership_num: int) -> schema.MemberPermitsList:
         """Gets permits tab data for a given member.
 
         Args:
@@ -117,7 +117,7 @@ class People:
         """
         return self._scraper.get_permits_tab(membership_num)
 
-    def _awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
+    def awards(self, membership_num: int) -> list[schema.MemberAward]:
         """Gets awards tab data for a given member.
 
         Args:
@@ -126,10 +126,15 @@ class People:
         Returns:
             A MemberAward object containing all data.
 
+        Raises:
+            PermissionError:
+                If the current user does not have permission to view awards
+                data for the requested member.
+
         """
         return self._scraper.get_awards_tab(membership_num)
 
-    def _disclosures_tab(self, membership_num: int) -> list[schema.MemberDisclosure]:
+    def disclosures(self, membership_num: int) -> list[schema.MemberDisclosure]:
         """Gets disclosures tab data for a given member.
 
         Args:
@@ -137,6 +142,11 @@ class People:
 
         Returns:
             A list of MemberDisclosure objects containing all data.
+
+        Raises:
+            PermissionError:
+                If the current user does not have permission to view
+                disclosure data for the requested member.
 
         """
         return self._scraper.get_disclosures_tab(membership_num)
