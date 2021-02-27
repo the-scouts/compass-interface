@@ -153,6 +153,9 @@ class People:
         """
         return self._scraper.get_permits_tab(membership_num)
 
+    def ongoing_learning(self, membership_num: int) -> schema.MemberMOGLList:
+        return self._scraper.get_training_tab(membership_num, ongoing_only=True)
+
     def awards(self, membership_num: int) -> list[schema.MemberAward]:
         """Gets awards tab data for a given member.
 
