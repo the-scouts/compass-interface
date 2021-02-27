@@ -1,5 +1,7 @@
 import logging
 
+from compass.core.settings import Settings
+
 logger = logging.getLogger("compass_interface")
 
 
@@ -15,3 +17,7 @@ def enable_debug_logging() -> None:
     console.setFormatter(formatter)
 
     logger.addHandler(console)
+
+
+if Settings.debug:
+    enable_debug_logging()
