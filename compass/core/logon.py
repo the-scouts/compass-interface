@@ -81,11 +81,11 @@ class Logon(InterfaceAuthenticated):
             _response, props, roles = worker.logon_remote(credentials)
             self.compass_props = props
             self.roles_dict = roles
-            self.current_role = self.roles_dict[self.mrn]  # Set explicitly as work done in worker
+            self.current_role = self.roles_dict[props.master.user.mrn]  # Set explicitly as work done in worker
 
             if role_to_use is not None:
                 # Session contains updated auth headers from role change
-                self._change_role(role_to_use, role_location)
+                self._change_role(session, role_to_use, role_location)
         else:
             raise CompassError("compass.core.Logon must be initialised with credentials or an existing session object!")
 
@@ -99,7 +99,7 @@ class Logon(InterfaceAuthenticated):
         role_number = self.compass_props.master.user.mrn  # Member Role Number
         jk = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
 
-        self._asp_net_id: str = self.s.cookies["ASP.NET_SessionId"]
+        self._asp_net_id: str = session.cookies["ASP.NET_SessionId"]
         self._session_id: str = self.compass_props.master.sys.session_id
 
         # Finally, call super
@@ -160,7 +160,7 @@ class Logon(InterfaceAuthenticated):
         # TODO check STO.js etc for what happens when STO is None/undefined
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
 
-    def _change_role(self, new_role: str, location: Optional[str] = None) -> Logon:
+    def _change_role(self, session: requests.Session, new_role: str, location: Optional[str] = None) -> Logon:
         """Returns new Logon object with new role.
 
         If the user has multiple roles with the same role title, the first is used,
@@ -170,11 +170,11 @@ class Logon(InterfaceAuthenticated):
 
         new_role = new_role.strip()
 
-        worker = LogonCore(session=self.s)
+        worker = LogonCore(session=session)
 
         # If we don't have the roles dict, generate it.
         if not self.roles_dict:
-            worker.check_login()
+            _props, self.roles_dict = worker.check_login()
 
         # Change role to the specified role number
         if location is not None:
@@ -183,12 +183,13 @@ class Logon(InterfaceAuthenticated):
         else:
             member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
 
-        response = self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+        response = session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+        Settings.total_requests += 1
         logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
         # Confirm Compass is reporting the changed role number, update auth headers
-        worker.check_login(check_role_number=member_role_number)
-        self.current_role = self.roles_dict[self.mrn]  # Set explicitly as work done in worker
+        self.compass_props, self.roles_dict = worker.check_login(check_role_number=member_role_number)
+        self.current_role = self.roles_dict[member_role_number]  # Set explicitly as work done in worker
 
         logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
 
@@ -209,6 +210,7 @@ class LogonCore(InterfaceBase):
         session = requests.Session()
 
         session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
+        Settings.total_requests += 1
 
         if not session.cookies:
             raise CompassError(
