@@ -7,7 +7,7 @@ from typing import Literal, TYPE_CHECKING, Union
 from lxml import html
 import pydantic
 
-from compass.core.interface_base import InterfaceBase
+from compass.core.interface_base import InterfaceAuthenticated
 from compass.core.schemas import hierarchy as schema
 from compass.core.settings import Settings
 from compass.core.utility import compass_restify
@@ -32,15 +32,15 @@ TYPES_ENDPOINT_LEVELS = Literal[
 endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOINT_LEVELS)}
 
 
-class HierarchyScraper(InterfaceBase):
-    def __init__(self, session: requests.Session):
+class HierarchyScraper(InterfaceAuthenticated):
+    def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
         """Constructor for HierarchyScraper.
 
         takes an initialised Session object from Logon
         """
         # pylint: disable=useless-super-delegation
         # Want to keep this method for future use
-        super().__init__(session)
+        super().__init__(session, member_number, role_number, jk)
 
     # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
     def get_units_from_hierarchy(
