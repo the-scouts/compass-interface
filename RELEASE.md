@@ -2,44 +2,28 @@
 
 ## Release Process
 
-1. Ensure you have the repo forked locally
+1. Update setup.cfg `metadata.version`
 
 2. Tag the release (update setup.cfg if necessary)
 
 ```shell
-git commit --allow-empty -m "🔖 RLS: vX.Y.Z"
-git tag -a "vX.Y.Z" -m "Version X.Y.Z"
+git commit -m "🔖 RLS: vX.Y.Z"
+git tag -a "vX.Y.Z"
 ```
 
-3. Build the release
-
-```shell
-conda update -y conda
-conda env update
-conda activate compass-interface-core
-rm -rf dist
-#git clean -xdf
-#python -m pep517.build .  # Other PEP517 builders?
-#python -m build --sdist --wheel --outdir dist/ # Other PEP517 builders?
-python -m setup sdist bdist_wheel --universal
-```
-
-4. If happy, push the tag
+3. If happy, push the tag
 
 ```shell
 git push origin master --follow-tags
 ```
 
-5. Review the created release at [the-scouts/compass-interface-core/releases](https://github.com/the-scouts/compass-interface-core/releases), and publish it
+4. GitHub Actions will build the artifacts and  automatically release to PyPI
 
-Make sure to check the sdist in `compass/dist/` as the 'binary', as this is used by conda-forge.
+5. Review the created release at 
+   [the-scouts/compass-interface-core/releases](https://github.com/the-scouts/compass-interface-core/releases)
+   , and publish it
 
-6. Update conda-forge feedstock
-
-TODO!
-
-7. Check the upload to PyPI was successful
-
-[comment]: <> (```shell)
-[comment]: <> (twine upload compass/dist/compass-interface-core-*.{whl,tar.gz} --skip-existing)
-[comment]: <> (```)
+6. Conda forge's automation will build the release for conda ~2 hours after 
+   publication on GitHub releases
+   
+6. Check the upload to PyPI, GitHub Releases, and Conda were successful
