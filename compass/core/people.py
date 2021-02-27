@@ -190,6 +190,27 @@ class People:
         """
         return self._scraper.get_disclosures_tab(membership_num)
 
+    def latest_disclosure(self, membership_num: int) -> Optional[schema.MemberDisclosure]:
+        """Gets latest disclosure for a given member.
+
+        Latest is defined as the expiry date that is furthest away.
+
+        Args:
+            membership_num: Membership Number to use
+
+        Returns:
+            A MemberDisclosure objects containing disclosure data.
+
+        Raises:
+            PermissionError:
+                If the current user does not have permission to view
+                disclosure data for the requested member.
+
+        """
+        disclosures = self.disclosures(membership_num)
+        date_map = {disc: disc.expiry_date for disc in disclosures if disc.expiry_date}
+        return date_map.get(max(date_map.keys(), default=None))
+
 
 # class Member:
 #     def personal_details(self):
