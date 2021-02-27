@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 TYPES_STO = Literal[None, "0", "5", "X"]
+TYPES_ROLES_DICT = dict[int, tuple[str, str]]
+TYPES_ROLE = tuple[str, str]
 
 
 def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
@@ -63,19 +65,25 @@ class Logon(InterfaceAuthenticated):
         session: Optional[requests.Session] = None,
     ):
         """Constructor for Logon."""
-        self.compass_props: schema.CompassProps
+        self.worker: Optional[LogonCore] = None
 
-        self.current_role: tuple[str, str] = ("", "")
-        self.roles_dict: dict[int, tuple[str, str]] = {}
+        self.compass_props: schema.CompassProps
+        self.roles_dict: TYPES_ROLES_DICT = {}
+        self.current_role: TYPES_ROLE = ("", "")
 
         # Create session
         if session is not None:
+
             super().__init__(session)
         elif credentials is not None:
-            super().__init__(self._create_session())
+            self.worker: Optional[LogonCore] = LogonCore()
+            super().__init__(self.worker.s)
 
             # Log in and try to confirm success
-            self._logon_remote(credentials)
+            _response, props, roles = self.worker.logon_remote(credentials)
+            self.compass_props = props
+            self.roles_dict = roles
+            self.current_role = self.roles_dict[self.mrn]  # Set explicitly as work done in worker
 
             if role_to_use is not None:
                 # Session contains updated auth headers from role change
@@ -87,7 +95,7 @@ class Logon(InterfaceAuthenticated):
         # self.sto_thread.start()
 
     @classmethod
-    def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: tuple[str, str]) -> Logon:
+    def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
         session = requests.Session()
 
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
@@ -95,7 +103,7 @@ class Logon(InterfaceAuthenticated):
         logon.compass_props = schema.CompassProps(**{"master": {"user": dict(user_props)}})
         logon.current_role = current_role
 
-        logon._update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
+        logon.worker.update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
 
         return logon
 
@@ -156,6 +164,40 @@ class Logon(InterfaceAuthenticated):
 
     # Core login code:
 
+    def change_role(self, new_role: str, location: Optional[str] = None) -> None:
+        """Update role information.
+
+        If the user has multiple roles with the same role title, the first is used.
+        """
+        logger.info("Changing role")
+
+        new_role = new_role.strip()
+
+        # If we don't have the roles dict, generate it.
+        if not self.roles_dict:
+            self.worker.check_login()
+
+        # Change role to the specified role number
+        if location is not None:
+            location = location.strip()
+            member_role_number = next(num for num, name in self.roles_dict.items() if name == (new_role, location))
+        else:
+            member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
+        response = self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+        logger.debug(f"Compass ChangeRole call returned: {response.json()}")
+
+        # Confirm Compass is reporting the changed role number, update auth headers
+        self.worker.check_login(check_role_number=member_role_number)
+        self.current_role = self.roles_dict[self.mrn]  # Set explicitly as work done in worker
+
+        logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
+
+
+class LogonCore(InterfaceBase):
+    def __init__(self):
+        """Initialise InterfaceBase with a session."""
+        super().__init__(self._create_session())
+
     @staticmethod
     def _create_session() -> requests.Session:
         """Create a session and get ASP.Net Session ID cookie from the compass server."""
@@ -171,7 +213,7 @@ class Logon(InterfaceAuthenticated):
 
         return session
 
-    def _logon_remote(self, auth: tuple[str, str]) -> requests.Response:
+    def logon_remote(self, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
         """Log in to Compass and confirm success."""
         # Referer is genuinely needed otherwise login doesn't work
         headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
@@ -188,11 +230,11 @@ class Logon(InterfaceAuthenticated):
         response = self._post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
 
         # verify log in was successful
-        self._verify_success_update_properties()
+        props, roles = self.check_login()
 
-        return response
+        return response, props, roles
 
-    def _verify_success_update_properties(self, check_role_number: Optional[int] = None) -> None:
+    def check_login(self, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
         """Confirms success and updates authorisation."""
         # Test 'get' for an exemplar page that needs authorisation.
         portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
@@ -210,24 +252,30 @@ class Logon(InterfaceAuthenticated):
         form = html.fromstring(response.content).forms[0]
 
         # Update session dicts with new role
-        self.compass_props = self._create_compass_props(form)  # Updates MRN property etc.
-        self.roles_dict = dict(self._roles_iterator(form))
+        compass_props = self._create_compass_props(form)  # Updates MRN property etc.
+        roles_dict = dict(self._roles_iterator(form))
+
+        member_number = compass_props.master.user.cn
+        role_number = compass_props.master.user.mrn
+        session_id = compass_props.master.sys.session_id
 
         # Set auth headers for new role
-        self._update_auth_headers(self.cn, self.mrn, self._session_id)
+        self.update_auth_headers(member_number, role_number, session_id)
 
         # Update current role properties
-        self.current_role = self.roles_dict[self.mrn]
-        logger.debug(f"Using Role: {self.current_role[0]} ({self.current_role[1]})")
+        current_role = roles_dict[role_number]
+        logger.debug(f"Using Role: {current_role[0]} ({current_role[1]})")
 
         # Verify role number against test value
         if check_role_number is not None:
             logger.debug("Confirming role has been changed")
             # Check that the role has been changed to the desired role. If not, raise exception.
-            if check_role_number != self.mrn:
+            if check_role_number != role_number:
                 raise CompassAuthenticationError("Role failed to update in Compass")
 
-    def _update_auth_headers(self, membership_number: int, role_number: int, session_id: str) -> None:
+        return compass_props, roles_dict
+
+    def update_auth_headers(self, membership_number: int, role_number: int, session_id: str) -> None:
         auth_headers = {
             "Authorization": f"{membership_number}~{role_number}",
             "SID": session_id,  # Session ID
@@ -257,36 +305,9 @@ class Logon(InterfaceAuthenticated):
         return schema.CompassProps(**compass_props)
 
     @staticmethod
-    def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, tuple[str, str]]]:
+    def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, TYPES_ROLE]]:
         """Generate role number to role name mapping."""
         roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
         for row in roles_rows:
             if "Full" in row[5].text_content():  # TODO do prov roles show up in selector???
                 yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
-
-    def change_role(self, new_role: str, location: Optional[str] = None) -> None:
-        """Update role information.
-
-        If the user has multiple roles with the same role title, the first is used.
-        """
-        logger.info("Changing role")
-
-        new_role = new_role.strip()
-
-        # If we don't have the roles dict, generate it.
-        if not self.roles_dict:
-            self._verify_success_update_properties()
-
-        # Change role to the specified role number
-        if location is not None:
-            location = location.strip()
-            member_role_number = next(num for num, name in self.roles_dict.items() if name == (new_role, location))
-        else:
-            member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
-        response = self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
-        logger.debug(f"Compass ChangeRole call returned: {response.json()}")
-
-        # Confirm Compass is reporting the changed role number, update auth headers
-        self._verify_success_update_properties(check_role_number=member_role_number)
-
-        logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
