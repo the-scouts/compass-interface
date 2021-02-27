@@ -774,15 +774,15 @@ class PeopleScraper(InterfaceAuthenticated):
         # CE (Confidential Enquiry) Check  # TODO if CE check date != current date then is valid
         role_details["ce_check"] = parse(fields.get("ctl00$workarea$txt_p2_cecheck"))
         # Disclosure Check
-        disclosure_with_date = fields.get("ctl00$workarea$txt_p2_disclosure")
+        disclosure_with_date = fields.get("ctl00$workarea$txt_p2_disclosure", "")
         if disclosure_with_date.startswith("Disclosure Issued : "):
             disclosure_date = parse(disclosure_with_date.removeprefix("Disclosure Issued : "))
             disclosure_check = "Disclosure Issued"
         else:
             disclosure_date = None
-            disclosure_check = disclosure_with_date
-        role_details["disclosure_check"] = disclosure_check  # TODO extract date
-        role_details["disclosure_date"] = disclosure_date  # TODO extract date
+            disclosure_check = disclosure_with_date or None
+        role_details["disclosure_check"] = disclosure_check
+        role_details["disclosure_date"] = disclosure_date
         # References
         role_details["references"] = references_codes.get(ref_code, ref_code)
 
