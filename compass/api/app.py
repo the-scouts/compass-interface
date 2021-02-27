@@ -4,7 +4,7 @@ import uvicorn
 
 from compass.api.routes import authentication
 from compass.api.routes import members
-from compass.api.utility import redis_handler
+from compass.api.plugins import redis
 
 open_api_tag_metadata = [
     {
@@ -35,12 +35,13 @@ app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
     description=long_description,
     version="0.22.2",
-    on_shutdown=[redis_handler.on_shutdown],
+    on_startup=[redis.on_startup],
+    on_shutdown=[redis.on_shutdown],
     openapi_tags=open_api_tag_metadata,
 )
 
+# V1 Routing
 version_one = APIRouter()
-
 version_one.include_router(
     members.router,
     prefix="/members",
@@ -55,17 +56,12 @@ version_one.include_router(
     responses={404: {"description": "Not found!"}},
 )
 
+# Overall app routing
 app.include_router(
     version_one,
     prefix="/v1",
     dependencies=[],
 )
-
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    await redis_handler.on_startup(app)
-
 
 # Appointments report - role details (except M01Ex, M04), ongoing details (except M01Ex imputing), disclosures
 # Member Directory - emergency contact details
@@ -105,7 +101,10 @@ async def on_startup() -> None:
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000)
+    from compass.core.logger import enable_debug_logging
+
+    enable_debug_logging()
+    uvicorn.run("app:app", host="0.0.0.0", port=8002)
     print()
 
 
