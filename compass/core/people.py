@@ -33,6 +33,8 @@ class People:
             A MemberDetails object containing all data.
 
         Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             PermissionError:
                 If the current user does not have permission to view personal
                 data for the requested member.
@@ -62,6 +64,8 @@ class People:
             A MemberRolesDict object containing all data.
 
         Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             PermissionError:
                 If the current user does not have permission to view roles
                 data for the requested member.
@@ -85,6 +89,8 @@ class People:
             MemberRolePopup object with detail on the role
 
         Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             PermissionError:
                 If the current user does not have permission to view role data
 
@@ -98,6 +104,8 @@ class People:
             membership_num: Membership Number to use
 
         Returns:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             A MemberTrainingTab object containing all data.
 
         """
@@ -110,6 +118,8 @@ class People:
             membership_num: Membership Number to use
 
         Returns:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             A MemberPermitsList object containing all data.
 
         """
@@ -128,6 +138,8 @@ class People:
             A MemberAward object containing all data.
 
         Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             PermissionError:
                 If the current user does not have permission to view awards
                 data for the requested member.
@@ -145,6 +157,8 @@ class People:
             A list of MemberDisclosure objects containing all data.
 
         Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             PermissionError:
                 If the current user does not have permission to view
                 disclosure data for the requested member.
@@ -164,6 +178,8 @@ class People:
             A MemberDisclosure objects containing disclosure data.
 
         Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
             PermissionError:
                 If the current user does not have permission to view
                 disclosure data for the requested member.
