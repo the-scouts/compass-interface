@@ -167,35 +167,41 @@ class Logon(InterfaceAuthenticated):
         # TODO check STO.js etc for what happens when STO is None/undefined
         return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
 
-    # Core login code:
 
-    def change_role(self, new_role: str, location: Optional[str] = None) -> None:
-        """Update role information.
+def change_role(logon: Logon, new_role: str, location: Optional[str] = None) -> Logon:
+    """Returns new Logon object with new role.
 
-        If the user has multiple roles with the same role title, the first is used.
-        """
-        logger.info("Changing role")
+    If the user has multiple roles with the same role title, the first is used,
+    unless the location parameter is set, where the location is exactly matched.
+    """
+    logger.info("Changing role")
 
-        new_role = new_role.strip()
+    new_role = new_role.strip()
 
-        # If we don't have the roles dict, generate it.
-        if not self.roles_dict:
-            self.worker.check_login()
+    worker = LogonCore(session=logon.s)
 
-        # Change role to the specified role number
-        if location is not None:
-            location = location.strip()
-            member_role_number = next(num for num, name in self.roles_dict.items() if name == (new_role, location))
-        else:
-            member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
-        response = self._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
-        logger.debug(f"Compass ChangeRole call returned: {response.json()}")
+    # If we don't have the roles dict, generate it.
+    if not logon.roles_dict:
+        worker.check_login()
 
-        # Confirm Compass is reporting the changed role number, update auth headers
-        self.worker.check_login(check_role_number=member_role_number)
-        self.current_role = self.roles_dict[self.mrn]  # Set explicitly as work done in worker
+    # Change role to the specified role number
+    if location is not None:
+        location = location.strip()
+        member_role_number = next(num for num, name in logon.roles_dict.items() if name == (new_role, location))
+    else:
+        member_role_number = next(num for num, name in logon.roles_dict.items() if name[0] == new_role)
 
-        logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
+    new_logon = Logon.from_session(logon._asp_net_id, logon.compass_props.master.user.__dict__, logon.current_role)
+    response = new_logon._post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+    logger.debug(f"Compass ChangeRole call returned: {response.json()}")
+
+    # Confirm Compass is reporting the changed role number, update auth headers
+    worker.check_login(check_role_number=member_role_number)
+    new_logon.current_role = new_logon.roles_dict[new_logon.mrn]  # Set explicitly as work done in worker
+
+    logger.info(f"Role updated successfully! Role is now {new_logon.current_role[0]} ({new_logon.current_role[1]}).")
+
+    return new_logon
 
 
 class LogonCore(InterfaceBase):
