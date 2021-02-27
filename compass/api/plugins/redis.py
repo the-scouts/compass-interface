@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from aioredis import create_redis_pool
 from aioredis import Redis
@@ -6,7 +6,7 @@ from fastapi import FastAPI
 import pydantic
 from starlette.requests import Request
 
-REDIS_TYPE: str = "redis"
+from compass.core.logger import logger
 
 
 class RedisError(Exception):
@@ -14,7 +14,7 @@ class RedisError(Exception):
 
 
 class RedisSettings(pydantic.BaseSettings):
-    type: str = REDIS_TYPE
+    type: Literal["redis"] = "redis"
 
     url: str = None
     host: str = "localhost"
@@ -36,44 +36,70 @@ class RedisSettings(pydantic.BaseSettings):
 
 
 class RedisPlugin:
-    def __init__(self, app: FastAPI = None, config: RedisSettings = RedisSettings()):
+    def __init__(self, app: Optional[FastAPI] = None, config: RedisSettings = RedisSettings()):
         self.redis: Optional[Redis] = None
         self.config = config
 
         if app:
-            app.state.REDIS = self
+            await self.setup_redis(app)
 
-    async def __call__(self) -> Redis:
-        if self.redis is None:
-            raise RedisError("Redis is not initialized")
-        return self.redis
+    async def setup_redis(self, app: FastAPI) -> None:
+        logger.info("Setting up Redis plugin")
 
-    async def setup(self, app: FastAPI) -> None:
-        app.state.REDIS = self
-
-    async def init(self) -> None:
         if self.redis is not None:
+            app.state.redis = self.redis
             return self.redis
 
-        if self.config.type != REDIS_TYPE:
+        if self.config.type != "redis":
             raise NotImplementedError(f"Invalid Redis type '{self.config.type}' selected!")
 
-        options = {
-            "db": self.config.db,
-            "password": self.config.password,
-            "minsize": self.config.pool_min_size,
-            "maxsize": self.config.pool_max_size,
-            "timeout": self.config.connection_timeout,
-        }
-        self.redis = await create_redis_pool(self.config.address, **options)
+        logger.debug(f"Creating connection to Redis at {self.config.address}")
+        self.redis = await create_redis_pool(
+            self.config.address,
+            db=self.config.db,
+            password=self.config.password,
+            minsize=self.config.pool_min_size,
+            maxsize=self.config.pool_max_size,
+            timeout=self.config.connection_timeout,
+        )
+
+        logger.debug("Storing redis object in FastAPI app state")
+        app.state.redis = self.redis
 
     async def terminate(self) -> None:
-        self.config = None
-        if self.redis is not None:
-            self.redis.close()
-            await self.redis.wait_closed()
-            self.redis = None
+        logger.info("Shutting down Redis plugin")
+        if not self.redis:
+            return
+
+        # gracefully close connection
+        logger.debug("Closing Redis connection")
+        self.redis.close()
+        await self.redis.wait_closed()
+        logger.debug("Closed Redis connection")
+
+        # remove class attributes
+        del self.redis
+        del self.config
+
+
+redis_plugin = RedisPlugin(config=RedisSettings())
+
+
+async def on_startup() -> None:
+    # Import here to avoid circular imports
+    from compass.api.app import app
+
+    logger.debug("FastAPI startup: Redis setup")
+    await redis_plugin.setup_redis(app)
+
+
+async def on_shutdown() -> None:
+    logger.debug("FastAPI shutdown: Redis teardown")
+    await redis_plugin.terminate()
 
 
 async def depends_redis(request: Request) -> Redis:
-    return await request.app.state.REDIS()
+    redis = await request.app.state.redis
+    if redis is None:
+        raise RedisError("Redis is not initialized")
+    return redis

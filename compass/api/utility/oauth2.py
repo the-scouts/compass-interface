@@ -1,4 +1,4 @@
-import binascii
+import base64
 import datetime
 import os
 from typing import Optional
@@ -18,9 +18,9 @@ from compass.api.schemas.auth import User
 import compass.core as ci
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
-aes_gcm = AESGCM(binascii.unhexlify(SECRET_KEY))
+aes_gcm = AESGCM(bytes.fromhex(SECRET_KEY))
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/token")
 
@@ -34,15 +34,16 @@ async def login_token_store_session(user: str, pw: str, role: Optional[str], loc
         user = authenticate_user(user, pw, role, location)
     except ci.errors.CompassError:
         raise custom_bearer_auth_exception("Incorrect username or password") from None
+    access_token_expire_minutes = 30
 
-    jwt_expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    jwt_expiry_time = datetime.datetime.utcnow() + datetime.timedelta(minutes=access_token_expire_minutes)
     to_encode = dict(sub=f"{user.props.cn}", exp=jwt_expiry_time)
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     nonce = os.urandom(12)  # GCM mode needs 12 fresh bytes every time
-    data = nonce + aes_gcm.encrypt(nonce, user.json().encode(), None)
+    data = base64.b85encode(nonce + aes_gcm.encrypt(nonce, user.json().encode(), None))
     # expire param is integer number of seconds for key to live
-    await store.set(f"session:{access_token}", data, expire=ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    await store.set(f"session:{access_token}", data, expire=access_token_expire_minutes * 60)
 
     return access_token
 
@@ -55,7 +56,7 @@ def authenticate_user(username: str, password: str, role: Optional[str], locatio
         logon_info=(username, password, role, location),
         asp_net_id=user._asp_net_id,  # pylint: disable=protected-access
         props=user.compass_props.master.user,
-        expires=datetime.datetime.utcnow() + datetime.timedelta(minutes=9.5),
+        expires=datetime.datetime.utcnow() + datetime.timedelta(minutes=9.5),  # Compass timeout is 10m, use 9.5 here
     )
 
 
@@ -65,10 +66,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
     except JWTError:
         raise custom_bearer_auth_exception("Could not validate credentials")
 
-    session_encoded = await store.get(f"session:{token}")
+    session_encrypted = await store.get(f"session:{token}")
     try:
-        session_decrypted = aes_gcm.decrypt(session_encoded[:12], session_encoded[12:], None)  # Maybe raises InvalidTag
-        user = User.parse_raw(session_decrypted)  # Maybe raises KeyError
+        session_decrypted = aes_gcm.decrypt(session_encrypted[:12], session_encrypted[12:], None)  # Maybe raises InvalidTag
+        session_decoded = base64.b85decode(session_decrypted)  # Maybe raises ValueError
+        user = User.parse_raw(session_decoded)  # Maybe raises KeyError
         if datetime.datetime.utcnow() < user.expires:
             logon = ci.Logon.from_session(user.asp_net_id, user.props.__dict__, user.selected_role)
         else:
