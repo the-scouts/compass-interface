@@ -65,7 +65,6 @@ class Logon(InterfaceAuthenticated):
         session: Optional[requests.Session] = None,
     ):
         """Constructor for Logon."""
-        self.worker: Optional[LogonCore] = None
 
         self.compass_props: schema.CompassProps
         self.roles_dict: TYPES_ROLES_DICT = {}
@@ -73,14 +72,13 @@ class Logon(InterfaceAuthenticated):
 
         # Create session
         if session is not None:
-
             super().__init__(session)
         elif credentials is not None:
-            self.worker: Optional[LogonCore] = LogonCore()
-            super().__init__(self.worker.s)
+            worker = LogonCore()
+            super().__init__(worker.s)
 
             # Log in and try to confirm success
-            _response, props, roles = self.worker.logon_remote(credentials)
+            _response, props, roles = worker.logon_remote(credentials)
             self.compass_props = props
             self.roles_dict = roles
             self.current_role = self.roles_dict[self.mrn]  # Set explicitly as work done in worker
@@ -96,6 +94,13 @@ class Logon(InterfaceAuthenticated):
 
     @classmethod
     def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
+        """Initialise a Logon object with stored data.
+
+        This method  is used to avoid logging in many times, by enabling reuse
+        of an existing sever-side session in Compass. It is used by the main
+        compass-interface web API.
+
+        """
         session = requests.Session()
 
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
@@ -103,7 +108,7 @@ class Logon(InterfaceAuthenticated):
         logon.compass_props = schema.CompassProps(**{"master": {"user": dict(user_props)}})
         logon.current_role = current_role
 
-        logon.worker.update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
+        LogonCore(session=session).update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
 
         return logon
 
@@ -194,9 +199,12 @@ class Logon(InterfaceAuthenticated):
 
 
 class LogonCore(InterfaceBase):
-    def __init__(self):
+    def __init__(self, session: Optional[requests.Session] = None):
         """Initialise InterfaceBase with a session."""
-        super().__init__(self._create_session())
+        if session is None:
+            super().__init__(self._create_session())
+        else:
+            super().__init__(session)
 
     @staticmethod
     def _create_session() -> requests.Session:
