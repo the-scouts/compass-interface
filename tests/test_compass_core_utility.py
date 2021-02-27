@@ -39,81 +39,13 @@ class TestUtility:
         # TODO Aim for property based aspects instead of fixed values!
         assert result == [{"Key": "a", "Value": "1"}, {"Key": "b", "Value": "2"}, {"Key": "c", "Value": "3"}]
 
-    def test_cast_ast_eval_false_int(self):
-        # Given
-        data = 123
-
-        # When
-        result = utility.cast(data, ast_eval=False)
-        result_str = utility.cast(str(data), ast_eval=False)
-
-        # Then
-        assert result == data
-        assert result_str == data
-
-    def test_cast_ast_eval_false_str(self):
-        # Given
-        data = "abc"
-
-        # When
-        result = utility.cast(data, ast_eval=False)
-
-        # Then
-        assert result == data
-
-    def test_cast_ast_eval_false_list(self):
-        # Given
-        data = [1, 2, 3]
-
-        # When
-        result = utility.cast(data, ast_eval=False)
-        result_str = utility.cast(str(data), ast_eval=False)
-
-        # Then
-        assert result == str(data)
-        assert result_str == str(data)
-
-    def test_cast_ast_eval_true_int(self):
-        # Given
-        data = 123
-
-        # When
-        result = utility.cast(data, ast_eval=True)
-        result_str = utility.cast(str(data), ast_eval=True)
-
-        # Then
-        assert result == data
-        assert result_str == data
-
-    def test_cast_ast_eval_true_str(self):
-        # Given
-        data = "abc"
-
-        # When
-        result = utility.cast(data, ast_eval=True)
-
-        # Then
-        assert result == data
-
-    def test_cast_ast_eval_true_list(self):
-        # Given
-        data = [1, 2, 3]
-
-        # When
-        result = utility.cast(data, ast_eval=True)
-        result_str = utility.cast(str(data), ast_eval=True)
-
-        # Then
-        assert result == data
-        assert result_str == data
-
     def test_maybe_int_int(self):
         # Given
         data = 123
 
         # When
         result = utility.maybe_int(data)
-        result_str = utility.cast(str(data))
+        result_str = utility.maybe_int(str(data))
 
         # Then
         assert result == data
