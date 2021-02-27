@@ -40,44 +40,6 @@ class People:
         """
         return self._scraper.get_personal_tab(membership_num)
 
-    def get_roles(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> list[dict[str, object]]:  # TYPES_ISD
-        response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)
-
-        role_list = []
-        for role_number, role_dict in response:
-            if not role_dict.can_view_details:
-                continue
-
-            role_detail = self._scraper.get_roles_detail(role_number)
-            details = role_detail.details
-            hierarchy = role_detail.hierarchy
-            data = {
-                "membership_number": membership_num,
-                "role_title": role_dict.role_title,
-                "role_start": role_dict.role_start,
-                "role_end": role_dict.role_end,
-                "role_status": role_dict.role_status,
-                "line_manager_number": maybe_int(details.line_manager_number),
-                "line_manager": details.line_manager,
-                "review_date": details.review_date,
-                "organisation": hierarchy.organisation,
-                "region": hierarchy.region,
-                "county": hierarchy.county,
-                "district": hierarchy.district,
-                "group": hierarchy.group,
-                "section": hierarchy.section,
-                "ce_check": details.ce_check,
-                "appointment_panel_approval": details.appointment_panel_approval,
-                "commissioner_approval": details.commissioner_approval,
-                "committee_approval": details.committee_approval,
-                "references": details.references,
-                **role_detail.getting_started,
-                "training_completion_date": None,
-            }
-            role_list.append({k: v for k, v in data.items() if v})
-
-        return role_list
-
     # See getRole in PGS\Needle
     def roles(
         self,
