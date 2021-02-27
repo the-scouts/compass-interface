@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class People:
     def __init__(self, session: Logon):
         """Constructor for People."""
-        self._scraper = PeopleScraper(session.s)
+        self._scraper = PeopleScraper(session.s, session.cn, session.mrn, session.jk)
 
     def get_roles(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> list[dict[str, object]]:  # TYPES_ISD
         response = self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles)

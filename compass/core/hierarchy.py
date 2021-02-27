@@ -49,7 +49,7 @@ class UnitSections(enum.IntEnum):
 class Hierarchy:
     def __init__(self, session: Logon):
         """Constructor for Hierarchy."""
-        self._scraper: HierarchyScraper = HierarchyScraper(session.s)
+        self._scraper: HierarchyScraper = HierarchyScraper(session.s, session.cn, session.mrn, session.jk)
         self.session: Logon = session
 
     def get_unit_data(
