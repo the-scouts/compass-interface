@@ -72,10 +72,10 @@ class Logon(InterfaceAuthenticated):
 
         # Create session
         if session is not None:
-            super().__init__(session)
+            session = session  # Already set
         elif credentials is not None:
             worker = LogonCore()
-            super().__init__(worker.s)
+            session = worker.s
 
             # Log in and try to confirm success
             _response, props, roles = worker.logon_remote(credentials)
@@ -91,6 +91,19 @@ class Logon(InterfaceAuthenticated):
 
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
+
+        # Set these last, treat as immutable after we leave init. Role can
+        # theoretically change, but this is not supported behaviour.
+
+        member_number = self.compass_props.master.user.cn  # Contact Number
+        role_number = self.compass_props.master.user.mrn  # Member Role Number
+        jk = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
+
+        self._asp_net_id: str = self.s.cookies["ASP.NET_SessionId"]
+        self._session_id: str = self.compass_props.master.sys.session_id
+
+        # Finally, call super
+        super().__init__(session, member_number, role_number, jk)
 
     @classmethod
     def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
@@ -119,18 +132,6 @@ class Logon(InterfaceAuthenticated):
     # properties/accessors code:
 
     @property
-    def mrn(self) -> int:
-        return self.compass_props.master.user.mrn  # Member Role Number
-
-    @property
-    def cn(self) -> int:
-        return self.compass_props.master.user.cn  # Contact Number
-
-    @property
-    def jk(self) -> str:
-        return self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
-
-    @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
         unit_number = self.compass_props.master.user.on  # Organisation Number
         unit_level = self.compass_props.master.user.lvl  # Level
@@ -150,14 +151,6 @@ class Logon(InterfaceAuthenticated):
         }
 
         return schemas.hierarchy.HierarchyLevel(id=unit_number, level=level_map[unit_level])
-
-    @property
-    def _asp_net_id(self) -> str:
-        return self.s.cookies["ASP.NET_SessionId"]
-
-    @property
-    def _session_id(self) -> str:
-        return self.compass_props.master.sys.session_id
 
     # Timeout code:
 
