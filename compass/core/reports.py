@@ -31,7 +31,7 @@ class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
         self._scraper = ReportsScraper(session.s, session.cn, session.mrn, session.jk)
-        self.session: Logon = session
+        self.current_role: tuple[str, str] = session.current_role
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
         """Exports report as CSV from Compass.
@@ -80,7 +80,7 @@ class Reports:
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
             rt_key = report_type.lower().replace(" ", "_")
-            run_report_url = self._scraper.get_report_token(ReportTypes[rt_key].value, self.session.mrn)
+            run_report_url = self._scraper.get_report_token(ReportTypes[rt_key].value, self._scraper.mrn)
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
             types = [rt.name.title().replace("_", " ") for rt in ReportTypes]
@@ -98,7 +98,7 @@ class Reports:
 
         # TODO Debug check
         time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
-        filename = f"{time_string} - {self.session.cn} ({self.session.current_role}).csv"
+        filename = f"{time_string} - {self._scraper.cn} ({' - '.join(self.current_role)}).csv"
 
         # start = time.time()
         # TODO TRAINING REPORT ETC.
