@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import get_args, Literal, overload, TYPE_CHECKING, Union
+from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, Union
 
 from lxml import html
 
@@ -219,7 +219,9 @@ class PeopleScraper(InterfaceAuthenticated):
         with validation_errors_logging(membership_num):
             return schema.MemberDetails.parse_obj(details)
 
-    def get_roles_tab(self, membership_num: int, keep_non_volunteer_roles: bool = False) -> schema.MemberRolesDict:
+    def get_roles_tab(
+        self, membership_num: int, keep_non_volunteer_roles: bool = False, statuses: Optional[set] = None
+    ) -> schema.MemberRolesDict:
         """Returns data from Roles tab for a given member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
@@ -305,6 +307,10 @@ class PeopleScraper(InterfaceAuthenticated):
                 "helper" in role_details["role_class"].lower()
                 or {role_details["role_title"].lower()} <= {"occasional helper", "pvg", "network member"}
             ):
+                continue
+
+            # Role status filter
+            if role_status not in statuses:
                 continue
 
             roles_data[role_number] = role_details
