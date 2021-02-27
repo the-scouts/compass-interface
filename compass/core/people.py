@@ -109,6 +109,26 @@ class People:
             statuses = STATUSES - {"Closed", "Cancelled"}
         return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles, statuses)
 
+    def role_detail(self, role_number: int) -> schema.MemberRolePopup:
+        """Get detailed information for specified role.
+
+         Make sure to check `MemberRoleCore.can_view_details` on each role, as
+         you may not have permissions to view certain roles (if they are
+         outside of your hierarchy, for example).
+
+         Args:
+             role_number: Role to query
+
+        Returns:
+            MemberRolePopup object with detail on the role
+
+        Raises:
+            PermissionError:
+                If the current user does not have permission to view role data
+
+        """
+        return self._scraper.get_roles_detail(role_number)
+
     def training(self, membership_num: int) -> schema.MemberTrainingTab:
         """Gets training tab data for a given member.
 
