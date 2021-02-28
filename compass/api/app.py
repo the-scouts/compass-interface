@@ -2,9 +2,9 @@ from fastapi import APIRouter
 from fastapi import FastAPI
 import uvicorn
 
+from compass.api.plugins import redis
 from compass.api.routes import authentication
 from compass.api.routes import members
-from compass.api.plugins import redis
 
 
 open_api_tag_metadata = [
@@ -71,15 +71,15 @@ app.include_router(
 
 # base = api.compass.cys.org.uk
 # /v1/
-#    /members/me
-#    /members/{memberNumber}
+#    /members/me ✔
+#    /members/{memberNumber} ✔
 #            /XXX/ - default is profile ✔
-#                /roles ✔
-#                /ongoing-training ✔
-#                /disclosures
-#                /training
-#                /permits
-#                /awards
+#                /roles ✘
+#                /permits ✔
+#                /training ✔
+#                /ongoing-learning ✔
+#                /awards ✔
+#                /disclosures ✔
 #                /emergency_details          ??
 #                /communication_preferences  ??
 #                /visibility                 ??
