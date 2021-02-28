@@ -6,7 +6,7 @@ dependencies:
   - python>=3.9
 
   # Compass-Interface Core
-  - compass-interface-core>=0.8.0
+  - compass-interface-core>=0.9.1
 
   # Transforming
 #  - numba>0.52  # Numba==0.52 does not support python 3.9!
