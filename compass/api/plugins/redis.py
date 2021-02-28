@@ -1,12 +1,17 @@
-from typing import Literal, Optional
+from __future__ import annotations
+
+from typing import Literal, Optional, TYPE_CHECKING
 
 from aioredis import create_redis_pool
-from aioredis import Redis
-from fastapi import FastAPI
 import pydantic
+from aioredis import Redis
 from starlette.requests import Request
-
 from compass.core.logger import logger
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+    from fastapi import FastAPI
 
 
 class RedisError(Exception):
@@ -43,10 +48,6 @@ class RedisPlugin:
     async def setup_redis(self, app: FastAPI) -> None:
         logger.info("Setting up Redis plugin")
 
-        if self.redis is not None:
-            app.state.redis = self.redis
-            return self.redis
-
         if self.config.type != "redis":
             raise NotImplementedError(f"Invalid Redis type '{self.config.type}' selected!")
 
@@ -79,18 +80,13 @@ class RedisPlugin:
         del self.config
 
 
-redis_plugin = RedisPlugin(config=RedisSettings())
-
-
-async def on_startup() -> None:
-    # Import here to avoid circular imports
-    from compass.api.app import app
+async def lifetime(app: FastAPI) -> AsyncGenerator:
+    logger.debug("Initialising RedisPlugin")
+    redis_plugin = RedisPlugin(config=RedisSettings())
 
     logger.debug("FastAPI startup: Redis setup")
     await redis_plugin.setup_redis(app)
-
-
-async def on_shutdown() -> None:
+    yield
     logger.debug("FastAPI shutdown: Redis teardown")
     await redis_plugin.terminate()
 
