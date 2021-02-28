@@ -31,7 +31,7 @@ def login(username: str, password: str, /, *, role: Optional[str] = None, locati
 
     This function is provided as a convenient interface to the logon module.
     """
-    return Logon((username, password), role, location)
+    return Logon.from_logon((username, password), role, location)
 
 
 class Logon(InterfaceAuthenticated):
@@ -58,34 +58,16 @@ class Logon(InterfaceAuthenticated):
 
     def __init__(
         self,
-        credentials: Optional[tuple[str, str]] = None,
-        role_to_use: Optional[str] = None,
-        role_location: Optional[str] = None,
-        session: Optional[requests.Session] = None,
+        *,
+        session: requests.Session,
+        compass_props: Optional[schema.CompassProps] = None,
+        roles_dict: Optional[TYPES_ROLES_DICT] = None,
+        current_role: Optional[TYPES_ROLE] = None,
     ):
         """Constructor for Logon."""
-        self.compass_props: schema.CompassProps
-        self.roles_dict: TYPES_ROLES_DICT = {}
-        self.current_role: TYPES_ROLE = ("", "")
-
-        # Create session
-        if session is not None:
-            pass  # As we assign to session below, we can't do an if session is None check to raise
-        elif credentials is not None:
-            worker = LogonCore()
-            session = worker.s
-
-            # Log in and try to confirm success
-            _response, props, roles = worker.logon_remote(credentials)
-            self.compass_props = props
-            self.roles_dict = roles
-            self.current_role = self.roles_dict[props.master.user.mrn]  # Set explicitly as work done in worker
-
-            if role_to_use is not None:
-                # Session contains updated auth headers from role change
-                self._change_role(session, role_to_use, role_location)
-        else:
-            raise CompassError("compass.core.Logon must be initialised with credentials or an existing session object!")
+        self.compass_props: schema.CompassProps = compass_props
+        self.roles_dict: TYPES_ROLES_DICT = roles_dict or {}
+        self.current_role: TYPES_ROLE = current_role or ("", "")
 
         self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
@@ -104,6 +86,51 @@ class Logon(InterfaceAuthenticated):
         super().__init__(session, member_number, role_number, jk)
 
     @classmethod
+    def from_logon(
+        cls,
+        credentials: Optional[tuple[str, str]] = None,
+        role_to_use: Optional[str] = None,
+        role_location: Optional[str] = None,
+    ) -> Logon:
+        """Initialise a Logon object with login information.
+
+        Args:
+            credentials: username and password
+            role_to_use: Compass role to use
+            role_location: Role location, if multiple identical role titles
+
+        Returns:
+            Initialised Logon object
+
+        Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+            CompassError:
+                If initial connection to Compass fails
+            CompassAuthenticationError:
+                If authentication with Compass fails
+
+        """
+        worker = LogonCore()
+        session = worker.s
+
+        # Log in and try to confirm success
+        _response, props, roles = worker.logon_remote(credentials)
+
+        logon = cls(
+            session=session,
+            compass_props=props,
+            roles_dict=roles,
+            current_role=roles[props.master.user.mrn],  # Set explicitly as work done in worker
+        )
+
+        if role_to_use is not None:
+            # Session contains updated auth headers from role change
+            logon._change_role(session, role_to_use, role_location)
+
+        return logon
+
+    @classmethod
     def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
         """Initialise a Logon object with stored data.
 
@@ -111,13 +138,27 @@ class Logon(InterfaceAuthenticated):
         of an existing sever-side session in Compass. It is used by the main
         compass-interface web API.
 
+        Args:
+            asp_net_id: ASP.NET Session ID, from cookie
+            user_props: Compass master.sys.user properties
+            current_role: Role used by initialised session
+
+        Returns:
+            Initialised Logon object
+
+        Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+
         """
         session = requests.Session()
-
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
-        logon = cls(session=session)
-        logon.compass_props = schema.CompassProps(**{"master": {"user": dict(user_props)}})
-        logon.current_role = current_role
+
+        logon = cls(
+            session=session,
+            compass_props=schema.CompassProps(**{"master": {"user": dict(user_props)}}),
+            current_role=current_role,
+        )
 
         LogonCore(session=session).update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
 
