@@ -146,6 +146,7 @@ class PeopleScraper(InterfaceAuthenticated):
                 Access to the member is not given by the current authentication
 
         """
+        # pylint: disable=too-many-locals
         response = self._get_member_profile_tab(membership_num, "Personal")
 
         tree = html.fromstring(response)
