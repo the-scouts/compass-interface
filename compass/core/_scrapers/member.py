@@ -196,7 +196,8 @@ class PeopleScraper(InterfaceAuthenticated):
         # Occupation
         details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
         # Address
-        address = tree.xpath('string(//*[text()="Address"]/../../../td[3])') or ", .  "
+        original_address = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
+        address = original_address or ", .  "
         addr_main, addr_code = address.rsplit(". ", 1)
         postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
         try:
@@ -204,7 +205,7 @@ class PeopleScraper(InterfaceAuthenticated):
         except ValueError:
             street, town = addr_main.rsplit(", ", 1)
             county = None
-        details["address"] = address or None
+        details["address"] = original_address or None
         details["country"] = country or None
         details["postcode"] = postcode or None
         details["county"] = county or None
