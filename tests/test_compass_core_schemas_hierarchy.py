@@ -4,7 +4,7 @@ import pytest
 from compass.core.schemas import hierarchy
 
 
-class TestErrors:
+class TestSchemaHierarchy:
     def test_hierarchy_base_round_trip(self):
         # Given
         data = dict(id=123)
