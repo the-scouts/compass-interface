@@ -5,6 +5,7 @@ from typing import Literal, Optional
 import pydantic
 
 TYPES_SECTION = Literal[
+    "Early Years Pilot",
     "Beavers",
     "Beaver Scout",
     "Cub Scout",
