@@ -126,7 +126,7 @@ class Logon(InterfaceAuthenticated):
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
-            logon._change_role(session, role_to_use, role_location)
+            logon._change_role(session, role_to_use, role_location)  # pylint: disable=protected-access
 
         return logon
 
