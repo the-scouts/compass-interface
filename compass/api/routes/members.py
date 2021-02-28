@@ -5,7 +5,7 @@ from fastapi import Depends
 from fastapi import HTTPException
 from starlette import status
 
-from compass.api.utility.oauth2 import get_current_user
+from compass.api.utility.oauth2 import people_accessor
 import compass.core as ci
 from compass.core.schemas import member
 
@@ -18,36 +18,36 @@ router = APIRouter()
 
 
 @router.get("/me", response_model=member.MemberDetails)
-def get_current_member(logon: ci.Logon = Depends(get_current_user)) -> member.MemberDetails:
-    return ci.People(logon).personal(logon.cn)
+def get_current_member(people: ci.People = Depends(people_accessor)) -> member.MemberDetails:
+    return people.personal(people._scraper.cn)  # NoQA
 
 
 # @router.get("/me/roles", response_model=list[member.MemberRole])
-# def get_current_member_roles(logon: ci.Logon = Depends(get_current_user), volunteer_only: bool = False):
-#     return ci.People(logon).get_roles(logon.cn, keep_non_volunteer_roles=not volunteer_only)
+# def get_current_member_roles(people: ci.People = Depends(people_accessor), volunteer_only: bool = False):
+#     return people.get_roles(people._scraper.cn, keep_non_volunteer_roles=not volunteer_only)  # NoQA
 
 
 @router.get("/me/permits", response_model=member.MemberPermitsList)
-def get_current_member_permits(logon: ci.Logon = Depends(get_current_user)) -> member.MemberPermitsList:
-    permits = ci.People(logon).permits(logon.cn)
+def get_current_member_permits(people: ci.People = Depends(people_accessor)) -> member.MemberPermitsList:
+    permits = people.permits(people._scraper.cn)  # NoQA
 
     if not permits:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permit data were not found")
     return permits
 
 
-@router.get("/me/training", response_model=member.MemberTrainingTab)
-def get_current_member_training(logon: ci.Logon = Depends(get_current_user)) -> member.MemberTrainingTab:
-    training = ci.People(logon).training(logon.cn)
-
-    if not training:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
-    return training
+# @router.get("/me/training", response_model=member.MemberTrainingTab)
+# def get_current_member_training(people: ci.People = Depends(people_accessor)) -> member.MemberTrainingTab:
+#     training = people.training(people._scraper.cn)  # NoQA
+#
+#     if not training:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
+#     return training
 
 
 @router.get("/me/ongoing-learning", response_model=member.MemberMOGLList)
-def get_current_member_ongoing_learning(logon: ci.Logon = Depends(get_current_user)) -> member.MemberMOGLList:
-    ongoing = ci.People(logon).ongoing_learning(logon.cn)
+def get_current_member_ongoing_learning(people: ci.People = Depends(people_accessor)) -> member.MemberMOGLList:
+    ongoing = people.ongoing_learning(people._scraper.cn)  # NoQA
 
     if not ongoing:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
@@ -55,8 +55,8 @@ def get_current_member_ongoing_learning(logon: ci.Logon = Depends(get_current_us
 
 
 @router.get("/me/awards", response_model=list[member.MemberAward])
-def get_current_member_awards(logon: ci.Logon = Depends(get_current_user)) -> list[member.MemberAward]:
-    awards = ci.People(logon).awards(logon.cn)
+def get_current_member_awards(people: ci.People = Depends(people_accessor)) -> list[member.MemberAward]:
+    awards = people.awards(people._scraper.cn)  # NoQA
 
     if not awards:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
@@ -64,8 +64,8 @@ def get_current_member_awards(logon: ci.Logon = Depends(get_current_user)) -> li
 
 
 @router.get("/me/disclosures", response_model=list[member.MemberDisclosure])
-def get_current_member_disclosures(logon: ci.Logon = Depends(get_current_user)) -> list[member.MemberDisclosure]:
-    disclosures = ci.People(logon).disclosures(logon.cn)
+def get_current_member_disclosures(people: ci.People = Depends(people_accessor)) -> list[member.MemberDisclosure]:
+    disclosures = people.disclosures(people._scraper.cn)  # NoQA
 
     if not disclosures:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
@@ -73,8 +73,8 @@ def get_current_member_disclosures(logon: ci.Logon = Depends(get_current_user)) 
 
 
 @router.get("/me/latest-disclosure", response_model=Optional[member.MemberDisclosure])
-def get_current_member_latest_disclosure(logon: ci.Logon = Depends(get_current_user)) -> Optional[member.MemberDisclosure]:
-    disclosure = ci.People(logon).latest_disclosure(logon.cn)
+def get_current_member_latest_disclosure(people: ci.People = Depends(people_accessor)) -> Optional[member.MemberDisclosure]:
+    disclosure = people.latest_disclosure(people._scraper.cn)  # NoQA
 
     if not disclosure:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
@@ -82,15 +82,15 @@ def get_current_member_latest_disclosure(logon: ci.Logon = Depends(get_current_u
 
 
 @router.get("/{compass_id}", response_model=member.MemberDetails)
-def get_member(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> member.MemberDetails:
+def get_member(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberDetails:
     """Gets profile details for given member
 
     Args:
         compass_id: Member to retrieve information for
-        logon: ci.Logon object
+        people: People object
     """
     try:
-        user = ci.People(logon).personal(compass_id)
+        user = people.personal(compass_id)
     except (Exception,) as err:
         print(type(err))
         user = None
@@ -101,9 +101,9 @@ def get_member(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> 
 
 
 # @router.get("/{compass_id}/roles", response_model=list[member.MemberRole])
-# def get_member_roles(compass_id: int, logon: ci.Logon = Depends(get_current_user)):
+# def get_member_roles(compass_id: int, people: ci.People = Depends(people_accessor)):
 #     try:
-#         roles_list = ci.People(logon).get_roles(compass_id, keep_non_volunteer_roles=False)
+#         roles_list = people.get_roles(compass_id, keep_non_volunteer_roles=False)
 #     except Exception as err:
 #         print(type(err))
 #         roles_list = None
@@ -114,27 +114,27 @@ def get_member(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> 
 
 
 @router.get("/{compass_id}/permits", response_model=member.MemberPermitsList)
-def get_member_permits(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> member.MemberPermitsList:
-    permits = ci.People(logon).permits(compass_id)
+def get_member_permits(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberPermitsList:
+    permits = people.permits(compass_id)
 
     if not permits:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Permit data were not found")
     return permits
 
 
-@router.get("/{compass_id}/training", response_model=member.MemberTrainingTab)
-def get_current_member_training(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> member.MemberTrainingTab:
-    training = ci.People(logon).training(compass_id)
-
-    if not training:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
-    return training
+# @router.get("/{compass_id}/training", response_model=member.MemberTrainingTab)
+# def get_current_member_training(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberTrainingTab:
+#     training = people.training(compass_id)
+#
+#     if not training:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
+#     return training
 
 
 @router.get("/{compass_id}/ongoing-learning", response_model=member.MemberMOGLList)
-def get_ongoing_learning(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> member.MemberMOGLList:
+def get_ongoing_learning(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberMOGLList:
     try:
-        ongoing = ci.People(logon).ongoing_learning(compass_id)
+        ongoing = people.ongoing_learning(compass_id)
     except Exception as err:
         print(type(err))
         ongoing = None
@@ -145,8 +145,8 @@ def get_ongoing_learning(compass_id: int, logon: ci.Logon = Depends(get_current_
 
 
 @router.get("/{compass_id}/awards", response_model=list[member.MemberAward])
-def get_current_member_awards(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> list[member.MemberAward]:
-    awards = ci.People(logon).awards(compass_id)
+def get_current_member_awards(compass_id: int, people: ci.People = Depends(people_accessor)) -> list[member.MemberAward]:
+    awards = people.awards(compass_id)
 
     if not awards:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
@@ -154,8 +154,8 @@ def get_current_member_awards(compass_id: int, logon: ci.Logon = Depends(get_cur
 
 
 @router.get("/{compass_id}/disclosures", response_model=list[member.MemberDisclosure])
-def get_current_member_disclosures(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> list[member.MemberDisclosure]:
-    disclosures = ci.People(logon).disclosures(compass_id)
+def get_current_member_disclosures(compass_id: int, people: ci.People = Depends(people_accessor)) -> list[member.MemberDisclosure]:
+    disclosures = people.disclosures(compass_id)
 
     if not disclosures:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
@@ -163,8 +163,8 @@ def get_current_member_disclosures(compass_id: int, logon: ci.Logon = Depends(ge
 
 
 @router.get("/{compass_id}/latest-disclosure", response_model=Optional[member.MemberDisclosure])
-def get_current_member_latest_disclosure(compass_id: int, logon: ci.Logon = Depends(get_current_user)) -> member.MemberDisclosure:
-    disclosure = ci.People(logon).latest_disclosure(compass_id)
+def get_current_member_latest_disclosure(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberDisclosure:
+    disclosure = people.latest_disclosure(compass_id)
 
     if not disclosure:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ongoing training data were not found")
