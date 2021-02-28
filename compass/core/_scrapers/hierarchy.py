@@ -7,6 +7,7 @@ from typing import Literal, TYPE_CHECKING, Union
 from lxml import html
 import pydantic
 
+from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceAuthenticated
 from compass.core.schemas import hierarchy as schema
 from compass.core.settings import Settings
@@ -54,8 +55,6 @@ class HierarchyScraper(InterfaceAuthenticated):
             - number of members
             - SectionType1 and SectionTypeDesc1 keys, if requesting sections data
 
-        TODO
-
         Args:
             parent_unit: The unit ID to get descendants from
             level: string org type, used for selecting API endpoint
@@ -71,9 +70,9 @@ class HierarchyScraper(InterfaceAuthenticated):
              'address': '...',
              'member_count': ...}
 
-        Todo:
-            can we do this without needing to provide the level string?
-            raises? (from requests etc)
+        Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
 
         """
         # Get API endpoint from level
@@ -136,8 +135,11 @@ class HierarchyScraper(InterfaceAuthenticated):
                 ...
             ]
 
-        Todo:
-            raises?
+        Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+            CompassError:
+                If Compass reports that the search was invalid
 
         """
         keys_to_keep: tuple[str, ...] = ("contact_number",)
@@ -164,9 +166,9 @@ class HierarchyScraper(InterfaceAuthenticated):
         form = html.fromstring(search_results.content).forms[0]
         del search_results
 
-        # If the search hasn't worked the form returns an InvalidSearchError - check for this and raise an error if needed
+        # If the search hasn't worked the form returns an InvalidSearchError
         if form.action == "./ScoutsPortal.aspx?Invalid=SearchError":
-            raise Exception("Invalid Search")
+            raise CompassError("Invalid Search")
 
         # Get the encoded JSON data from the HTML
         member_data_string = form.fields["ctl00$plInnerPanel_head$txt_h_Data"] or "[]"
