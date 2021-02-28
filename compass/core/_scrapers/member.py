@@ -493,9 +493,11 @@ class PeopleScraper(InterfaceAuthenticated):
                 info["role_title"] = child_nodes[0].text_content()
                 info["role_start"] = parse(child_nodes[1].text_content())
                 status_with_review = child_nodes[2].text_content()
-                if status_with_review.startswith("Full (Review Due: "):
+                # TODO for `Ending: blah` roles, should we store the ending date?
+                if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
                     info["role_status"] = "Full"
-                    info["review_date"] = parse(status_with_review.removeprefix("Full (Review Due: ").removesuffix(")"))
+                    date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
+                    info["review_date"] = parse(date_str)
                 else:
                     info["role_status"] = status_with_review
                     info["review_date"] = None
