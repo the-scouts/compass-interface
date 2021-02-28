@@ -1,14 +1,14 @@
 import compass.core as ci
 
 
-def compass_read(auth: tuple[str, str]):
-    logon = ci.Logon(auth)
+def compass_read(username: str, password: str, /):
+    logon = ci.login(username, password)
     people = ci.People(logon)
 
     member_number = logon.cn
-    training_data = people._training_tab(member_number)
-    permits_data = people._permits_tab(member_number)
-    roles_detail = {role: people._scraper.get_roles_detail(role) for role in training_data.roles}
+    training_data = people.training(member_number)
+    permits_data = people.permits(member_number)
+    roles_detail = {role: people.role_detail(role) for role in training_data.roles}
 
     obj = {
         # **training_data,

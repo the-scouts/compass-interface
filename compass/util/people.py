@@ -33,7 +33,7 @@ class PeopleUtility(People):
 
         full_roles_mask = (roles_data["role_status"] != "Closed") & (roles_data["location_id"] > 0)
         open_roles = roles_data.index[full_roles_mask].to_list()
-        roles_detail_array = [self._scraper.get_roles_detail(role_number) for role_number in open_roles]
+        roles_detail_array = [self.role_detail(role_number) for role_number in open_roles]
         training_data = self._training_tab(membership_num)  # TODO rename completion date to WoodBadgeReceived
         if training_data["roles"]:
             training_frame = pd.DataFrame(training_data["roles"]).T
@@ -59,7 +59,7 @@ class PeopleUtility(People):
 
         compliance_data["membership_number"] = membership_num
 
-        for key, value in self._scraper.get_personal_tab(membership_num).items():
+        for key, value in self.personal(membership_num).items():
             compliance_data[key] = value
 
         # # Fill all rows with Mandatory Ongoing Learning data
