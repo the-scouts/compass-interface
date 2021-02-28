@@ -24,9 +24,9 @@ class TestSchemaMember:
         result_international = member.MemberDetails(main_phone=number_international, **base_data)
 
         # Them
-        assert "01632 160400" == result_landline.main_phone
-        assert "07700 900420" == result_mobile.main_phone
-        assert "+1 311-555-2368" == result_international.main_phone
+        assert result_landline.main_phone == "01632 160400"
+        assert result_mobile.main_phone == "07700 900420"
+        assert result_international.main_phone == "+1 311-555-2368"
 
     def test_member_details_phone_number_passing(self):
         # Given
