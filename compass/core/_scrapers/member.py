@@ -288,7 +288,7 @@ class PeopleScraper(InterfaceAuthenticated):
             status_with_review = cells[5].text_content().strip()
             if status_with_review.startswith("Full Review Due "):
                 role_status = "Full"
-                review_date = parse(status_with_review.removeprefix("Full Review Due "))
+                review_date = parse(status_with_review.removeprefix("Full Review Due ").removeprefix("Full Ending  "))
             else:
                 role_status = status_with_review
                 review_date = None
