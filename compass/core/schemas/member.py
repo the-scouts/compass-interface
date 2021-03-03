@@ -378,7 +378,7 @@ class MemberTrainingRole(MemberRoleBase):
 
     # Completion details
     completion: Optional[str]
-    completion_type: Optional[str]
+    completion_type: Optional[Literal["PLP", "Wood Badge"]]
     completion_date: Optional[datetime.date]
     wood_badge_number: Optional[int]
 
