@@ -1,20 +1,11 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Generic, Literal, Optional, TYPE_CHECKING, TypeVar, Union
+from typing import Literal, Optional, Union
 import warnings
 
 import phonenumbers
 import pydantic
-from pydantic import generics
-
-# Must use typing.Dict etc for generics not native as of pydantic 1.7.3
-from typing import List  # isort: skip
-
-if TYPE_CHECKING:
-    from collections.abc import Iterator
-
-DataT = TypeVar("DataT")
 
 TYPES_ROLE_STATUS = Literal["Cancelled", "Closed", "Full", "Pre provisional", "Provisional"]
 TYPES_SEX = Literal["Male", "Female", "Unknown"]
@@ -191,22 +182,6 @@ TYPES_DISCLOSURE_STATUSES = Literal[
     "ID check required",
     "ID selection required",
 ]  # Disclosure statuses in disclosures tab
-
-
-class MemberGenericList(generics.GenericModel, Generic[DataT]):
-    __root__: List[DataT]
-
-    def __iter__(self) -> Iterator[DataT]:
-        """Iterate over model items."""
-        yield from self.__root__
-
-    def __getitem__(self, item: int) -> DataT:
-        """Get item by index."""
-        return self.__root__[item]
-
-    def __len__(self) -> int:
-        """Get number of items."""
-        return len(self.__root__)
 
 
 class MemberBase(pydantic.BaseModel):
@@ -415,10 +390,6 @@ class MemberPermit(MemberBase):
     restrictions: str
     expires: Optional[datetime.date]
     status: Literal["PERM_OK", "PERM_EXP", "PERM_REV"]
-
-
-# Permits Tab - collection
-MemberPermitsList = MemberGenericList[MemberPermit]
 
 
 class MemberAward(MemberBase):
