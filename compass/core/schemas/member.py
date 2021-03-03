@@ -228,7 +228,7 @@ class MemberDetails(MemberBase):
     # TODO - potential disabilities, qualifications, hobbies sections
 
     @pydantic.validator("main_phone")
-    def check_phone_number(cls, v: Optional[str], values: dict[str, Any]) -> Optional[str]:
+    def check_phone_number(cls, v: Optional[str], values: dict[str, Optional[Union[str, datetime.date]]]) -> Optional[str]:
         if v is None or not v or v == "0" or len(v) < 2:
             return None
 
