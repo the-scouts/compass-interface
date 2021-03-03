@@ -62,7 +62,3 @@ class HierarchyMember(pydantic.BaseModel):
 
 class HierarchyUnitMembers(HierarchyBase):
     member: list[HierarchyMember]
-
-
-class HierarchyUnitMembersList(pydantic.BaseModel):
-    __root__: list[HierarchyUnitMembers]
