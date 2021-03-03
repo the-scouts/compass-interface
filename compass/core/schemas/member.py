@@ -251,7 +251,9 @@ class MemberRoleCore(MemberBase, MemberRoleBase):
     # Role details
     role_end: Optional[datetime.date] = None
     role_class: TYPES_ROLE_CLASS
-    role_type: Optional[str] = None  # TODO literal
+    role_type: Optional[str] = None
+    # Full list of role types runs to 458, probably too many for a Literal type
+    # xref: https://compass.scouts.org.uk/Roles.aspx?closed=Y
 
     # Location details
     location_id: Optional[int] = None
