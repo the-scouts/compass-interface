@@ -97,7 +97,7 @@ class People:
         """
         return self._scraper.get_roles_detail(role_number)
 
-    def permits(self, membership_num: int) -> schema.MemberPermitsList:
+    def permits(self, membership_num: int) -> list[schema.MemberPermit]:
         """Gets permits tab data for a given member.
 
         Args:
