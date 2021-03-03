@@ -345,7 +345,7 @@ class PeopleScraper(InterfaceAuthenticated):
         with validation_errors_logging(membership_num):
             return schema.MemberRolesCollection(roles=roles_data, membership_duration=membership_duration_years)
 
-    def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
+    def get_permits_tab(self, membership_num: int) -> list[schema.MemberPermit]:
         """Returns data from Permits tab for a given member.
 
         If a permit has been revoked, the expires value is None and the status is PERM_REV
@@ -371,21 +371,22 @@ class PeopleScraper(InterfaceAuthenticated):
         rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
 
         permits = []
-        for row in rows:
-            permit: dict[str, Union[None, int, str, datetime.date]] = dict(membership_number=membership_num)
-            child_nodes = list(row)
-            permit["permit_type"] = child_nodes[1].text_content()
-            permit["category"] = child_nodes[2].text_content()
-            permit["type"] = child_nodes[3].text_content()
-            permit["restrictions"] = child_nodes[4].text_content()
-            expires = child_nodes[5].text_content()
-            permit["expires"] = parse(expires) if expires != "Revoked" else None
-            permit["status"] = child_nodes[5].get("class")
-
-            permits.append(permit)
-
         with validation_errors_logging(membership_num):
-            return schema.MemberPermitsList.parse_obj(permits)
+            for row in rows:
+                child_nodes = list(row)
+                expires = child_nodes[5].text_content()
+                permit = schema.MemberPermit(
+                    membership_number=membership_num,
+                    permit_type=child_nodes[1].text_content(),
+                    category=child_nodes[2].text_content(),
+                    type=child_nodes[3].text_content(),
+                    restrictions=child_nodes[4].text_content(),
+                    expires=parse(expires) if expires != "Revoked" else None,
+                    status=child_nodes[5].get("class"),
+                )
+                permits.append(permit)
+
+            return permits
 
     @overload
     def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMOGLList:
