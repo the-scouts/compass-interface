@@ -306,7 +306,7 @@ class PeopleScraper(InterfaceAuthenticated):
                 role_status = status_with_review
                 review_date = None
 
-            role_details = dict(
+            role_details = schema.MemberRoleCore(
                 role_number=role_number,
                 membership_number=membership_num,
                 role_title=cells[0].text_content().strip(),
@@ -323,13 +323,13 @@ class PeopleScraper(InterfaceAuthenticated):
                 can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
             )
             # Remove OHs etc from list
-            if "helper" in role_details["role_class"].lower() or {role_details["role_title"].lower()} <= NON_VOLUNTEER_TITLES:
+            if "helper" in role_details.role_class.lower() or {role_details.role_title.lower()} <= NON_VOLUNTEER_TITLES:
                 if keep_non_volunteer_roles is False:
                     continue
             # If role is a full volunteer role, potentially add to date list
             elif role_status != "Cancelled":
                 # If role_end is a falsy value (None), replace with today's date
-                pair = role_details["role_start"], role_details["role_end"] or datetime.datetime.today()
+                pair = role_details.role_start, role_details.role_end or datetime.date.today()
                 roles_dates.append(pair)
 
             # Role status filter
