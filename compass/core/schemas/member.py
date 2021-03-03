@@ -303,14 +303,13 @@ class MemberRoleHierarchy(pydantic.BaseModel):
 
 # Roles Tab (Role Detail Popup - Getting Started)
 class MemberRoleGettingStartedModule(pydantic.BaseModel):
-    # name: str  # Module name  # needed?? as saved under key
     validated: Optional[datetime.date] = None
     validated_by: Optional[str] = None
 
 
 # Roles Tab (Role Detail Popup - Getting Started)
 class MemberRoleGettingStarted(pydantic.BaseModel):
-    # Getting Started Training
+    """Getting Started Training."""
     module_01: Optional[MemberRoleGettingStartedModule] = None
     trustee_intro: Optional[MemberRoleGettingStartedModule] = None
     module_02: Optional[MemberRoleGettingStartedModule] = None
@@ -342,7 +341,7 @@ class MemberTrainingRole(MemberRoleBase):
     completion: Optional[str]
     completion_type: Optional[str]
     completion_date: Optional[datetime.date]
-    wood_badge_number: Optional[int]  # WB_1234567
+    wood_badge_number: Optional[int]
 
 
 # Training Tab (PLP)
@@ -371,7 +370,7 @@ class MemberMOGL(pydantic.BaseModel):
 
 
 # Training Tab (OGL - all)
-class MemberMOGLList(pydantic.BaseModel):
+class MemberMandatoryTraining(pydantic.BaseModel):
     safety: MemberMOGL
     safeguarding: MemberMOGL
     first_aid: MemberMOGL
@@ -382,7 +381,7 @@ class MemberMOGLList(pydantic.BaseModel):
 class MemberTrainingTab(pydantic.BaseModel):
     roles: dict[int, MemberTrainingRole]
     plps: dict[int, list[MemberTrainingPLP]]
-    mandatory: MemberMOGLList
+    mandatory: MemberMandatoryTraining
 
 
 # Permits Tab
