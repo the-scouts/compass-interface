@@ -7,7 +7,7 @@ from compass.core.schemas import hierarchy
 class TestSchemaHierarchy:
     def test_hierarchy_base_round_trip(self):
         # Given
-        data = dict(id=123)
+        data = dict(unit_id=123)
 
         # When
         result = hierarchy.HierarchyBase(**data)
@@ -17,7 +17,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_base_invalid(self):
         # Given
-        data = dict(id="abc")
+        data = dict(unit_id="abc")
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyBase"):
@@ -26,7 +26,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_round_trip(self):
         # Given
-        data = dict(id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42)
+        data = dict(unit_id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42)
 
         # When
         result = hierarchy.HierarchyUnit(**data)
@@ -36,7 +36,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_invalid_normal(self):
         # Given
-        data = dict(id=123, name="name", parent_id="parent_id", status="ACT", address="W1A 1AA", member_count=42)
+        data = dict(unit_id=123, name="name", parent_id="parent_id", status="ACT", address="W1A 1AA", member_count=42)
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyUnit"):
@@ -45,7 +45,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_invalid_literal(self):
         # Given
-        data = dict(id=123, name="name", parent_id=321, status="Not ACT", address="W1A 1AA", member_count=42)
+        data = dict(unit_id=123, name="name", parent_id=321, status="Not ACT", address="W1A 1AA", member_count=42)
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyUnit"):
@@ -54,7 +54,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_section_round_trip(self):
         # Given
-        data = dict(id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42, section_type="Beavers")
+        data = dict(unit_id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42, section_type="Beavers")
 
         # When
         result = hierarchy.HierarchySection(**data)
@@ -64,7 +64,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_section_invalid_literal(self):
         # Given
-        data = dict(id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42, section_type="random")
+        data = dict(unit_id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42, section_type="random")
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchySection"):
@@ -73,7 +73,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_level_round_trip(self):
         # Given
-        data = dict(id=123, level="Group")
+        data = dict(unit_id=123, level="Group")
 
         # When
         result = hierarchy.HierarchyLevel(**data)
@@ -83,7 +83,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_level_invalid_literal(self):
         # Given
-        data = dict(id=123, level="random")
+        data = dict(unit_id=123, level="random")
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyLevel"):
@@ -92,8 +92,8 @@ class TestSchemaHierarchy:
 
     def test_unit_data_round_trip(self):
         # Given
-        section_data = dict(id=1, name="name", parent_id=3, status="ACT", address="W1A", member_count=42, section_type="Beavers")
-        data = dict(id=123, level="Group", child=None, sections=[section_data])
+        section_data = dict(unit_id=1, name="name", parent_id=3, status="ACT", address="W1A", member_count=42, section_type="Beavers")
+        data = dict(unit_id=123, level="Group", child=None, sections=[section_data])
 
         # When
         result = hierarchy.UnitData(**data)
@@ -103,7 +103,7 @@ class TestSchemaHierarchy:
 
     def test_unit_data_invalid_missing(self):
         # Given
-        data = dict(id=123, level="Group", child=None)
+        data = dict(unit_id=123, level="Group", child=None)
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for UnitData"):
@@ -112,8 +112,8 @@ class TestSchemaHierarchy:
 
     def test_descendant_data_round_trip(self):
         # Given
-        hierarchy_unit_data = dict(id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42)
-        unit_data_data = dict(id=123, level="Group", child=None, sections=[hierarchy_unit_data | dict(section_type="Beavers")])
+        hierarchy_unit_data = dict(unit_id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42)
+        unit_data_data = dict(unit_id=123, level="Group", child=None, sections=[hierarchy_unit_data | dict(section_type="Beavers")])
         data = hierarchy_unit_data | unit_data_data
 
         # When
