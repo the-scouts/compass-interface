@@ -94,6 +94,45 @@ TYPES_DISCLOSURES_APPOINTMENT = Literal[
     "ID check required",
     "No Disclosure",
 ]  # Disclosure statuses in role details popup
+TYPES_LEARNING_METHOD = Literal[
+    "Course",
+    "DVD/Video",
+    "E-Learning",
+    "External Course",
+    "Independent Study",
+    "On the Job",
+    "One to One",
+    "Practical",
+    "Small Group",
+    "Workbook",
+    "Your prior learning/experience recognised",
+    "Other",
+    # First Aid
+    "Life Support",
+    "Major illness",
+    "Trauma and injury",
+    # Manager and Supporter: Induction (rare)
+    "RST Induction [England only]",
+    # Manager and Supporter: Skills Courses
+    "Skills Course - Achieving Growth",
+    "Skills Course - Meeting the Challenges",
+    "Skills Course - Skills of Management",
+    # Manager and Supporter: Independent Learning
+    "IL - Building Effective Teams",
+    "IL - Dealing with Difficult Situations",
+    "IL - Decision Making",
+    "IL - Enabling Change",
+    "IL - Financial and Physical Resources",
+    "IL - Finding, Appointing and Welcoming Volunteers",
+    "IL - Getting the Word Out",
+    "IL - Keeping, Developing and Managing Volunteers",
+    "IL - Leading Local Scouting",
+    "IL - Managing Time and Personal Skills",
+    "IL - Planning For Growth",
+    "IL - Project Management",
+    "IL - Safety for Managers and Supporters",
+    "IL - Supporting the Adult Training Scheme",
+]
 TYPES_PERMIT = Literal[
     "Archery",
     "Bell Boating",
@@ -353,7 +392,7 @@ class MemberTrainingPLP(pydantic.BaseModel):
 
     # Learning details
     learning_required: Optional[bool]
-    learning_method: Optional[str]
+    learning_method: Optional[TYPES_LEARNING_METHOD]
     learning_completed: Optional[datetime.date]
     learning_date: Optional[datetime.date]
 
