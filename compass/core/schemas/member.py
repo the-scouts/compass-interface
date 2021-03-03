@@ -9,7 +9,7 @@ import pydantic
 from pydantic import generics
 
 # Must use typing.Dict etc for generics not native as of pydantic 1.7.3
-from typing import List, Dict  # isort: skip
+from typing import List  # isort: skip
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
