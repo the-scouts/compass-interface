@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import re
 import time
-import datetime
 from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, Union
 
 from lxml import html
@@ -17,7 +17,6 @@ from compass.core.utility import validation_errors_logging
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
 
     import requests
 
@@ -223,10 +222,10 @@ class PeopleScraper(InterfaceAuthenticated):
             return schema.MemberDetails.parse_obj(details)
 
     def get_roles_tab(
-            self,
-            membership_num: int,
-            keep_non_volunteer_roles: bool = False,
-            statuses: Optional[set] = None,
+        self,
+        membership_num: int,
+        keep_non_volunteer_roles: bool = False,
+        statuses: Optional[set] = None,
     ) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
 
@@ -340,7 +339,7 @@ class PeopleScraper(InterfaceAuthenticated):
             roles_data[role_number] = role_details
 
         # Calculate days of membership (inclusive), normalise to years.
-        membership_duration_days = sum((end-start).days + 1 for start, end in _reduce_date_list(roles_dates))
+        membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(roles_dates))
         membership_duration_years = membership_duration_days / 365.2425  # = Leap year except thrice per 400 years.
 
         with validation_errors_logging(membership_num):
@@ -909,7 +908,7 @@ def _reduce_date_list(dl: Iterable) -> list[tuple[datetime.date, datetime.date]]
         elif start >= start_ and end <= end_:
             pass
         # If adjacent
-        elif abs(end_-start).days == 1 or abs(start_-end).days == 1:
+        elif abs(end_ - start).days == 1 or abs(start_ - end).days == 1:
             end_ = max(end, end_)
             start_ = min(start, start_)
         # If none of these (date forms a disjoint set) note as unused

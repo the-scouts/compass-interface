@@ -103,11 +103,9 @@ class TestScrapersMemberReduceDateList:
             (datetime.date(2017, 1, 1), datetime.date(2021, 6, 1)),
             (datetime.date(2014, 7, 22), datetime.date(2015, 6, 10)),
             (datetime.date(2015, 1, 1), datetime.date(2015, 1, 1)),
-
             (datetime.date(2004, 5, 13), datetime.date(2007, 11, 1)),
             (datetime.date(1997, 7, 2), datetime.date(2007, 11, 1)),
             (datetime.date(1993, 2, 18), datetime.date(1997, 7, 2)),
-
             (datetime.date(1983, 11, 17), datetime.date(1985, 3, 23)),
         ]
 
