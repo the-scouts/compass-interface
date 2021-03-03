@@ -153,7 +153,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_members_round_trip(self):
         # Given
-        data = dict(compass_id=321, member=[dict(contact_number=123, name="Adam Smith", role=None)])
+        data = dict(unit_id=321, member=[dict(contact_number=123, name="Adam Smith", role=None)])
 
         # When
         result = hierarchy.HierarchyUnitMembers(**data)
@@ -163,7 +163,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_members_invalid_missing(self):
         # Given
-        data = dict(compass_id=321, member=[object()])
+        data = dict(unit_id=321, member=[object()])
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyUnitMembers"):
@@ -172,10 +172,10 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_members_list_round_trip(self):
         # Given
-        data = [dict(compass_id=321, member=[dict(contact_number=123, name="Adam Smith", role=None)])]
+        data = [dict(unit_id=321, member=[dict(contact_number=123, name="Adam Smith", role=None)])]
 
         # When
-        result = pydantic.parse_obj_as(hierarchy.HierarchyUnitMembersList, data)
+        result = [hierarchy.HierarchyUnitMembers(**unit_members) for unit_members in data]
 
         # Then
-        assert data == result.dict()["__root__"]
+        assert data == [model.__dict__ for model in result]
