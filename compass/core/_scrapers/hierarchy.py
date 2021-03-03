@@ -5,7 +5,6 @@ import typing
 from typing import Literal, TYPE_CHECKING, Union
 
 from lxml import html
-import pydantic
 
 from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceAuthenticated
@@ -46,7 +45,7 @@ class HierarchyScraper(InterfaceAuthenticated):
     # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
     def get_units_from_hierarchy(
         self, parent_unit: int, level: TYPES_ENDPOINT_LEVELS
-    ) -> list[Union[schema.HierarchySection, schema.HierarchyUnit, None]]:
+    ) -> Union[list[schema.HierarchySection], list[schema.HierarchyUnit]]:
         """Get all children of a given unit.
 
         If LiveData=Y is passed, the resulting JSON additionally contains:
@@ -60,15 +59,24 @@ class HierarchyScraper(InterfaceAuthenticated):
             level: string org type, used for selecting API endpoint
 
         Returns:
-            Mapping of unit properties to data.
+            List of HierarchySection or HierarchyUnit models. If the current
+            user cannot access the hierarchy unit, an empty list is returned.
+
+            Returned lists have uniform types (i.e. all elements are of type
+            HierarchySection or of type HierarchyUnit, they cannot mix)
 
             E.g.:
-            {'id': ...,
-             'name': '...',
-             'parent_id': ...,
-             'status': '...',
-             'address': '...',
-             'member_count': ...}
+            [
+                HierarchyUnit(
+                    unit_id=...,
+                    name='...',
+                    parent_id=...,
+                    status='...',
+                    address='...',
+                    member_count=...
+                ),
+                ...
+            ]
 
         Raises:
             requests.exceptions.RequestException:
@@ -79,6 +87,7 @@ class HierarchyScraper(InterfaceAuthenticated):
         level_endpoint = endpoints[level]
         # Are we requesting sections here?
         is_sections = "/sections" in level_endpoint
+        model_class = schema.HierarchySection if is_sections else schema.HierarchyUnit  # chose right model to use
 
         result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
@@ -94,7 +103,7 @@ class HierarchyScraper(InterfaceAuthenticated):
                 "name": unit_dict["Description"],
                 "parent_id": unit_dict["Parent"],
             }
-            if unit_dict["Tag"]:  # TODO possible error states - what can we expect here as an invariant?
+            if unit_dict["Tag"]:
                 tag = json.loads(unit_dict["Tag"])[0]
                 parsed["status"] = tag["org_status"]
                 parsed["address"] = tag["address"]
@@ -103,11 +112,8 @@ class HierarchyScraper(InterfaceAuthenticated):
                 if "SectionTypeDesc" in tag:
                     parsed["section_type"] = tag["SectionTypeDesc"]
 
-            result_units.append(parsed)
-
-        if is_sections:
-            return pydantic.parse_obj_as(list[schema.HierarchySection], result_units)
-        return pydantic.parse_obj_as(list[schema.HierarchyUnit], result_units)
+            result_units.append(model_class(**parsed))
+        return result_units
 
     def get_members_with_roles_in_unit(
         self, unit_number: int, include_name: bool = False, include_primary_role: bool = False
