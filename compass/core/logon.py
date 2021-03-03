@@ -189,7 +189,7 @@ class Logon(InterfaceAuthenticated):
             # "SGST": "Group Sections",
         }
 
-        return schemas.hierarchy.HierarchyLevel(id=unit_number, level=level_map[unit_level])
+        return schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
 
     # Timeout code:
 
