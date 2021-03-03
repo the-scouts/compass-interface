@@ -855,3 +855,43 @@ class PeopleScraper(InterfaceAuthenticated):
         }
         with validation_errors_logging(role_number, name="Role Number"):
             return schema.MemberRolePopup.parse_obj(full_details)
+
+
+def _reduce_date_list(dl: Iterable) -> list[tuple[datetime.date, datetime.date]]:
+    """Reduce list of start and end dates to disjoint ranges.
+
+    Iterate through date pairs and get longest consecutive date ranges.
+    For disjoint ranges, call function recursively. Returns all found date
+    pairs.
+
+    Args:
+        dl: list of start, end date pairs
+
+    Returns:
+        list of start, end date pairs
+
+    """
+    unused_values = set()  # We init the date values with the first
+    sdl = sorted(dl)
+    start_, end_ = sdl[0]
+    for i, (start, end) in enumerate(sdl):
+        # If date range completely outwith, set both start and end
+        if start < start_ and end > end_:
+            start_, end_ = start, end
+        # If start and latest end overlap, and end is later than latest end, update latest end
+        elif start <= end_ < end:
+            end_ = end
+        # If end and earliest start overlap, and start is earlier than earliest start, update earliest start
+        elif end >= start_ > start:
+            start_ = start
+        # If date range completely within, do nothing
+        elif start >= start_ and end <= end_:
+            pass
+        # If none of these (date forms a disjoint set) note as unused
+        else:
+            unused_values.add(i)
+    output_pairs = [(start_, end_)]
+    # If there are remaining items not used, pass recursively
+    if len(unused_values) != 0:
+        output_pairs.extend(_reduce_date_list((pair for i, pair in enumerate(sdl) if i in unused_values)))
+    return output_pairs
