@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import time
+import datetime
 from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, Union
 
 from lxml import html
@@ -15,13 +16,16 @@ from compass.core.utility import parse
 from compass.core.utility import validation_errors_logging
 
 if TYPE_CHECKING:
-    import datetime
+    from collections.abc import Iterable
+
 
     import requests
 
 MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
 ]
+
+NON_VOLUNTEER_TITLES = {"occasional helper", "pvg", "network member"}
 
 mogl_map = dict(
     SA="safety",
@@ -219,8 +223,11 @@ class PeopleScraper(InterfaceAuthenticated):
             return schema.MemberDetails.parse_obj(details)
 
     def get_roles_tab(
-        self, membership_num: int, keep_non_volunteer_roles: bool = False, statuses: Optional[set] = None
-    ) -> schema.MemberRolesDict:
+            self,
+            membership_num: int,
+            keep_non_volunteer_roles: bool = False,
+            statuses: Optional[set] = None,
+    ) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
@@ -234,20 +241,26 @@ class PeopleScraper(InterfaceAuthenticated):
             A dict of dicts mapping keys to the corresponding data from the roles tab.
 
             E.g.:
-            {1234578:
-             {'role_number': 1234578,
-              'membership_number': ...,
-              'role_title': '...',
-              'role_class': '...',
-              'role_type': '...',
-              'location_id': ...,
-              'location_name': '...',
-              'role_start_date': datetime.datetime(...),
-              'role_end': datetime.datetime(...),
-              'role_status': '...'},
-             {...}
-            }
-
+            MemberRolesCollection(
+                roles={
+                    1234578: MemberRoleCore(
+                        role_number=...,
+                        membership_number=...,
+                        role_title='...',
+                        role_class='...',
+                        role_type='...',
+                        location_id=...,
+                        location_name='...',
+                        role_start=datetime.date(...),
+                        role_end=datetime.date(...),
+                        role_status='...',
+                        review_date=datetime.date(...),
+                        can_view_details=True|False
+                    ),
+                    ...
+                },
+                membership_duration=...
+            )
 
             Keys will always be present.
 
@@ -274,6 +287,7 @@ class PeopleScraper(InterfaceAuthenticated):
 
         statuses_set = statuses is not None
 
+        roles_dates = []
         roles_data = {}
         rows = tree.xpath("//tbody/tr")
         for row in rows:
@@ -310,11 +324,14 @@ class PeopleScraper(InterfaceAuthenticated):
                 can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
             )
             # Remove OHs etc from list
-            if not keep_non_volunteer_roles and (
-                "helper" in role_details["role_class"].lower()
-                or {role_details["role_title"].lower()} <= {"occasional helper", "pvg", "network member"}
-            ):
-                continue
+            if "helper" in role_details["role_class"].lower() or {role_details["role_title"].lower()} <= NON_VOLUNTEER_TITLES:
+                if keep_non_volunteer_roles is False:
+                    continue
+            # If role is a full volunteer role, potentially add to date list
+            elif role_status != "Cancelled":
+                # If role_end is a falsy value (None), replace with today's date
+                pair = role_details["role_start"], role_details["role_end"] or datetime.datetime.today()
+                roles_dates.append(pair)
 
             # Role status filter
             if statuses_set and role_status not in statuses:
@@ -322,8 +339,12 @@ class PeopleScraper(InterfaceAuthenticated):
 
             roles_data[role_number] = role_details
 
+        # Calculate days of membership (inclusive), normalise to years.
+        membership_duration_days = sum((end-start).days + 1 for start, end in _reduce_date_list(roles_dates))
+        membership_duration_years = membership_duration_days / 365.2425  # = Leap year except thrice per 400 years.
+
         with validation_errors_logging(membership_num):
-            return schema.MemberRolesDict.parse_obj(roles_data)
+            return schema.MemberRolesCollection(roles=roles_data, membership_duration=membership_duration_years)
 
     def get_permits_tab(self, membership_num: int) -> schema.MemberPermitsList:
         """Returns data from Permits tab for a given member.
