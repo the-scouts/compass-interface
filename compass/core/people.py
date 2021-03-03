@@ -49,7 +49,7 @@ class People:
         keep_non_volunteer_roles: bool = False,
         only_active: bool = False,
         statuses: Optional[Iterable[TYPES_ROLE_STATUS]] = None,
-    ) -> schema.MemberRolesDict:
+    ) -> schema.MemberRolesCollection:
         """Gets the data from the Role tab in Compass for the specified member.
 
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
