@@ -908,6 +908,10 @@ def _reduce_date_list(dl: Iterable) -> list[tuple[datetime.date, datetime.date]]
         # If date range completely within, do nothing
         elif start >= start_ and end <= end_:
             pass
+        # If adjacent
+        elif abs(end_-start).days == 1 or abs(start_-end).days == 1:
+            end_ = max(end, end_)
+            start_ = min(start, start_)
         # If none of these (date forms a disjoint set) note as unused
         else:
             unused_values.add(i)
