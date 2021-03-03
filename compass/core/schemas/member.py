@@ -317,7 +317,8 @@ class MemberRoleGettingStarted(pydantic.BaseModel):
     module_03: Optional[MemberRoleGettingStartedModule] = None
     module_04: Optional[MemberRoleGettingStartedModule] = None
     gdpr: Optional[MemberRoleGettingStartedModule] = None
-    # training_completion_date: Optional[str] = None  # TODO where is this from???!!!
+    safety: Optional[MemberRoleGettingStartedModule]
+    safeguarding: Optional[MemberRoleGettingStartedModule]
 
 
 # Roles Tab (Role Detail Popup - All)
