@@ -193,25 +193,6 @@ TYPES_DISCLOSURE_STATUSES = Literal[
 ]  # Disclosure statuses in disclosures tab
 
 
-class MemberGenericDict(generics.GenericModel, Generic[DataT]):
-    __root__: Dict[int, DataT]  # Must use typing.Dict not dict as of pydantic 1.7.3
-
-    def __iter__(self) -> Iterator[tuple[int, DataT]]:
-        """Iterate over model items."""
-        yield from self.__root__.items()
-
-    def __getitem__(self, item: int) -> DataT:
-        """Get item by key."""
-        return self.__root__[item]
-
-    def __len__(self) -> int:
-        """Get number of items."""
-        return len(self.__root__)
-
-    def items(self) -> Iterator[tuple[int, DataT]]:
-        yield from iter(self)
-
-
 class MemberGenericList(generics.GenericModel, Generic[DataT]):
     __root__: List[DataT]
 
@@ -306,7 +287,9 @@ class MemberRoleCore(MemberBase, MemberRoleBase):
 
 
 # Roles Tab (Main List - collection)
-MemberRolesDict = MemberGenericDict[MemberRoleCore]
+class MemberRolesCollection(pydantic.BaseModel):
+    roles: dict[int, MemberRoleCore]
+    membership_duration: float  # Membership duration in qualifying roles, in years
 
 
 # Roles Tab (Role Detail Popup - Main)
