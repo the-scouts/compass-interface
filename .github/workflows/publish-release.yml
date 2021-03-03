@@ -18,12 +18,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Install pypa/build, setuptools, wheel
+      - name: Install build dependencies (pypa/build, setuptools, wheel)
         run: pip install build setuptools wheel
 
       - name: Build a sources and binary
