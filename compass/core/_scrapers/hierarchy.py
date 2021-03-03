@@ -90,7 +90,7 @@ class HierarchyScraper(InterfaceAuthenticated):
         result_units = []
         for unit_dict in result_json:
             parsed = {
-                "id": int(unit_dict["Value"]),
+                "unit_id": int(unit_dict["Value"]),
                 "name": unit_dict["Description"],
                 "parent_id": unit_dict["Parent"],
             }

@@ -19,7 +19,7 @@ TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", 
 
 
 class HierarchyBase(pydantic.BaseModel):
-    id: int
+    unit_id: int
 
 
 class HierarchyUnit(HierarchyBase):
@@ -60,8 +60,7 @@ class HierarchyMember(pydantic.BaseModel):
     role: Optional[str]
 
 
-class HierarchyUnitMembers(pydantic.BaseModel):
-    compass_id: int  # TODO disambiguate this
+class HierarchyUnitMembers(HierarchyBase):
     member: list[HierarchyMember]
 
 
