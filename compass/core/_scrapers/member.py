@@ -225,7 +225,7 @@ class PeopleScraper(InterfaceAuthenticated):
         self,
         membership_num: int,
         keep_non_volunteer_roles: bool = False,
-        statuses: Optional[set] = None,
+        statuses: Optional[set[str]] = None,
     ) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
 
@@ -318,7 +318,7 @@ class PeopleScraper(InterfaceAuthenticated):
                 location_name=cells[2].text_content().strip(),
                 role_start=parse(cells[3].text_content().strip()),
                 role_end=parse(cells[4].text_content().strip()),
-                role_status=role_status,
+                role_status=role_status,  # type: ignore[arg-type]  # literal validation is done by Pydantic
                 review_date=review_date,
                 can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
             )
