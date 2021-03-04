@@ -16,7 +16,8 @@ from compass.core.utility import parse
 from compass.core.utility import validation_errors_logging
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable
+    from collections.abc import Iterator
 
     import requests
 
@@ -553,8 +554,8 @@ class PeopleScraper(InterfaceAuthenticated):
             cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
 
             training_ogl[mogl_map[ongoing_learning.get("data-ng_code")]] = dict(
-                completed_date=parse(cell_text.get("tdLastComplete")),
-                renewal_date=parse(cell_text.get("tdRenewal")),
+                completed_date=parse(cell_text.get("tdLastComplete")),  # type: ignore[arg-type]
+                renewal_date=parse(cell_text.get("tdRenewal")),  # type: ignore[arg-type]
             )
             # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 

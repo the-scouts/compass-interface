@@ -30,7 +30,7 @@ TYPES_ETHNICITY = Literal[
     "18.Other",
     "19.Prefer not to say",
 ]
-TYPES_RELIGION = Union[
+TYPES_RELIGION = Union[  # type: ignore[misc]
     Literal[
         "Buddhist",
         "Christian (including all Christian denominations)",
@@ -45,7 +45,7 @@ TYPES_RELIGION = Union[
     pydantic.constr(regex=r"^Any other religion.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
     pydantic.constr(regex=r"^No religion.*"),  # NoQA F722 (https://stackoverflow.com/a/64917499)
 ]
-TYPES_OCCUPATION = Union[
+TYPES_OCCUPATION = Union[  # type: ignore[misc]
     Literal[
         "Employed",
         "Unemployed",
@@ -249,8 +249,8 @@ class MemberDetails(MemberBase):
     sex: Optional[TYPES_SEX] = None
     nationality: Optional[str] = None  # literal? Big list...!
     ethnicity: Optional[TYPES_ETHNICITY] = None
-    religion: Optional[TYPES_RELIGION] = None
-    occupation: Optional[TYPES_OCCUPATION] = None
+    religion: Optional[TYPES_RELIGION] = None  # type: ignore[valid-type]
+    occupation: Optional[TYPES_OCCUPATION] = None  # type: ignore[valid-type]
     join_date: Optional[datetime.date] = None
 
     # Contact Details
@@ -349,6 +349,7 @@ class MemberRoleGettingStartedModule(pydantic.BaseModel):
 # Roles Tab (Role Detail Popup - Getting Started)
 class MemberRoleGettingStarted(pydantic.BaseModel):
     """Getting Started Training."""
+
     module_01: Optional[MemberRoleGettingStartedModule] = None
     trustee_intro: Optional[MemberRoleGettingStartedModule] = None
     module_02: Optional[MemberRoleGettingStartedModule] = None
@@ -444,7 +445,8 @@ class MemberDisclosure(MemberBase):
     country: Optional[Literal["England & Wales", "Scotland", "The Scout Association"]]
     provider: TYPES_DISCLOSURE_PROVIDERS
     type: Literal["Enhanced with Barring"]
-    number: Union[Optional[int], pydantic.constr(regex=r"^\d{7}R$")]  # NoQA: F722 # If Application Withdrawn, no disclosure number
+    # If Application Withdrawn, no disclosure number. If Scottish in the early 2000s, 7 digits ending with an R
+    number: Union[Optional[int], pydantic.constr(regex=r"^\d{7}R$")]  # type: ignore[valid-type]  # NoQA: F722
     issuer: Optional[TYPES_DISCLOSURE_PROVIDERS]
     issue_date: Optional[datetime.date]  # If Application Withdrawn, maybe no issue date
     status: TYPES_DISCLOSURE_STATUSES

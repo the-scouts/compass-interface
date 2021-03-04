@@ -60,9 +60,9 @@ class Logon(InterfaceAuthenticated):
         self,
         *,
         session: requests.Session,
-        compass_props: Optional[schema.CompassProps] = None,
+        compass_props: schema.CompassProps,
         roles_dict: Optional[TYPES_ROLES_DICT] = None,
-        current_role: Optional[TYPES_ROLE] = None,
+        current_role: TYPES_ROLE,
     ):
         """Constructor for Logon."""
         self.compass_props: schema.CompassProps = compass_props
@@ -88,7 +88,7 @@ class Logon(InterfaceAuthenticated):
     @classmethod
     def from_logon(
         cls,
-        credentials: Optional[tuple[str, str]] = None,
+        credentials: tuple[str, str] = None,
         role_to_use: Optional[str] = None,
         role_location: Optional[str] = None,
     ) -> Logon:
@@ -156,7 +156,7 @@ class Logon(InterfaceAuthenticated):
 
         logon = cls(
             session=session,
-            compass_props=schema.CompassProps(**{"master": {"user": dict(user_props)}}),
+            compass_props=schema.CompassProps.parse_obj({"master": {"user": dict(user_props)}}),
             current_role=current_role,
         )
 

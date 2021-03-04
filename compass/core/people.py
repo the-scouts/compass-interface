@@ -202,7 +202,9 @@ class People:
         """
         disclosures = self.disclosures(membership_num)
         date_map = {disc.expiry_date: disc for disc in disclosures if disc.expiry_date}
-        return date_map.get(max(date_map.keys(), default=None))
+        if not date_map:
+            return None
+        return date_map[max(date_map)]
 
 
 # class Member:
