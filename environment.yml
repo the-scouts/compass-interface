@@ -19,6 +19,8 @@ dependencies:
 
   # Testing
   - pytest
+  - starlette
+  - uvicorn
 
   # Development (Tools, Style, Linting)
   - ipython
