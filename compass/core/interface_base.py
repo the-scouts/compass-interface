@@ -25,9 +25,9 @@ class InterfaceBase:
 
     def _get(
         self,
-        url: Union[str, bytes],
-        params: Optional[MutableMapping[str, str]] = None,
-        headers: Optional[MutableMapping[str, str]] = None,
+        url: str,
+        params: Optional[dict[str, Optional[str]]] = None,
+        headers: Optional[dict[str, str]] = None,
         stream: Optional[bool] = None,
         **kwargs: Any,
     ) -> requests.Response:
@@ -118,7 +118,7 @@ class InterfaceAuthenticated(InterfaceBase, abc.ABC):
     def _get(
         self,
         url: str,
-        params: Union[None, dict[str, str]] = None,
+        params: Optional[dict[str, Optional[str]]] = None,
         headers: Optional[dict[str, str]] = None,
         stream: Optional[bool] = None,
         auth_header: bool = False,

@@ -31,13 +31,13 @@ class CompassPropsPage(CompassPropsBase):
 
 
 class CompassPropsCRUD(CompassPropsBase):
-    mdis: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MDIS")
-    roles: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="ROLES")
-    pemd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PEMD")
-    mmmd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MMMD")
-    mvid: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MVID")
-    perm: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PERM")
-    trn: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="TRN")
+    mdis: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MDIS")  # type: ignore[valid-type]
+    roles: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="ROLES")  # type: ignore[valid-type]
+    pemd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PEMD")  # type: ignore[valid-type]
+    mmmd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MMMD")  # type: ignore[valid-type]
+    mvid: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MVID")  # type: ignore[valid-type]
+    perm: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PERM")  # type: ignore[valid-type]
+    trn: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="TRN")  # type: ignore[valid-type]
 
 
 class CompassPropsUser(CompassPropsBase):
