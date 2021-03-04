@@ -55,7 +55,7 @@ class Hierarchy:
     def get_unit_data(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
-        _id: Optional[int] = None,
+        unit_id: Optional[int] = None,
         level: Optional[TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
     ) -> schema.HierarchyLevel:
@@ -82,8 +82,8 @@ class Hierarchy:
         """
         if unit_level is not None:
             data = unit_level
-        elif _id is not None and level is not None:
-            data = schema.HierarchyLevel(unit_id=_id, level=level)
+        elif unit_id is not None and level is not None:
+            data = schema.HierarchyLevel(unit_id=unit_id, level=level)
         elif use_default:
             data = self.session.hierarchy  # as this is a property, it will update when roles change
         else:
