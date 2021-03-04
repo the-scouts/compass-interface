@@ -389,7 +389,7 @@ class PeopleScraper(InterfaceAuthenticated):
             return permits
 
     @overload
-    def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMOGLList:
+    def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMandatoryTraining:
         ...
 
     @overload
@@ -397,12 +397,12 @@ class PeopleScraper(InterfaceAuthenticated):
         ...
 
     @overload
-    def get_training_tab(self, membership_num: int, ongoing_only: bool) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList]:
+    def get_training_tab(self, membership_num: int, ongoing_only: bool) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
         ...
 
     def get_training_tab(
         self, membership_num: int, ongoing_only: bool = False
-    ) -> Union[schema.MemberTrainingTab, schema.MemberMOGLList]:
+    ) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
         """Returns data from Training tab for a given member.
 
         Args:
@@ -564,7 +564,7 @@ class PeopleScraper(InterfaceAuthenticated):
 
         if ongoing_only:
             with validation_errors_logging(membership_num):
-                return schema.MemberMOGLList.parse_obj(training_ogl)
+                return schema.MemberMandatoryTraining.parse_obj(training_ogl)
 
         training_data = {
             "roles": training_roles,
