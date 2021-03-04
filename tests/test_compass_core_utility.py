@@ -69,8 +69,8 @@ class TestUtility:
         result = utility.parse(data)
 
         # Then
-        assert isinstance(result, datetime.datetime)
-        assert result == datetime.datetime(2000, 1, 1)
+        assert isinstance(result, datetime.date)
+        assert result == datetime.date(2000, 1, 1)
 
     def test_parse_month_long(self):
         # Given
@@ -80,8 +80,8 @@ class TestUtility:
         result = utility.parse(data)
 
         # Then
-        assert isinstance(result, datetime.datetime)
-        assert result == datetime.datetime(2000, 1, 1)
+        assert isinstance(result, datetime.date)
+        assert result == datetime.date(2000, 1, 1)
 
     def test_parse_non_date(self):
         # Given

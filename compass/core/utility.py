@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import contextlib
 import ctypes
 import datetime
 import functools
 import threading
-from typing import Any, Callable, Optional
+from typing import Any, Optional, TYPE_CHECKING
 
 import pydantic
 
 from compass.core.logger import logger
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Iterator
 
 
 def hash_code(text: str) -> int:
@@ -34,18 +40,18 @@ def maybe_int(value: Any) -> Optional[int]:
         return None
 
 
-def parse(date_time_str: str) -> Optional[datetime.datetime]:
+def parse(date_time_str: str) -> Optional[datetime.date]:
     if not date_time_str:
         return None
     else:
         try:
-            return datetime.datetime.strptime(date_time_str, "%d %B %Y")  # e.g. 01 January 2000
+            return datetime.datetime.strptime(date_time_str, "%d %B %Y").date()  # e.g. 01 January 2000
         except ValueError:
-            return datetime.datetime.strptime(date_time_str, "%d %b %Y")  # e.g. 01 Jan 2000
+            return datetime.datetime.strptime(date_time_str, "%d %b %Y").date()  # e.g. 01 Jan 2000
 
 
 @contextlib.contextmanager
-def filesystem_guard(msg: str):
+def filesystem_guard(msg: str) -> Iterator[None]:
     try:
         yield
     except IOError as err:
@@ -53,7 +59,7 @@ def filesystem_guard(msg: str):
 
 
 @contextlib.contextmanager
-def validation_errors_logging(id_value: int, name: str = "Member No"):
+def validation_errors_logging(id_value: int, name: str = "Member No") -> Iterator[None]:
     try:
         yield
     except pydantic.ValidationError as err:
