@@ -72,8 +72,12 @@ class People:
 
         """
         if only_active:
-            statuses = STATUSES - {"Closed", "Cancelled"}
-        return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles, statuses)
+            unique_statuses = STATUSES - {"Closed", "Cancelled"}
+        elif statuses is None:
+            unique_statuses = set()
+        else:
+            unique_statuses = set(statuses)
+        return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles, unique_statuses)
 
     def role_detail(self, role_number: int) -> schema.MemberRolePopup:
         """Get detailed information for specified role.
