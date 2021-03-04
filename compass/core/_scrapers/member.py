@@ -397,7 +397,9 @@ class PeopleScraper(InterfaceAuthenticated):
         ...
 
     @overload
-    def get_training_tab(self, membership_num: int, ongoing_only: bool) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
+    def get_training_tab(
+        self, membership_num: int, ongoing_only: bool
+    ) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
         ...
 
     def get_training_tab(
