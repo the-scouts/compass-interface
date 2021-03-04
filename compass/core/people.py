@@ -125,7 +125,7 @@ class People:
         """
         return self._scraper.get_training_tab(membership_num, ongoing_only=False)
 
-    def ongoing_learning(self, membership_num: int) -> schema.MemberMOGLList:
+    def ongoing_learning(self, membership_num: int) -> schema.MemberMandatoryTraining:
         """Gets ongoing learning data for a given member.
 
         Args:
