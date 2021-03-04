@@ -16,7 +16,7 @@ from compass.core.utility import parse
 from compass.core.utility import validation_errors_logging
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     import requests
 
@@ -339,8 +339,7 @@ class PeopleScraper(InterfaceAuthenticated):
             roles_data[role_number] = role_details
 
         # Calculate days of membership (inclusive), normalise to years.
-        membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(roles_dates))
-        membership_duration_years = membership_duration_days / 365.2425  # = Leap year except thrice per 400 years.
+        membership_duration_years = _membership_duration(roles_dates)
 
         with validation_errors_logging(membership_num):
             return schema.MemberRolesCollection(roles=roles_data, membership_duration=membership_duration_years)
@@ -878,7 +877,7 @@ class PeopleScraper(InterfaceAuthenticated):
             return schema.MemberRolePopup.parse_obj(full_details)
 
 
-def _reduce_date_list(dl: Iterable) -> list[tuple[datetime.date, datetime.date]]:
+def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
     """Reduce list of start and end dates to disjoint ranges.
 
     Iterate through date pairs and get longest consecutive date ranges.
@@ -915,8 +914,13 @@ def _reduce_date_list(dl: Iterable) -> list[tuple[datetime.date, datetime.date]]
         # If none of these (date forms a disjoint set) note as unused
         else:
             unused_values.add(i)
-    output_pairs = [(start_, end_)]
+    yield start_, end_
     # If there are remaining items not used, pass recursively
     if len(unused_values) != 0:
-        output_pairs.extend(_reduce_date_list((pair for i, pair in enumerate(sdl) if i in unused_values)))
-    return output_pairs
+        yield from _reduce_date_list((pair for i, pair in enumerate(sdl) if i in unused_values))
+
+
+def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
+    """Calculate days of membership (inclusive), normalise to years."""
+    membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(dates))
+    return membership_duration_days / 365.2425  # Leap year except thrice per 400 years.

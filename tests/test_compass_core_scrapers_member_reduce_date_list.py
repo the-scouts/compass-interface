@@ -12,7 +12,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [(datetime.date(2015, 1, 1), datetime.date(2021, 1, 1))]
@@ -25,7 +25,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [(datetime.date(2015, 1, 1), datetime.date(2020, 2, 7))]
@@ -38,7 +38,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [(datetime.date(2016, 4, 5), datetime.date(2021, 1, 1))]
@@ -51,7 +51,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [(datetime.date(2016, 4, 5), datetime.date(2020, 2, 7))]
@@ -64,7 +64,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [(datetime.date(2017, 1, 1), datetime.date(2017, 12, 31))]
@@ -77,7 +77,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [(datetime.date(2016, 7, 1), datetime.date(2017, 6, 30))]
@@ -90,7 +90,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == data
@@ -110,7 +110,7 @@ class TestScrapersMemberReduceDateList:
         ]
 
         # When
-        result = _reduce_date_list(data)
+        result = list(_reduce_date_list(data))
 
         # Then
         assert result == [
