@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 import datetime
 import time
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, TYPE_CHECKING
 
 from compass.core.logger import logger
 from compass.core.settings import Settings
@@ -11,7 +11,6 @@ from compass.core.utility import compass_restify
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from collections.abc import MutableMapping
 
     import requests
 
