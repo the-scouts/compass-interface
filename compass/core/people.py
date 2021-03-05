@@ -74,7 +74,7 @@ class People:
         if only_active:
             unique_statuses = STATUSES - {"Closed", "Cancelled"}
         elif statuses is None:
-            unique_statuses = set()
+            unique_statuses = None
         else:
             unique_statuses = set(statuses)
         return self._scraper.get_roles_tab(membership_num, keep_non_volunteer_roles, unique_statuses)
