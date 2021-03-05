@@ -295,6 +295,8 @@ class PeopleScraper(InterfaceAuthenticated):
             cells = list(row)  # filter out empty elements
 
             # If current role allows selection of role for editing, remove tickbox
+            # If any role allows for selection, an additional column will be added
+            # with empty table-cells where there is no tickbox. Also remove these.
             if any(el.tag == "input" for el in cells[0]) or cells[0].getchildren() == []:
                 cells.pop(0)
 
