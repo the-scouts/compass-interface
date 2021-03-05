@@ -9,7 +9,7 @@ from compass.core.logon import LogonCore
 from compass.core.logon import Settings
 import compass.core.schemas.logon as schema
 
-from util.fake_compass import asp_net_id
+from tests.util.fake_compass import asp_net_id
 
 base_domain = "127.0.0.1"
 base_url = "http://127.0.0.1:4200"
@@ -102,7 +102,7 @@ class TestLogon:
                 ),
                 const=schema.CompassPropsMasterConst(wales=10000007, scotland=10000005, over_seas=10000002, hq=10000001),
                 sys=schema.CompassPropsMasterSys(
-                    session_id="c7637d65-b61c-3091-4cd3-1d5e44632a6d",
+                    session_id="d6c76537-1b6c-3910-c3d4-d21d4e6453a6",
                     safe_json=True,
                     web_path=pydantic.HttpUrl(
                         "https://compass.scouts.org.uk/JSon.svc/",
