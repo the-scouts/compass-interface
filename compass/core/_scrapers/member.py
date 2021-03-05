@@ -295,7 +295,7 @@ class PeopleScraper(InterfaceAuthenticated):
             cells = list(row)  # filter out empty elements
 
             # If current role allows selection of role for editing, remove tickbox
-            if any(el.tag == "input" for el in cells[0]):
+            if any(el.tag == "input" for el in cells[0]) or cells[0].getchildren() == []:
                 cells.pop(0)
 
             role_number = int(row.get("data-pk"))
