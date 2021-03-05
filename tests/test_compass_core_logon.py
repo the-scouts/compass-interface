@@ -5,11 +5,11 @@ import pytest
 import requests
 
 from compass.core.errors import CompassError
-# from compass.core.logon import Logon
 from compass.core.logon import LogonCore
 from compass.core.logon import Settings
-from tests.util.fake_compass import asp_net_id
 import compass.core.schemas.logon as schema
+
+from util.fake_compass import asp_net_id
 
 base_domain = "127.0.0.1"
 base_url = "http://127.0.0.1:4200"
@@ -38,7 +38,7 @@ class TestLogon:
             # When
             LogonCore()
 
-    def test_login_post_credentials(self, server,  monkeypatch: pytest.MonkeyPatch):
+    def test_login_post_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
         Settings.base_url = base_url
         session = requests.Session()
@@ -53,7 +53,7 @@ class TestLogon:
         expected_response = b"<head><title>Compass - System Startup</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"https://compass.scouts.org.uk/ScoutsPortal.aspx\"'></body>"
         assert response.content == expected_response
 
-    def test_login_post_incorrect_credentials(self, server,  monkeypatch: pytest.MonkeyPatch):
+    def test_login_post_incorrect_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
         Settings.base_url = base_url
         session = requests.Session()

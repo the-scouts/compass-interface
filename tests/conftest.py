@@ -1,8 +1,8 @@
 import pytest
 import uvicorn
 
-from tests.util.fake_compass import app
-from tests.util.http import Server
+from util.fake_compass import app
+from util.http import Server
 
 
 @pytest.fixture(scope="session")
