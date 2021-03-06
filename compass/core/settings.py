@@ -10,6 +10,7 @@ class _SettingsModel(pydantic.BaseSettings):
     wcf_json_endpoint: str = "/JSon.svc"  # Windows communication foundation JSON service endpoint
     web_service_path: pydantic.HttpUrl = base_url + wcf_json_endpoint  # type: ignore[assignment]
     debug: bool = False
+    validation_errors: bool = True
 
     class Config:  # noqa: D106
         case_sensitive = False  # this is the default, but mark for clarity.

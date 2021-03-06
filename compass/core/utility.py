@@ -10,6 +10,7 @@ from typing import Any, Optional, TYPE_CHECKING
 import pydantic
 
 from compass.core.logger import logger
+from compass.core.settings import Settings
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -63,8 +64,9 @@ def validation_errors_logging(id_value: int, name: str = "Member No") -> Iterato
     try:
         yield
     except pydantic.ValidationError as err:
-        logger.error(f"Parsing Error! {name}: {id_value}")
-        raise err
+        logger.exception(f"Parsing Error! {name}: {id_value}")
+        if Settings.validation_errors is True:
+            raise err
 
 
 class PeriodicTimer:
