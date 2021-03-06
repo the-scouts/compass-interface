@@ -14,6 +14,8 @@ line_length = 132
 profile = "google"
 py_version = "39"
 skip_gitignore = true
+known_tests = ['tests']
+sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'FIRSTPARTY', "TESTS", 'LOCALFOLDER']
 
 # pytest configuration
 [tool.pytest.ini_options]
