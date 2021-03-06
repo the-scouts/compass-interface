@@ -8,12 +8,15 @@ phonenumbers
 
 # testing
 pytest
+starlette
+uvicorn
 
 # dev
 ipython
 black
 isort
 pre-commit
+mypy
 
 # build
 pep517
