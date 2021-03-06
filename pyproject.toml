@@ -14,3 +14,11 @@ line_length = 132
 profile = "google"
 py_version = "39"
 skip_gitignore = true
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "6.2"
+norecursedirs = "tests/util"
+testpaths = [
+    "tests",
+]
