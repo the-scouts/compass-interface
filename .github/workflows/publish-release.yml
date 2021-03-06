@@ -18,8 +18,8 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Install build dependencies (pypa/build, setuptools, wheel)
-        run: pip install build setuptools wheel
+      - name: Install build dependencies (pypa/build, setuptools, twine, wheel)
+        run: pip install build setuptools twine wheel
 
       - name: Build a sources and binary
         run: python -m build --sdist --wheel --outdir dist/ .
@@ -38,7 +38,6 @@ jobs:
           release_name: Release ${{ steps.get_version.outputs.VERSION }}
           body: |
             compass-interface-core v${{ steps.get_version.outputs.VERSION }}
-          draft: true
 
       - name: Upload Asset to GH Releases
         uses: actions/upload-release-asset@v1
@@ -50,23 +49,19 @@ jobs:
           asset_name: compass-interface-core-${{ steps.get_version.outputs.VERSION }}.tar.gz
           asset_content_type: application/gzip
 
-      - name: TESTING- upload files
+      - name: (debug) Upload files
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: my-artifact
+          name: debug-build-files
           path: |
             *
 
-
-#      - name: Publish distribution 📦 to Test PyPI
-#        uses: pypa/gh-action-pypi-publish@master
-#        with:
-#          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-#          repository_url: https://test.pypi.org/legacy/
-
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.4.1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+#          TWINE_REPOSITORY_URL: ""
+        run: |
+          twine check dist/*
+          twine upload dist/*
