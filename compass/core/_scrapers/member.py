@@ -25,13 +25,35 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
 ]
 
-NON_VOLUNTEER_TITLES = {"occasional helper", "pvg", "network member"}
+NON_VOLUNTEER_TITLES = {
+    # occasional helper roles
+    "group occasional helper",
+    "group occasional helper.",
+    "district occasional helper",
+    "county occasional helper",
+    "pvg",  # TODO is this ever a role title?
+    "occasional helper",  # TODO is this ever a role title?
+    # council roles:
+    "county scout council member",
+    "county scout council member - nominated representative",
+    "county scout council member - nominated youth representative",
+    "county scout council member - nominated member (18-24)",
+    # staff roles:
+    "district staff",
+    "county staff",
+    # network member roles:
+    "network member",  # TODO is this ever a role title?
+    "scout network member",
+    "district scout network",
+    "district scout network member",
+    "county scout network member",
+}  # TODO add PVG, TSA council, etc
 
-mogl_map = dict(
-    SA="safety",
-    SG="safeguarding",
-    FA="first_aid",
-)
+mogl_map = {
+    "SA": "safety",
+    "SG": "safeguarding",
+    "FA": "first_aid",
+}
 mogl_types = {"gdpr", *mogl_map.values()}
 
 
