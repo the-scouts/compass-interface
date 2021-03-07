@@ -35,7 +35,7 @@ and is licensed under the **[MIT license](https://choosealicense.com/licenses/mi
 app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
     description=long_description,
-    version="0.22.4",
+    version="0.22.5",
     openapi_tags=open_api_tag_metadata,
 )
 app.router.lifespan_context = redis.lifetime
