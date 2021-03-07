@@ -58,7 +58,6 @@ jobs:
             *
 
       - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.4.1
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
