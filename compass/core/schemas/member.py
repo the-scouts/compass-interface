@@ -214,6 +214,7 @@ TYPES_AWARD_TYPE = Literal[
 TYPES_DISCLOSURE_PROVIDERS = Literal["Atlantic Data", "DBS Paper Application", "Disclosure Scotland", "Other"]
 TYPES_DISCLOSURE_STATUSES = Literal[
     "Application Withdrawn",
+    "Application received at HQ",
     "Application submitted - in progress",
     "Disclosure Expired",
     "Disclosure Issued",
