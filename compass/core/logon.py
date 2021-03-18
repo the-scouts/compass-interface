@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal, Optional, TYPE_CHECKING, Union
+from typing import Any, Literal, Optional, TYPE_CHECKING, Union
 import urllib.parse
 
 from lxml import html

@@ -3,6 +3,9 @@ inherits:
 
 ignore-patterns:
   - ^test.*\.py$
+  - ^tests.*\.py$
+
+test-warnings: false
 
 # sync with pyproject.toml
 max-line-length: 132
