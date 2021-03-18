@@ -73,7 +73,7 @@ class ReportsScraper(InterfaceBase):
     def get_report_page(self, run_report_url: str) -> bytes:
         # TODO what breaks if we don't update user-agent?
         # Compass does user-agent sniffing in reports!!!
-        self._update_headers({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        self.s.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
 
         # Get initial reports page, for export URL and config.
         logger.info("Generating report")
