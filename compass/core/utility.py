@@ -112,6 +112,7 @@ def auth_header_get(
     jk: str,
     session: requests.Session,
     url: str,
+    *,
     params: Optional[dict[str, Optional[str]]] = None,
     headers: Optional[dict[str, str]] = None,
     stream: Optional[bool] = None,
