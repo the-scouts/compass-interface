@@ -175,31 +175,21 @@ class PeopleScraper(InterfaceBase):
 
         # ### Extractors
         # ## Core:
-
         details["membership_number"] = membership_num
         names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]  # ("Scout", "-", membership_num, *names)
         details["forenames"] = names[0]
         details["surname"] = " ".join(names[1:])
-        details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
-        details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
         # ## Core - Positional:
-
-        # Full Name
-        details["name"] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")
-        # Known As
+        details["name"] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")  # Full Name
         details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
-        # Join Date  # TODO Unknown - take date from earliest role?
-        join_date_str = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")
-        details["join_date"] = parse(join_date_str) if join_date_str != "Unknown" else None
+        join_date = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")  # TODO Unknown - take date from earliest role?
+        details["join_date"] = parse(join_date) if join_date != "Unknown" else None
 
-        # ## Position Varies, only if authorised:
+        # ## Core - Position Varies:
         details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
-        details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
-        details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
-        details["ethnicity"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
-        details["religion"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
-        details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
+
+        # ## Additional - Position Varies, visible for most roles:
         details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])') or None
         address_parts = _process_address(details["address"])
         details["country"] = address_parts.country
@@ -207,6 +197,15 @@ class PeopleScraper(InterfaceBase):
         details["county"] = address_parts.county
         details["town"] = address_parts.town
         details["street"] = address_parts.street
+        details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
+        details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
+
+        # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
+        details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
+        details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
+        details["ethnicity"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
+        details["religion"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
+        details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
