@@ -16,7 +16,3 @@ class InterfaceBase:
     def __init__(self, session: requests.Session):
         """Constructor for InterfaceBase."""
         self.s: requests.Session = session
-
-    def _update_headers(self, headers: dict[str, str]) -> None:
-        """Update common session headers dictionary."""
-        self.s.headers.update(headers)

@@ -35,14 +35,3 @@ class TestInterfaceBase:
         assert result["args"][0] == data
         assert result["kwargs"]["json"] == json
         assert reqs + 1 == Settings.total_requests
-
-    def test_update_headers(self):
-        # Given
-        data = {"header_one": "123", "abc_xyz": "321"}
-
-        # When
-        ib = InterfaceBase(requests.Session())
-        ib._update_headers(data)  # pylint: disable=protected-access
-
-        # Then
-        assert data.items() <= ib.s.headers.items()

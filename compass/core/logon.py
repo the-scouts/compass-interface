@@ -320,7 +320,7 @@ class LogonCore(InterfaceBase):
             "Authorization": f"{membership_number}~{role_number}",
             "SID": session_id,  # Session ID
         }
-        self._update_headers(auth_headers)
+        self.s.headers.update(auth_headers)
 
     @staticmethod
     def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
