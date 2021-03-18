@@ -12,7 +12,7 @@ from lxml import html
 from compass.core import utility
 from compass.core.errors import CompassReportError
 from compass.core.errors import CompassReportPermissionError
-from compass.core.interface_base import InterfaceAuthenticated
+from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.settings import Settings
 
@@ -20,15 +20,17 @@ if TYPE_CHECKING:
     import requests
 
 
-class ReportsScraper(InterfaceAuthenticated):
+class ReportsScraper(InterfaceBase):
     def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
         """Constructor for ReportsScraper.
 
         takes an initialised Session object from Logon
         """
-        # pylint: disable=useless-super-delegation
-        # Want to keep this method for future use
-        super().__init__(session, member_number, role_number, jk)
+        super().__init__(session)
+
+        self._member_number = member_number
+        self._role_number = role_number
+        self._jk = jk
 
     def get_report_token(self, report_number: int, role_number: int) -> str:
         params = {
@@ -37,12 +39,12 @@ class ReportsScraper(InterfaceAuthenticated):
         }
         logger.debug("Getting report token")
         response = utility.auth_header_get(
-            self.cn,
-            self.mrn,
-            self.jk,
+            self._member_number,
+            self._role_number,
+            self._jk,
             self.s,
             f"{Settings.web_service_path}/ReportToken",
-            params=params
+            params=params,
         )
         response.raise_for_status()
 
