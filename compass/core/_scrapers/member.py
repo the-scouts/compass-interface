@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import re
 import time
-from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, Union
+from typing import get_args, Literal, NamedTuple, Optional, overload, TYPE_CHECKING, Union
 
 from lxml import html
 
@@ -214,21 +214,13 @@ class PeopleScraper(InterfaceBase):
         # Occupation
         details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
         # Address
-        original_address = tree.xpath('string(//*[text()="Address"]/../../../td[3])')
-        address = original_address or ", .  "
-        addr_main, addr_code = address.rsplit(". ", 1)
-        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
-        try:
-            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
-        except ValueError:
-            street, town = addr_main.rsplit(", ", 1)
-            county = None
-        details["address"] = original_address or None
-        details["country"] = country or None
-        details["postcode"] = postcode or None
-        details["county"] = county or None
-        details["town"] = town or None
-        details["street"] = street or None
+        details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])') or None
+        address_parts = _process_address(details["address"])
+        details["country"] = address_parts.country
+        details["postcode"] = address_parts.postcode
+        details["county"] = address_parts.county
+        details["town"] = address_parts.town
+        details["street"] = address_parts.street
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
@@ -942,3 +934,24 @@ def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -
     """Calculate days of membership (inclusive), normalise to years."""
     membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(dates))
     return membership_duration_days / 365.2425  # Leap year except thrice per 400 years.
+
+
+class _AddressData(NamedTuple):
+    country: Optional[str]
+    postcode: Optional[str]
+    county: Optional[str]
+    town: Optional[str]
+    street: Optional[str]
+
+
+def _process_address(address: str) -> _AddressData:
+    if address:
+        addr_main, addr_code = address.rsplit(". ", 1)
+        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
+        try:
+            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
+            return _AddressData(country, postcode, county, town, street)
+        except ValueError:
+            street, town = addr_main.rsplit(", ", 1)
+            return _AddressData(country, postcode, None, town, street)
+    return _AddressData(None, None, None, None, None)
