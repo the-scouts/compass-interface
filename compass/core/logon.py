@@ -168,8 +168,6 @@ class Logon(InterfaceAuthenticated):
         """String representation of the Logon class."""
         return f"{self.__class__} Compass ID: {self.cn} ({' - '.join(self.current_role)})"
 
-    # properties/accessors code:
-
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
         unit_number = self.compass_props.master.user.on  # Organisation Number
@@ -190,8 +188,6 @@ class Logon(InterfaceAuthenticated):
         }
 
         return schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
-
-    # Timeout code:
 
     def _extend_session_timeout(self, sto: TYPES_STO = "0") -> requests.Response:
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
