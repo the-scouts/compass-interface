@@ -171,6 +171,7 @@ def auth_header_get(
 
 class CountingSession(requests.Session):
     """Counts the number of requests sent"""
+
     def request(self, *args, **kwargs) -> requests.Response:
         Settings.total_requests += 1
         return super(CountingSession, self).request(*args, **kwargs)
