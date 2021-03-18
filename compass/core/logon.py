@@ -10,7 +10,6 @@ import requests
 from compass.core import schemas
 from compass.core.errors import CompassAuthenticationError
 from compass.core.errors import CompassError
-from compass.core.interface_base import InterfaceAuthenticated
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 import compass.core.schemas.logon as schema
@@ -34,7 +33,7 @@ def login(username: str, password: str, /, *, role: Optional[str] = None, locati
     return Logon.from_logon((username, password), role, location)
 
 
-class Logon(InterfaceAuthenticated):
+class Logon:
     """Create connection to Compass and authenticate. Holds session state.
 
     Logon flow is:
@@ -69,21 +68,20 @@ class Logon(InterfaceAuthenticated):
         self.roles_dict: TYPES_ROLES_DICT = roles_dict or {}
         self.current_role: TYPES_ROLE = current_role or ("", "")
 
-        self.sto_thread = utility.PeriodicTimer(150, self._extend_session_timeout)
-        # self.sto_thread.start()
-
-        # Set these last, treat as immutable after we leave init. Role can
-        # theoretically change, but this is not supported behaviour.
-
-        member_number = self.compass_props.master.user.cn  # Contact Number
-        role_number = self.compass_props.master.user.mrn  # Member Role Number
-        jk = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
+        self._sto_thread = utility.PeriodicTimer(150, self._extend_session_timeout)
+        # self._sto_thread.start()
 
         self._asp_net_id: str = session.cookies["ASP.NET_SessionId"]
         self._session_id: str = self.compass_props.master.sys.session_id
 
-        # Finally, call super
-        super().__init__(session, member_number, role_number, jk)
+        # For session timeout logic
+        self._session = session
+
+        # Set these last, treat as immutable after we leave init. Role can
+        # theoretically change, but this is not supported behaviour.
+        self.member_number = self.compass_props.master.user.cn  # Contact Number
+        self.role_number = self.compass_props.master.user.mrn  # Member Role Number
+        self._jk = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
 
     @classmethod
     def from_logon(
@@ -160,13 +158,13 @@ class Logon(InterfaceAuthenticated):
             current_role=current_role,
         )
 
-        LogonCore(session=session).update_auth_headers(logon.cn, logon.mrn, logon._session_id)  # pylint: disable=protected-access
+        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)  # pylint: disable=protected-access
 
         return logon
 
     def __repr__(self) -> str:
         """String representation of the Logon class."""
-        return f"{self.__class__} Compass ID: {self.cn} ({' - '.join(self.current_role)})"
+        return f"{self.__class__} Compass ID: {self.member_number} ({' - '.join(self.current_role)})"
 
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
@@ -194,10 +192,10 @@ class Logon(InterfaceAuthenticated):
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
         return utility.auth_header_get(
-            self.cn,
-            self.mrn,
-            self.jk,
-            self.s,
+            self.member_number,
+            self.role_number,
+            self._jk,
+            self._session,
             f"{Settings.web_service_path}/STO_CHK",
             params={"pExtend": sto}
         )
