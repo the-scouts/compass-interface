@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import typing
-from typing import Literal, TYPE_CHECKING, Union
+from typing import Literal, Union
 
 from lxml import html
 
@@ -11,9 +11,6 @@ from compass.core.interface_base import InterfaceBase
 from compass.core.schemas import hierarchy as schema
 from compass.core.settings import Settings
 from compass.core.utility import compass_restify
-
-if TYPE_CHECKING:
-    import requests
 
 # TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
 TYPES_ENDPOINT_LEVELS = Literal[

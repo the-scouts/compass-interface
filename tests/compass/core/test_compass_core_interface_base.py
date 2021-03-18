@@ -36,23 +36,9 @@ class TestInterfaceBase:
         assert result["kwargs"]["json"] == json
         assert reqs + 1 == Settings.total_requests
 
-    def test_head(self, monkeypatch: MonkeyPatch):
-        # Given
-        data = "https://example.org"
-        reqs = Settings.total_requests
-
-        # When
-        s = requests.Session()
-        monkeypatch.setattr(s, "head", lambda *args, **kwargs: dict(args=args, kwargs=kwargs))
-        result = InterfaceBase(s)._head(data)  # pylint: disable=protected-access
-
-        # Then
-        assert result["args"][0] == data
-        assert reqs + 1 == Settings.total_requests
-
     def test_update_headers(self):
         # Given
-        data = {"header_one": 123, "abc_xyz": 321}
+        data = {"header_one": "123", "abc_xyz": "321"}
 
         # When
         ib = InterfaceBase(requests.Session())

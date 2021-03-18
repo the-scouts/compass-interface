@@ -23,7 +23,7 @@ class TestLogon:
         Settings.base_url = base_url
 
         # When
-        worker = LogonCore()
+        worker = LogonCore.create_session()
 
         # Then
         assert isinstance(worker.s, requests.Session)
@@ -36,7 +36,7 @@ class TestLogon:
         # Then
         with pytest.raises(CompassError, match="Could not create a session with Compass"):
             # When
-            LogonCore()
+            LogonCore.create_session()
 
     def test_login_post_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
