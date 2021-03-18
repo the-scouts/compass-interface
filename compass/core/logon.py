@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 TYPES_STO = Literal[None, "0", "5", "X"]
-TYPES_ROLES_DICT = dict[int, tuple[str, str]]
 TYPES_ROLE = tuple[str, str]
+TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
 
 
 def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
