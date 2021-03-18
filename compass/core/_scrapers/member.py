@@ -671,9 +671,9 @@ class PeopleScraper(InterfaceBase):
         # Role Status
         role_details["role_status"] = fields.get("ctl00$workarea$txt_p2_status")
         # Line Manager
-        line_manager_el = next((op for op in inputs["ctl00$workarea$cbo_p2_linemaneger"] if op.get("selected")), None)
-        role_details["line_manager_number"] = maybe_int(line_manager_el.get("value")) if line_manager_el is not None else None
-        role_details["line_manager"] = line_manager_el.text.strip() if line_manager_el is not None else None
+        line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
+        role_details["line_manager_number"] = line_manager_number
+        role_details["line_manager"] = line_manager_name
         # Review Date
         role_details["review_date"] = parse(fields.get("ctl00$workarea$txt_p2_review"))
         # CE (Confidential Enquiry) Check  # TODO if CE check date != current date then is valid
@@ -694,15 +694,9 @@ class PeopleScraper(InterfaceBase):
             # select.get("title") gives title text, but this is not useful as it does not reflect latest changes,
             # but only who added the role to Compass.
 
-        # Appointment Panel Approval
         role_details["appointment_panel_approval"] = approval_values.get("ROLPRP|AACA")
-        # Commissioner Approval
         role_details["commissioner_approval"] = approval_values.get("ROLPRP|CAPR")
-        # Committee Approval
         role_details["committee_approval"] = approval_values.get("ROLPRP|CCA")
-
-        if role_details["line_manager_number"] in unset_vals:
-            role_details["line_manager_number"] = None
 
         # Filter null values
         role_details = {k: v for k, v in role_details.items() if v is not None}
@@ -927,6 +921,18 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
 
     return role_number, role_data
+
+
+def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Optional[int], Optional[str]]:
+    line_manager_el = next((op for op in line_manager_list if op.get("selected")), None)
+    if line_manager_el is None:
+        return None, None
+    else:
+        number = maybe_int(line_manager_el.get("value"))
+        name = line_manager_el.text.strip()
+        if name in unset_vals:
+            name = None
+    return number, name
 
 
 def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Optional[datetime.date]]:
