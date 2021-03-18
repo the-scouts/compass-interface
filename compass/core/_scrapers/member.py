@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import re
 import time
-from typing import get_args, Literal, NamedTuple, Optional, overload, TYPE_CHECKING, Union
+from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
 
@@ -171,7 +171,7 @@ class PeopleScraper(InterfaceBase):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
-        details: dict[str, Union[None, int, str, datetime.date]] = dict()
+        details: dict[str, Union[None, int, str, datetime.date, _AddressData]] = dict()
 
         # ### Extractors
         # ## Core:
@@ -190,13 +190,7 @@ class PeopleScraper(InterfaceBase):
         details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
 
         # ## Additional - Position Varies, visible for most roles:
-        details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])') or None
-        address_parts = _process_address(details["address"])
-        details["country"] = address_parts.country
-        details["postcode"] = address_parts.postcode
-        details["county"] = address_parts.county
-        details["town"] = address_parts.town
-        details["street"] = address_parts.street
+        details["address"] = _process_address(tree.xpath('string(//*[text()="Address"]/../../../td[3])'))
         details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
         details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
@@ -921,7 +915,8 @@ def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -
     return membership_duration_days / 365.2425  # Leap year except thrice per 400 years.
 
 
-class _AddressData(NamedTuple):
+class _AddressData(TypedDict):
+    unparsed_address: Optional[str]
     country: Optional[str]
     postcode: Optional[str]
     county: Optional[str]
@@ -935,8 +930,8 @@ def _process_address(address: str) -> _AddressData:
         postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
         try:
             street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
-            return _AddressData(country, postcode, county, town, street)
+            return dict(unparsed_address=address, country=country, postcode=postcode, county=county, town=town, street=street)
         except ValueError:
             street, town = addr_main.rsplit(", ", 1)
-            return _AddressData(country, postcode, None, town, street)
-    return _AddressData(None, None, None, None, None)
+            return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
+    return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)

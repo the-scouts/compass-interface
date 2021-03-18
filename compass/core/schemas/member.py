@@ -237,6 +237,15 @@ class MemberRoleBase(pydantic.BaseModel):
     review_date: Optional[datetime.date] = None
 
 
+class MemberDetailsAddress(pydantic.BaseModel):
+    unparsed_address: Optional[str] = None  # this is the unmodified address string
+    country: Optional[str] = None
+    postcode: Optional[str] = None
+    county: Optional[str] = None
+    town: Optional[str] = None
+    street: Optional[str] = None
+
+
 # Personal Details Tab
 class MemberDetails(MemberBase):
     # Name
@@ -257,12 +266,7 @@ class MemberDetails(MemberBase):
     # Contact Details
     main_phone: Optional[str] = None
     main_email: Optional[pydantic.EmailStr] = None
-    address: Optional[str] = None  # this is the unmodified address string
-    country: Optional[str] = None
-    postcode: Optional[str] = None
-    county: Optional[str] = None
-    town: Optional[str] = None
-    street: Optional[str] = None
+    address: MemberDetailsAddress = MemberDetailsAddress()
 
     # Additional / miscellaneous details
     # TODO - potential disabilities, qualifications, hobbies sections
@@ -389,8 +393,8 @@ class MemberTrainingRole(MemberRoleBase):
 class MemberTrainingPLP(pydantic.BaseModel):
     pk: int
     module_id: int
-    code: str  # TODO literal
-    name: str  # TODO literal
+    code: str  # We could do literals for module name/code but this would be ~150 values
+    name: str
 
     # Learning details
     learning_required: Optional[bool]
