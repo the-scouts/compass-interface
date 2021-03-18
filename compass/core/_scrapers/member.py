@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 
     import requests
 
+TYPES_TRAINING_PLPS = dict[int, list[dict[str, Union[None, int, str, datetime.date]]]]
+TYPES_TRAINING_OGL = dict[str, dict[str, Optional[datetime.date]]]
+
 MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
 ]
@@ -369,12 +372,6 @@ class PeopleScraper(InterfaceBase):
     def get_training_tab(self, membership_num: int, ongoing_only: Literal[False]) -> schema.MemberTrainingTab:
         ...
 
-    @overload
-    def get_training_tab(
-        self, membership_num: int, ongoing_only: bool
-    ) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
-        ...
-
     def get_training_tab(
         self, membership_num: int, ongoing_only: bool = False
     ) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
@@ -434,7 +431,7 @@ class PeopleScraper(InterfaceBase):
 
         rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
 
-        training_plps = {}
+        training_plps: TYPES_TRAINING_PLPS = {}
         training_roles = {}
         for row in rows:
             # Personal Learning Plan (PLP) data
@@ -521,34 +518,14 @@ class PeopleScraper(InterfaceBase):
 
                 training_roles[info["role_number"]] = info
 
-        # Handle GDPR:
-        # Get latest GDPR date
-        gdpr_dates = [mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR"]
-        training_ogl = {"gdpr": dict(completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None))}
-        for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
-            cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
-
-            training_ogl[mogl_map[ongoing_learning.get("data-ng_code")]] = dict(
-                completed_date=parse(cell_text.get("tdLastComplete")),  # type: ignore[arg-type]
-                renewal_date=parse(cell_text.get("tdRenewal")),  # type: ignore[arg-type]
-            )
-            # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
-
-        # Update training_ogl with missing mandatory ongoing learning types
-        training_ogl |= {missing_mogl_type: dict() for missing_mogl_type in mogl_types - training_ogl.keys()}
+        training_ogl = _compile_ongoing_learning(training_plps, tree)
 
         if ongoing_only:
             with validation_errors_logging(membership_num):
-                return schema.MemberMandatoryTraining.parse_obj(training_ogl)
-
-        training_data = {
-            "roles": training_roles,
-            "plps": training_plps,
-            "mandatory": training_ogl,
-        }
+                return schema.MemberMandatoryTraining(**training_ogl)
 
         with validation_errors_logging(membership_num):
-            return schema.MemberTrainingTab.parse_obj(training_data)
+            return schema.MemberTrainingTab(**{"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})
 
     def get_awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
         """Returns data from Awards tab for a given member.
@@ -932,3 +909,23 @@ def _extract_review_date(review_status: str) -> tuple[str, Optional[datetime.dat
         role_status = review_status
         review_date = None
     return role_status, review_date
+
+
+def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.HtmlElement) -> TYPES_TRAINING_OGL:
+    # Handle GDPR:
+    # Get latest GDPR date
+    gdpr_dates = [mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR"]
+    training_ogl = {"gdpr": dict(completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None))}
+
+    # Get main OGL - safety, safeguarding, first aid
+    for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
+        cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
+
+        training_ogl[mogl_map[ongoing_learning.get("data-ng_code")]] = dict(
+            completed_date=parse(cell_text.get("tdLastComplete")),  # type: ignore[arg-type]
+            renewal_date=parse(cell_text.get("tdRenewal")),  # type: ignore[arg-type]
+        )
+        # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
+
+    # Update training_ogl with missing mandatory ongoing learning types
+    return {mogl_type: training_ogl.get(mogl_type, dict()) for mogl_type in mogl_types}
