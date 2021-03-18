@@ -4,6 +4,9 @@ inherits:
 ignore-paths:
   - tests
 
+ignore-patterns:
+  - ^test_.*\.py$
+
 # sync with pyproject.toml
 max-line-length: 132
 
