@@ -8,13 +8,13 @@ from lxml import html
 import requests
 
 from compass.core import schemas
+from compass.core import utility
 from compass.core.errors import CompassAuthenticationError
 from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
-from compass.core import utility
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -85,7 +85,7 @@ class Logon:
 
     @classmethod
     def from_logon(
-        cls,
+        cls: type[Logon],
         credentials: tuple[str, str] = None,
         role_to_use: Optional[str] = None,
         role_location: Optional[str] = None,
@@ -109,7 +109,7 @@ class Logon:
                 If authentication with Compass fails
 
         """
-        worker = LogonCore()
+        worker = LogonCore.create_session()
         session = worker.s
 
         # Log in and try to confirm success
@@ -129,7 +129,7 @@ class Logon:
         return logon
 
     @classmethod
-    def from_session(cls, asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
+    def from_session(cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
         """Initialise a Logon object with stored data.
 
         This method  is used to avoid logging in many times, by enabling reuse
@@ -158,7 +158,7 @@ class Logon:
             current_role=current_role,
         )
 
-        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)  # pylint: disable=protected-access
+        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)
 
         return logon
 
@@ -197,7 +197,7 @@ class Logon:
             self._jk,
             self._session,
             f"{Settings.web_service_path}/STO_CHK",
-            params={"pExtend": sto}
+            params={"pExtend": sto},
         )
 
     def _change_role(self, session: requests.Session, new_role: str, location: Optional[str] = None) -> Logon:
@@ -237,14 +237,12 @@ class Logon:
 
 
 class LogonCore(InterfaceBase):
-    def __init__(self, session: Optional[requests.Session] = None):
+    def __init__(self, session: requests.Session):
         """Initialise InterfaceBase with a session."""
-        if session is None:
-            session = self._create_session()
         super().__init__(session)
 
-    @staticmethod
-    def _create_session() -> requests.Session:
+    @classmethod
+    def create_session(cls: type[LogonCore]) -> LogonCore:
         """Create a session and get ASP.Net Session ID cookie from the compass server."""
         session = requests.Session()
 
@@ -257,7 +255,7 @@ class LogonCore(InterfaceBase):
                 "access Compass (including firewalls etc.) and that Compass is currently online. "
             )
 
-        return session
+        return cls(session)
 
     def logon_remote(self, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
         """Log in to Compass and confirm success."""
