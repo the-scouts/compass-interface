@@ -21,7 +21,8 @@ STATUSES = set(get_args(TYPES_ROLE_STATUS))
 class People:
     def __init__(self, session: Logon):
         """Constructor for People."""
-        self._scraper = PeopleScraper(session.s, session.cn, session.mrn, session.jk)
+        self._scraper = PeopleScraper(session._session)
+        self.member_number = session.member_number
 
     def personal(self, membership_num: int) -> schema.MemberDetails:
         """Gets personal tab data for a given member.

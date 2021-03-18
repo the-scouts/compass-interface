@@ -30,7 +30,7 @@ class ReportTypes(enum.IntEnum):
 class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
-        self._scraper = ReportsScraper(session.s, session.cn, session.mrn, session.jk)
+        self._scraper = ReportsScraper(session._session, session.member_number, session.role_number, session._jk)
         self.current_role: tuple[str, str] = session.current_role
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:

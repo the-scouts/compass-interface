@@ -116,7 +116,7 @@ def auth_header_get(
     params: Optional[dict[str, Optional[str]]] = None,
     headers: Optional[dict[str, str]] = None,
     stream: Optional[bool] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> requests.Response:
     """Sends a HTTP GET request.
 
@@ -167,6 +167,7 @@ def auth_header_get(
     }
 
     return session.get(url, params=params, headers=headers, stream=stream, **kwargs)
+
 
 #
 # def set_interval(interval: int):
