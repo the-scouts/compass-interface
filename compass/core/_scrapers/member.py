@@ -177,16 +177,10 @@ class PeopleScraper(InterfaceBase):
         # ## Core:
 
         details["membership_number"] = membership_num
-
-        # Name(s)
-        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]
+        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]  # ("Scout", "-", membership_num, *names)
         details["forenames"] = names[0]
         details["surname"] = " ".join(names[1:])
-
-        # Main Phone
         details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
-
-        # Main Email
         details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
 
         # ## Core - Positional:
@@ -200,20 +194,12 @@ class PeopleScraper(InterfaceBase):
         details["join_date"] = parse(join_date_str) if join_date_str != "Unknown" else None
 
         # ## Position Varies, only if authorised:
-
-        # Gender
         details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
-        # DOB
         details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
-        # Nationality
         details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
-        # Ethnicity
         details["ethnicity"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
-        # Religion
         details["religion"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
-        # Occupation
         details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
-        # Address
         details["address"] = tree.xpath('string(//*[text()="Address"]/../../../td[3])') or None
         address_parts = _process_address(details["address"])
         details["country"] = address_parts.country
@@ -225,7 +211,7 @@ class PeopleScraper(InterfaceBase):
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
         with validation_errors_logging(membership_num):
-            return schema.MemberDetails.parse_obj(details)
+            return schema.MemberDetails(**details)
 
     def get_roles_tab(
         self,
@@ -797,10 +783,10 @@ class PeopleScraper(InterfaceBase):
         role_details: dict[str, Union[None, int, str, datetime.date]] = dict()
         # Approval and Role details
         role_details["role_number"] = role_number
-        role_details["organisation_level"] = fields.get("ctl00$workarea$cbo_p1_level")
+        role_details["organisation_level"] = fields.get("ctl00$workarea$cbo_p1_level")  # Ignored, no field in MemberTrainingRole
         role_details["birth_date"] = parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")) if Settings.debug else None
         role_details["membership_number"] = int(fields.get("ctl00$workarea$txt_p1_memberno"))
-        role_details["name"] = member_string.split(" ", maxsplit=1)[1]  # TODO does this make sense - should name be in every role??
+        role_details["name"] = member_string.split(" ", maxsplit=1)[1]  # Ignored, no corresponding field in MemberTrainingRole
         role_details["role_title"] = fields.get("ctl00$workarea$txt_p1_alt_title")
         role_details["role_start"] = parse(fields.get("ctl00$workarea$txt_p1_startdate"))
         # Role Status
