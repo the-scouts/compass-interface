@@ -15,7 +15,7 @@ from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
-from compass.core.utility import PeriodicTimer
+from compass.core import utility
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -69,7 +69,7 @@ class Logon(InterfaceAuthenticated):
         self.roles_dict: TYPES_ROLES_DICT = roles_dict or {}
         self.current_role: TYPES_ROLE = current_role or ("", "")
 
-        self.sto_thread = PeriodicTimer(150, self._extend_session_timeout)
+        self.sto_thread = utility.PeriodicTimer(150, self._extend_session_timeout)
         # self.sto_thread.start()
 
         # Set these last, treat as immutable after we leave init. Role can
@@ -193,7 +193,14 @@ class Logon(InterfaceAuthenticated):
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
-        return self._get(f"{Settings.web_service_path}/STO_CHK", auth_header=True, params={"pExtend": sto})
+        return utility.auth_header_get(
+            self.cn,
+            self.mrn,
+            self.jk,
+            self.s,
+            f"{Settings.web_service_path}/STO_CHK",
+            params={"pExtend": sto}
+        )
 
     def _change_role(self, session: requests.Session, new_role: str, location: Optional[str] = None) -> Logon:
         """Returns new Logon object with new role.

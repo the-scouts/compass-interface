@@ -36,7 +36,14 @@ class ReportsScraper(InterfaceAuthenticated):
             "pMemberRoleNumber": str(role_number),
         }
         logger.debug("Getting report token")
-        response = self._get(f"{Settings.web_service_path}/ReportToken", auth_header=True, params=params)
+        response = utility.auth_header_get(
+            self.cn,
+            self.mrn,
+            self.jk,
+            self.s,
+            f"{Settings.web_service_path}/ReportToken",
+            params=params
+        )
         response.raise_for_status()
 
         report_token_uri = str(response.json().get("d"))
