@@ -444,46 +444,8 @@ class PeopleScraper(InterfaceBase):
 
             # Role data
             if "msTR" in classes:
-                role = row
-
-                child_nodes = list(role)
-
-                info: dict[str, Union[None, str, int, datetime.date]] = {}  # NoQA
-
-                info["role_number"] = int(role.xpath("./@data-ng_mrn")[0])
-                info["role_title"] = child_nodes[0].text_content()
-                info["role_start"] = parse(child_nodes[1].text_content())
-                status_with_review = child_nodes[2].text_content()
-                # TODO for `Ending: blah` roles, should we store the ending date?
-                if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
-                    info["role_status"] = "Full"
-                    date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
-                    info["review_date"] = parse(date_str)
-                else:
-                    info["role_status"] = status_with_review
-                    info["review_date"] = None
-
-                info["location"] = child_nodes[3].text_content()
-
-                training_advisor_string = child_nodes[4].text_content()
-                if training_advisor_string:
-                    info["ta_data"] = training_advisor_string
-                    # Add empty item to prevent IndexError
-                    training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
-                    info["ta_number"] = maybe_int(training_advisor_data[0])
-                    info["ta_name"] = training_advisor_data[1]
-
-                completion_string = child_nodes[5].text_content()
-                if completion_string:
-                    info["completion"] = completion_string
-                    parts = completion_string.split(":")
-                    info["completion_type"] = parts[0].strip()
-                    info["completion_date"] = parse(parts[1].strip())
-                    assert len(parts) <= 2, parts[2:]
-                    # info["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
-                info["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
-
-                training_roles[info["role_number"]] = info
+                role_number, role_data = _process_role_data(row)
+                training_roles[role_number] = role_data
 
         training_ogl = _compile_ongoing_learning(training_plps, tree)
 
@@ -936,3 +898,45 @@ def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -
         plp_data.append(module_data)
 
     return int(plp_table.get("data-pk")), plp_data
+
+
+def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[None, str, int, datetime.date]]]:
+    child_nodes = list(role)
+
+    role_data: dict[str, Union[None, str, int, datetime.date]] = dict()  # NoQA
+
+    role_number = int(role.xpath("./@data-ng_mrn")[0])
+    role_data["role_number"] = role_number
+    role_data["role_title"] = child_nodes[0].text_content()
+    role_data["role_start"] = parse(child_nodes[1].text_content())
+    status_with_review = child_nodes[2].text_content()
+    # TODO for `Ending: blah` roles, should we store the ending date?
+    if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
+        role_data["role_status"] = "Full"
+        date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
+        role_data["review_date"] = parse(date_str)
+    else:
+        role_data["role_status"] = status_with_review
+        role_data["review_date"] = None
+
+    role_data["location"] = child_nodes[3].text_content()
+
+    training_advisor_string = child_nodes[4].text_content()
+    if training_advisor_string:
+        role_data["ta_data"] = training_advisor_string
+        # Add empty item to prevent IndexError
+        training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
+        role_data["ta_number"] = maybe_int(training_advisor_data[0])
+        role_data["ta_name"] = training_advisor_data[1]
+
+    completion_string = child_nodes[5].text_content()
+    if completion_string:
+        role_data["completion"] = completion_string
+        parts = completion_string.split(":")
+        role_data["completion_type"] = parts[0].strip()
+        role_data["completion_date"] = parse(parts[1].strip())
+        assert len(parts) <= 2, parts[2:]
+        # role_data["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
+    role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
+
+    return role_number, role_data
