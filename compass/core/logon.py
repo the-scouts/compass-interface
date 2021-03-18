@@ -237,10 +237,6 @@ class Logon:
 
 
 class LogonCore(InterfaceBase):
-    def __init__(self, session: requests.Session):
-        """Initialise InterfaceBase with a session."""
-        super().__init__(session)
-
     @classmethod
     def create_session(cls: type[LogonCore]) -> LogonCore:
         """Create a session and get ASP.Net Session ID cookie from the compass server."""
