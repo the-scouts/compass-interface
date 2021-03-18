@@ -2,7 +2,7 @@ inherits:
   - default
 
 ignore-paths:
-  tests
+  - tests
 
 # sync with pyproject.toml
 max-line-length: 132
