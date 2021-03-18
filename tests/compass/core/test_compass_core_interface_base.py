@@ -1,37 +1,15 @@
-from pytest import MonkeyPatch
 import requests
 
 from compass.core.interface_base import InterfaceBase
-from compass.core.settings import Settings
 
 
 class TestInterfaceBase:
-    def test_get(self, monkeypatch: MonkeyPatch):
+    def test_init(self):
         # Given
-        data = "https://example.org"
-        reqs = Settings.total_requests
+        s = requests.Session()
 
         # When
-        s = requests.Session()
-        monkeypatch.setattr(s, "get", lambda *args, **kwargs: dict(args=args, kwargs=kwargs))
-        result = InterfaceBase(s)._get(data)  # pylint: disable=protected-access
+        result = InterfaceBase(s)
 
         # Then
-        assert result["args"][0] == data
-        assert reqs + 1 == Settings.total_requests
-
-    def test_post(self, monkeypatch: MonkeyPatch):
-        # Given
-        data = "https://example.org"
-        json = {"abc": 123, "xyz": 321}
-        reqs = Settings.total_requests
-
-        # When
-        s = requests.Session()
-        monkeypatch.setattr(s, "post", lambda *args, **kwargs: dict(args=args, kwargs=kwargs))
-        result = InterfaceBase(s)._post(data, json=json)  # pylint: disable=protected-access
-
-        # Then
-        assert result["args"][0] == data
-        assert result["kwargs"]["json"] == json
-        assert reqs + 1 == Settings.total_requests
+        assert result.s is s
