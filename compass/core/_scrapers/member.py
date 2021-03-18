@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import re
 import time
-from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
+from typing import AnyStr, get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
 
@@ -25,10 +25,12 @@ TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
 TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
 TYPES_TRAINING_OGL = dict[str, dict[str, Optional[datetime.date]]]
 
+# _get_member_profile_tab
 MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
 ]
 
+# get_roles_tab
 NON_VOLUNTEER_TITLES = {
     # occasional helper roles
     "group occasional helper",
@@ -53,6 +55,7 @@ NON_VOLUNTEER_TITLES = {
     "county scout network member",
 }  # TODO add PVG, TSA council, etc
 
+# get_training_tab
 mogl_map = {
     "SA": "safety",
     "SG": "safeguarding",
@@ -60,6 +63,40 @@ mogl_map = {
 }
 mogl_types = {"gdpr", *mogl_map.values()}
 
+# get_roles_detail
+renamed_levels = {
+    "County / Area / Scottish Region / Overseas Branch": "County",
+}
+renamed_modules = {
+    "001": "module_01",
+    "TRST": "trustee_intro",
+    "002": "module_02",
+    "003": "module_03",
+    "004": "module_04",
+    "GDPR": "GDPR",
+    "SFTY": "safety",
+    "SAFE": "safeguarding",
+}
+unset_vals = {"--- Not Selected ---", "--- No Items Available ---", "--- No Line Manager ---"}
+
+module_names = {
+    "Essential Information": "M01",
+    "Trustee Introduction": "TRST",
+    "Personal Learning Plan": "M02",
+    "Tools for the Role (Section Leaders)": "M03",
+    "Tools for the Role (Managers and Supporters)": "M04",
+    "General Data Protection Regulations": "GDPR",
+    "Safety Training": "SFTY",
+    "Safeguarding Training": "SAFE",
+}
+
+references_codes = {
+    "NC": "Not Complete",
+    "NR": "Not Required",
+    "RR": "References Requested",
+    "S": "References Satisfactory",
+    "U": "References Unsatisfactory",
+}
 
 class PeopleScraper(InterfaceBase):
     """Class directly interfaces with Compass operations to extract member data.
@@ -421,10 +458,6 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        # pylint: disable=too-many-locals,too-many-statements
-        # Want to keep all functionality in one place, to reduce the number of
-        # calls to Compass.
-        # TODO could refactor some internals into helper functions
         logger.debug(f"getting training tab for member number: {membership_num}")
 
         response = self._get_member_profile_tab(membership_num, "Training")
@@ -558,9 +591,7 @@ class PeopleScraper(InterfaceBase):
         return disclosures
 
     # See getAppointment in PGS\Needle
-    def get_roles_detail(
-        self, role_number: int, response: Union[None, str, bytes, requests.Response] = None
-    ) -> schema.MemberRolePopup:
+    def get_roles_detail(self, role_number: int, response: Union[None, AnyStr, requests.Response] = None) -> schema.MemberRolePopup:
         """Returns detailed data from a given role number.
 
         Args:
@@ -608,44 +639,6 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        # pylint: disable=too-many-locals,too-many-statements
-        # Want to keep all functionality in one place, to reduce the number of
-        # calls to Compass.
-        # TODO could refactor some internals into helper functions
-        renamed_levels = {
-            "County / Area / Scottish Region / Overseas Branch": "County",
-        }
-        renamed_modules = {
-            "001": "module_01",
-            "TRST": "trustee_intro",
-            "002": "module_02",
-            "003": "module_03",
-            "004": "module_04",
-            "GDPR": "GDPR",
-            "SFTY": "safety",
-            "SAFE": "safeguarding",
-        }
-        unset_vals = {"--- Not Selected ---", "--- No Items Available ---", "--- No Line Manager ---"}
-
-        module_names = {
-            "Essential Information": "M01",
-            "Trustee Introduction": "TRST",
-            "Personal Learning Plan": "M02",
-            "Tools for the Role (Section Leaders)": "M03",
-            "Tools for the Role (Managers and Supporters)": "M04",
-            "General Data Protection Regulations": "GDPR",
-            "Safety Training": "SFTY",
-            "Safeguarding Training": "SAFE",
-        }
-
-        references_codes = {
-            "NC": "Not Complete",
-            "NR": "Not Required",
-            "RR": "References Requested",
-            "S": "References Satisfactory",
-            "U": "References Unsatisfactory",
-        }
-
         start_time = time.time()
         if response is None:
             response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
@@ -687,13 +680,7 @@ class PeopleScraper(InterfaceBase):
         ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")
         role_details["ce_check"] = parse(ce_check) if ce_check != "Pending" else None
         # Disclosure Check
-        disclosure_with_date = fields.get("ctl00$workarea$txt_p2_disclosure", "")
-        if disclosure_with_date.startswith("Disclosure Issued : "):
-            disclosure_date = parse(disclosure_with_date.removeprefix("Disclosure Issued : "))
-            disclosure_check = "Disclosure Issued"
-        else:
-            disclosure_date = None
-            disclosure_check = disclosure_with_date or None
+        disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
         role_details["disclosure_check"] = disclosure_check
         role_details["disclosure_date"] = disclosure_date
         # References
@@ -940,3 +927,13 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
 
     return role_number, role_data
+
+
+def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Optional[datetime.date]]:
+    if disclosure_status.startswith("Disclosure Issued : "):
+        disclosure_check = "Disclosure Issued"
+        disclosure_date = parse(disclosure_status.removeprefix("Disclosure Issued : "))
+    else:
+        disclosure_check = disclosure_status or None
+        disclosure_date = None
+    return disclosure_check, disclosure_date
