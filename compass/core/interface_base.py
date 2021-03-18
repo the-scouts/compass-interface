@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc
 import datetime
 import time
 from typing import Any, Optional, TYPE_CHECKING
@@ -80,32 +79,12 @@ class InterfaceBase:
         Settings.total_requests += 1
         return self.s.post(url, data=data, json=json, **kwargs)
 
-    def _head(self, url: str, **kwargs: Any) -> requests.Response:
-        """Sends a HTTP HEAD request.
-
-        Pass-through method to requests.sessions.Session.head, also adding to
-        the counter of total requests sent by `ci.core`.
-
-        Args:
-            url: Request URL
-            kwargs: Optional arguments to requests.sessions.Session.post
-
-        Returns:
-            requests.Response object from executing the request
-
-        Raises:
-            requests.exceptions.RequestException
-
-        """
-        Settings.total_requests += 1
-        return self.s.head(url, **kwargs)
-
     def _update_headers(self, headers: dict[str, str]) -> None:
         """Update common session headers dictionary."""
         self.s.headers.update(headers)
 
 
-class InterfaceAuthenticated(InterfaceBase, abc.ABC):
+class InterfaceAuthenticated(InterfaceBase):
     def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
         """Constructor for InterfaceAuthenticated."""
         super(InterfaceAuthenticated, self).__init__(session)
