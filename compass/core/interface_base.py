@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import datetime
-import time
 from typing import Any, Optional, TYPE_CHECKING
 
-from compass.core.logger import logger
 from compass.core.settings import Settings
-from compass.core import utility
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -82,13 +78,3 @@ class InterfaceBase:
     def _update_headers(self, headers: dict[str, str]) -> None:
         """Update common session headers dictionary."""
         self.s.headers.update(headers)
-
-
-class InterfaceAuthenticated(InterfaceBase):
-    def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
-        """Constructor for InterfaceAuthenticated."""
-        super(InterfaceAuthenticated, self).__init__(session)
-
-        self.cn: int = member_number  # Contact Number
-        self.mrn: int = role_number  # Member Role Number
-        self.jk: str = jk  # ???? Key?  # Join Key??? SHA2-512
