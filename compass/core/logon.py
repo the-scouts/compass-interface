@@ -149,7 +149,7 @@ class Logon:
                 For errors while executing the HTTP call
 
         """
-        session = requests.Session()
+        session: requests.Session = utility.CountingSession()
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
 
         logon = cls(
@@ -240,7 +240,7 @@ class LogonCore(InterfaceBase):
     @classmethod
     def create_session(cls: type[LogonCore]) -> LogonCore:
         """Create a session and get ASP.Net Session ID cookie from the compass server."""
-        session = requests.Session()
+        session: requests.Session = utility.CountingSession()
 
         session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
         Settings.total_requests += 1

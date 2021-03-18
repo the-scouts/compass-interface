@@ -169,6 +169,13 @@ def auth_header_get(
     return session.get(url, params=params, headers=headers, stream=stream, **kwargs)
 
 
+class CountingSession(requests.Session):
+    """Counts the number of requests sent"""
+    def request(self, *args, **kwargs) -> requests.Response:
+        Settings.total_requests += 1
+        return super(CountingSession, self).request(*args, **kwargs)
+
+
 #
 # def set_interval(interval: int):
 #     def decorator(function: Callable):

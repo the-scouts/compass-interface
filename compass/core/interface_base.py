@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Optional, TYPE_CHECKING
-
-from compass.core.settings import Settings
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
-
     import requests
 
 
