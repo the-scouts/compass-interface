@@ -239,9 +239,8 @@ class LogonCore(InterfaceBase):
     def __init__(self, session: Optional[requests.Session] = None):
         """Initialise InterfaceBase with a session."""
         if session is None:
-            super().__init__(self._create_session())
-        else:
-            super().__init__(session)
+            session = self._create_session()
+        super().__init__(session)
 
     @staticmethod
     def _create_session() -> requests.Session:
