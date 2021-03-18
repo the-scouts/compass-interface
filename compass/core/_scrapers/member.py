@@ -21,7 +21,8 @@ if TYPE_CHECKING:
 
     import requests
 
-TYPES_TRAINING_PLPS = dict[int, list[dict[str, Union[None, int, str, datetime.date]]]]
+TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
+TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
 TYPES_TRAINING_OGL = dict[str, dict[str, Optional[datetime.date]]]
 
 MEMBER_PROFILE_TAB_TYPES = Literal[
@@ -434,49 +435,15 @@ class PeopleScraper(InterfaceBase):
         training_plps: TYPES_TRAINING_PLPS = {}
         training_roles = {}
         for row in rows:
+            classes = set(row.classes)
+
             # Personal Learning Plan (PLP) data
-            if "trPLP" in row.classes:
-                plp = row
-                plp_table = plp.getchildren()[0].getchildren()[0]
-                plp_data = []
-                for module_row in plp_table:
-                    if module_row.get("class") != "msTR trMTMN":
-                        continue
-
-                    module_data: dict[str, Union[None, int, str, datetime.date]] = {}
-                    child_nodes = list(module_row)
-                    module_data["pk"] = int(module_row.get("data-pk"))
-                    module_data["module_id"] = int(child_nodes[0].get("id")[4:])
-                    matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
-                    if matches:
-                        code = str(matches[0])
-                        module_data["code"] = code
-                        module_data["name"] = matches[1]
-
-                        # Skip processing if we only want ongoing learning data and the module is not GDPR.
-                        if ongoing_only and "gdpr" not in code.lower():
-                            continue
-
-                    learning_required = child_nodes[1].text_content().lower()
-                    module_data["learning_required"] = "yes" in learning_required if learning_required else None
-                    module_data["learning_method"] = child_nodes[2].text_content() or None
-                    module_data["learning_completed"] = parse(child_nodes[3].text_content())
-                    module_data["learning_date"] = parse(child_nodes[3].text_content())
-
-                    validated_by_string = child_nodes[4].text_content()
-                    if validated_by_string:
-                        # Add empty item to prevent IndexError
-                        validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]
-                        module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
-                        module_data["validated_name"] = validated_by_data[1]
-                    module_data["validated_date"] = parse(child_nodes[5].text_content())
-
-                    plp_data.append(module_data)
-
-                training_plps[int(plp_table.get("data-pk"))] = plp_data
+            if "trPLP" in classes:
+                plp_number, plp_data = _process_personal_learning_plan(row, ongoing_only)
+                training_plps[plp_number] = plp_data
 
             # Role data
-            if "msTR" in row.classes:
+            if "msTR" in classes:
                 role = row
 
                 child_nodes = list(role)
@@ -929,3 +896,43 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
     # Update training_ogl with missing mandatory ongoing learning types
     return {mogl_type: training_ogl.get(mogl_type, dict()) for mogl_type in mogl_types}
+
+
+def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
+    plp_data = []
+    plp_table = plp.getchildren()[0].getchildren()[0]
+    for module_row in plp_table:
+        if module_row.get("class") != "msTR trMTMN":
+            continue
+
+        module_data: TYPES_TRAINING_MODULE = {}
+        child_nodes = list(module_row)
+        module_data["pk"] = int(module_row.get("data-pk"))
+        module_data["module_id"] = int(child_nodes[0].get("id")[4:])
+        matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
+        if matches:
+            code = str(matches[0])
+            module_data["code"] = code
+            module_data["name"] = matches[1]
+
+            # Skip processing if we only want ongoing learning data and the module is not GDPR.
+            if ongoing_only and "gdpr" not in code.lower():
+                continue
+
+        learning_required = child_nodes[1].text_content().lower()
+        module_data["learning_required"] = "yes" in learning_required if learning_required else None
+        module_data["learning_method"] = child_nodes[2].text_content() or None
+        module_data["learning_completed"] = parse(child_nodes[3].text_content())
+        module_data["learning_date"] = parse(child_nodes[3].text_content())
+
+        validated_by_string = child_nodes[4].text_content()
+        if validated_by_string:
+            # Add empty item to prevent IndexError
+            validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]
+            module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
+            module_data["validated_name"] = validated_by_data[1]
+        module_data["validated_date"] = parse(child_nodes[5].text_content())
+
+        plp_data.append(module_data)
+
+    return int(plp_table.get("data-pk")), plp_data
