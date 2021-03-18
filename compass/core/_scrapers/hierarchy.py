@@ -77,7 +77,7 @@ class HierarchyScraper(InterfaceBase):
         is_sections = "/sections" in level_endpoint
         model_class = schema.HierarchySection if is_sections else schema.HierarchyUnit  # chose right model to use
 
-        result = self._post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
+        result = self.s.post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
 
         # Handle unauthorised access TODO raise???
@@ -151,10 +151,10 @@ class HierarchyScraper(InterfaceBase):
 
         # Execute search
         # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
-        self._post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
+        self.s.post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
 
         # Fetch results from Compass
-        search_results = self._get(f"{Settings.base_url}/SearchResults.aspx")
+        search_results = self.s.get(f"{Settings.base_url}/SearchResults.aspx")
 
         # Gets the compass form from the returned document
         form = html.fromstring(search_results.content).forms[0]

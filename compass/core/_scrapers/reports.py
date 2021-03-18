@@ -77,7 +77,7 @@ class ReportsScraper(InterfaceBase):
 
         # Get initial reports page, for export URL and config.
         logger.info("Generating report")
-        report_page = self._get(f"{Settings.base_url}/{run_report_url}")
+        report_page = self.s.get(f"{Settings.base_url}/{run_report_url}")
 
         return report_page.content
 
@@ -125,7 +125,7 @@ class ReportsScraper(InterfaceBase):
 
         # Including MicrosoftAJAX: Delta=true reduces size by ~1kb but increases time by 0.01s.
         # In reality we don't care about the output of this POST, just that it doesn't fail
-        report = self._post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
+        report = self.s.post(run_report, data=form_data, headers={"X-MicrosoftAjax": "Delta=true"})
         report.raise_for_status()
 
         # Check error state
@@ -135,12 +135,12 @@ class ReportsScraper(InterfaceBase):
     def report_keep_alive(self, report_page: str) -> str:
         logger.info(f"Extending Report Session {datetime.datetime.now()}")
         keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
-        response = self._post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841
+        response = self.s.post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841
 
         return keep_alive  # response
 
     def download_report_streaming(self, url: str, params: dict[str, str], filename: str) -> None:
-        with self._get(url, params=params, stream=True) as r:
+        with self.s.get(url, params=params, stream=True) as r:
             r.raise_for_status()
             with utility.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:  # TODO swap `with` stmts?
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
@@ -148,7 +148,7 @@ class ReportsScraper(InterfaceBase):
 
     def download_report_normal(self, url: str, params: dict[str, str], filename: str) -> bytes:
         start = time.time()
-        csv_export = self._get(url, params=params)
+        csv_export = self.s.get(url, params=params)
         logger.debug(f"Exporting took {time.time() - start}s")
         logger.info("Saving report")
         with utility.filesystem_guard("Unable to write report export"):

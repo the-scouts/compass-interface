@@ -113,10 +113,10 @@ class PeopleScraper(InterfaceBase):
         tabs = tuple(tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES))
         url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_num}"
         if tab_upper == "PERSONAL":  # Personal tab has no key so is a special case
-            response = self._get(url)
+            response = self.s.get(url)
         elif tab_upper in tabs:
             url += f"&Page={tab_upper}&TAB"
-            response = self._get(url)
+            response = self.s.get(url)
         else:
             raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs}")
 
@@ -784,7 +784,7 @@ class PeopleScraper(InterfaceBase):
 
         start_time = time.time()
         if response is None:
-            response = self._get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
+            response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
             logger.debug(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
 
         post_response_time = time.time()

@@ -158,7 +158,8 @@ class Logon:
             current_role=current_role,
         )
 
-        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)
+        # Disable pylint protected-access check
+        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)  # NoQA: W0212
 
         return logon
 
@@ -267,7 +268,7 @@ class LogonCore(InterfaceBase):
 
         # log in
         logger.info("Logging in")
-        response = self._post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
+        response = self.s.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
 
         # verify log in was successful
         props, roles = self.check_login()
@@ -278,7 +279,7 @@ class LogonCore(InterfaceBase):
         """Confirms success and updates authorisation."""
         # Test 'get' for an exemplar page that needs authorisation.
         portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
-        response = self._get(portal_url)
+        response = self.s.get(portal_url)
 
         # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
         # if int(post_response.headers.get("content-length", 901)) > 900:
@@ -303,8 +304,8 @@ class LogonCore(InterfaceBase):
         self.update_auth_headers(member_number, role_number, session_id)
 
         # Update current role properties
-        current_role = roles_dict[role_number]
-        logger.debug(f"Using Role: {current_role[0]} ({current_role[1]})")
+        current_role_title, current_role_location = roles_dict[role_number]
+        logger.debug(f"Using Role: {current_role_title} ({current_role_location})")
 
         # Verify role number against test value
         if check_role_number is not None:
@@ -325,7 +326,7 @@ class LogonCore(InterfaceBase):
     @staticmethod
     def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
         """Create Compass info dict from FormElement."""
-        compass_props = {}
+        compass_props: dict[str, Any] = {}
         compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
         for pair in compass_vars.split("~"):
             key, value = pair.split("#", 1)
@@ -336,11 +337,12 @@ class LogonCore(InterfaceBase):
             cd_tmp[levels[-1]] = value  # int or str
 
         if "Sys" in compass_props.get("Master", {}):
-            cp_m_s = compass_props["Master"]["Sys"]
-            if "WebPath" in cp_m_s:
-                cp_m_s["WebPath"] = urllib.parse.unquote(cp_m_s["WebPath"])
-            if "HardTime" in cp_m_s:
-                cp_m_s["HardTime"] = datetime.time.fromisoformat(cp_m_s["HardTime"].replace(".", ":"))
+            compass_props_master_sys = compass_props["Master"]["Sys"]
+            if "WebPath" in compass_props_master_sys:
+                compass_props_master_sys["WebPath"] = urllib.parse.unquote(compass_props_master_sys["WebPath"])
+            if "HardTime" in compass_props_master_sys:
+                hard_time_isoformat = compass_props_master_sys["HardTime"].replace(".", ":")
+                compass_props_master_sys["HardTime"] = datetime.time.fromisoformat(hard_time_isoformat)
 
         return schema.CompassProps(**compass_props)
 
