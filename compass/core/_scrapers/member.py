@@ -163,7 +163,6 @@ class PeopleScraper(InterfaceBase):
                 Access to the member is not given by the current authentication
 
         """
-        # pylint: disable=too-many-locals
         response = self._get_member_profile_tab(membership_num, "Personal")
 
         tree = html.fromstring(response)
@@ -258,10 +257,6 @@ class PeopleScraper(InterfaceBase):
             primary_role
 
         """
-        # pylint: disable=too-many-locals
-        # Want to keep all functionality in one place, to reduce the number of
-        # calls to Compass.
-        # TODO could refactor some internals into helper functions
         logger.debug(f"getting roles tab for member number: {membership_num}")
         response = self._get_member_profile_tab(membership_num, "Roles")
         tree = html.fromstring(response)
@@ -284,17 +279,10 @@ class PeopleScraper(InterfaceBase):
             if any(el.tag == "input" for el in cells[0]) or cells[0].getchildren() == []:
                 cells.pop(0)
 
-            role_number = int(row.get("data-pk"))
-            status_with_review = cells[5].text_content().strip()
-            if status_with_review.startswith("Full Review Due ") or status_with_review.startswith("Full Ending "):
-                role_status = "Full"
-                review_date = parse(status_with_review.removeprefix("Full Review Due ").removeprefix("Full Ending "))
-            else:
-                role_status = status_with_review
-                review_date = None
+            role_status, review_date = _extract_review_date(cells[5].text_content().strip())
 
             role_details = schema.MemberRoleCore(
-                role_number=role_number,
+                role_number=int(row.get("data-pk")),
                 membership_number=membership_num,
                 role_title=cells[0].text_content().strip(),
                 role_class=cells[1].text_content().strip(),
@@ -316,14 +304,13 @@ class PeopleScraper(InterfaceBase):
             # If role is a full volunteer role, potentially add to date list
             elif role_status != "Cancelled":
                 # If role_end is a falsy value (None), replace with today's date
-                pair = role_details.role_start, role_details.role_end or datetime.date.today()
-                roles_dates.append(pair)
+                roles_dates.append((role_details.role_start, role_details.role_end or datetime.date.today()))
 
             # Role status filter
             if statuses_set and role_status not in statuses:
                 continue
 
-            roles_data[role_number] = role_details
+            roles_data[role_details.role_number] = role_details
 
         # Calculate days of membership (inclusive), normalise to years.
         membership_duration_years = _membership_duration(roles_dates)
@@ -935,3 +922,13 @@ def _process_address(address: str) -> _AddressData:
             street, town = addr_main.rsplit(", ", 1)
             return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
     return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)
+
+
+def _extract_review_date(review_status: str) -> tuple[str, Optional[datetime.date]]:
+    if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
+        role_status = "Full"
+        review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
+    else:
+        role_status = review_status
+        review_date = None
+    return role_status, review_date
