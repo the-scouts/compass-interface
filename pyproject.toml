@@ -26,6 +26,10 @@ testpaths = [
 ]
 
 # pylint configuration
+[tool.pylint."MASTER"]
+persistent="n"  # pylint runs on CI, so no point saving
+jobs=0  # auto-detect the number of processors to use
+
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
     # no member warnings
@@ -89,9 +93,14 @@ disable = [
    "import-error",  # TODO: something going wrong as complaining can't import dependencies
    "unsubscriptable-object",  # TODO: pylint doesn't yet (22-01-2020) support Py 3.9
    "no-else-return",  # Probably bad style but this is cluttering the report
-    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
-   "too-many-branches",  # McCabe duplication
    "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
+   # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
+   # McCabe duplication
+   "too-many-branches",
+   # pydocstyle duplication
+   "missing-module-docstring",
+   "missing-class-docstring",
+   "missing-function-docstring",
 ]
 
 [tool.pylint."DESIGN"]
