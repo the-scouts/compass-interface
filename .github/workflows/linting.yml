@@ -32,4 +32,4 @@ jobs:
           pip install flake8 pep8-naming pylint pydocstyle bandit pyroma vulture
 
       - name: Run ${{ matrix.tool }}
-        run:  python -m ${{ matrix.tool }} "$GITHUB_WORKSPACE"
+        run:  python -m ${{ matrix.tool }} compass
