@@ -221,13 +221,13 @@ class PeopleScraper(InterfaceBase):
 
         # Full path is:
         # XP:   /html/body/form/div[5]/div[1]/div[2]/div[2]/div/div
-        # CSS:  html#mainhtml body form#aspnetForm div#ctl00_Popup_UpdatePanel div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
+        # CSS:  html body form div div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
         div_profile_tbl = tree[1][0][5][0][1][2][0][0]
         personal_details = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
         contact_details = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
 
         # ## Core - Positional:
-        details["name"] = personal_details["Name:"] # Full Name
+        details["name"] = personal_details["Name:"]  # Full Name
         details["known_as"] = personal_details["Known As:"]
         join_date = personal_details["Date of Joining:"]  # TODO Unknown - take date from earliest role?
         details["join_date"] = parse(join_date) if join_date != "Unknown" else None
