@@ -269,9 +269,9 @@ class MemberDetails(MemberBase):
     address: MemberDetailsAddress = MemberDetailsAddress()
 
     # Additional / miscellaneous details
-    disabilities: dict[str, str]  # TODO keyed models
-    qualifications: dict[str, str]
-    hobbies: dict[str, str]
+    disabilities: Optional[dict[str, str]] = None  # TODO keyed models
+    qualifications: Optional[dict[str, str]] = None
+    hobbies: Optional[dict[str, str]] = None
 
     @pydantic.validator("main_phone")
     def check_phone_number(cls, v: Optional[str], values: dict[str, Optional[Union[str, datetime.date]]]) -> Optional[str]:
