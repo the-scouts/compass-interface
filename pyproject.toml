@@ -24,3 +24,92 @@ norecursedirs = "tests/util"
 testpaths = [
     "tests",
 ]
+
+# pylint configuration
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    # no member warnings
+   "no-member",
+   "no-name-in-module",
+    # very high
+   "fixme",
+   "bad-continuation",
+    # high
+   "trailing-whitespace",
+   "missing-final-newline",
+   "too-few-public-methods",
+   "too-many-public-methods",
+   "deprecated-lambda",
+   "bad-builtin",
+   "star-args",
+   "global-statement",
+   "assignment-from-none",
+   "unused-format-string-key",
+   "W5103",
+    # medium
+   "invalid-name",
+   "bad-classmethod-argument",
+   "bad-mcs-method-argument",
+   "bad-mcs-classmethod-argument",
+   "too-many-lines",
+   "multiple-statements",
+   "C0322",
+   "C0323",
+   "C0324",
+   "superfluous-parens",
+   "bad-whitespace",
+   "bad-continuation",
+   "no-self-argument",
+   "E1103",
+   "I0014",
+   "no-self-use",
+   "too-many-ancestors",
+   "too-many-instance-attributes",
+   "too-many-return-statements",
+   "abstract-class-little-used",
+   "exec-used",
+   "attribute-defined-outside-init",
+   "abstract-method",
+   "super-init-not-called",
+   "no-init",
+   "unnecessary-semicolon",
+   "wildcard-import",
+   "relative-import",
+   "global-variable-undefined",
+   "redefined-outer-name",
+   "W0701",
+   "broad-except",
+   "pointless-except",
+   "W0713",
+   "property-on-old-class",
+   "anomalous-backslash-in-string",
+   "wrong-import-order",
+   "ungrouped-imports",
+    # CI config:
+   "import-error",  # TODO: something going wrong as complaining can't import dependencies
+   "unsubscriptable-object",  # TODO: pylint doesn't yet (22-01-2020) support Py 3.9
+   "no-else-return",  # Probably bad style but this is cluttering the report
+    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
+   "too-many-branches",  # McCabe duplication
+   "logging-fstring-interpolation  # f-strings are quicker than %-formatting",
+]
+
+[tool.pylint."DESIGN"]
+# very high
+max-parents=7
+max-attributes=7
+# high
+max-locals=15
+max-returns=6
+max-branches=15
+max-statements=60
+min-public-methods=1
+max-public-methods=20
+# medium
+max-line-length=159
+
+[tool.pylint."FORMAT"]
+# very high
+max-module-lines=1000
+# medium
+max-line-length=132
