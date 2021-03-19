@@ -1,4 +1,4 @@
-name: Lint source code
+name: 👷 linting
 
 on:
   pull_request:

@@ -91,7 +91,7 @@ disable = [
    "no-else-return",  # Probably bad style but this is cluttering the report
     # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
    "too-many-branches",  # McCabe duplication
-   "logging-fstring-interpolation  # f-strings are quicker than %-formatting",
+   "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
 ]
 
 [tool.pylint."DESIGN"]
