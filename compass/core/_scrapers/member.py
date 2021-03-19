@@ -592,7 +592,7 @@ class PeopleScraper(InterfaceBase):
         return disclosures
 
     # See getAppointment in PGS\Needle
-    def get_roles_detail(self, role_number: int, response: Union[None, AnyStr, requests.Response] = None) -> schema.MemberRolePopup:
+    def get_roles_detail(self, role_number: int) -> schema.MemberRolePopup:
         """Returns detailed data from a given role number.
 
         Args:
@@ -640,16 +640,12 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        start_time = time.time()
-        if response is None:
-            response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
-            logger.debug(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
+        # start_time = time.time()
+        response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
+        # logger.debug(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
+        # post_response_time = time.time()
+        tree = html.fromstring(response.content)
 
-        post_response_time = time.time()
-        if isinstance(response, (str, bytes)):
-            tree = html.fromstring(response)
-        else:
-            tree = html.fromstring(response.content)
         form: html.FormElement = tree.forms[0]
         inputs: html.InputGetter = form.inputs
         fields: html.FieldsDict = form.fields
@@ -657,27 +653,23 @@ class PeopleScraper(InterfaceBase):
         if form.action == "./ScoutsPortal.aspx?Invalid=Access":
             raise PermissionError(f"You do not have permission to the details of role {role_number}")
 
-        member_string = fields.get("ctl00$workarea$txt_p1_membername")
-        ref_code = fields.get("ctl00$workarea$cbo_p2_referee_status")
-
         line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
         ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")  # CE (Confidential Enquiry) Check
         disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
+        ref_code = fields.get("ctl00$workarea$cbo_p2_referee_status")
 
-        approval_values = {}
-        for row in tree.xpath("//tr[@class='trProp']"):
-            select = row[1][0]
-            code = select.get("data-app_code")
-            approval_values[code] = select.get("data-db")
-            # select.get("title") gives title text, but this is not useful as it does not reflect latest changes,
-            # but only who added the role to Compass.
+        approval_values = {row[1][0].get("data-app_code"): row[1][0].get("data-db") for row in tree.xpath("//tr[@class='trProp']")}
+        # row[1][0].get("title") gives title text, but this is not useful as it does not reflect latest changes,
+        # but only who added the role to Compass.
 
         role_details: dict[str, Union[None, int, str, datetime.date]] = dict(
             role_number=role_number,
-            organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),  # Ignored, no field in MemberTrainingRole
+            # `organisation_level` is ignored, no corresponding field in MemberTrainingRole:
+            organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),
             birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")) if Settings.debug else None,
             membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno")),
-            name=member_string.split(" ", maxsplit=1)[1],  # Ignored, no corresponding field in MemberTrainingRole
+            # `name` is ignored, no corresponding field in MemberTrainingRole:
+            name=fields.get("ctl00$workarea$txt_p1_membername").split(" ", maxsplit=1)[1],
             role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
             role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate")),
             role_status=fields.get("ctl00$workarea$txt_p2_status"),
@@ -698,7 +690,7 @@ class PeopleScraper(InterfaceBase):
 
         logger.debug(
             f"Processed details for role number: {role_number}. "
-            f"Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s"
+            # f"Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s"
         )
         # TODO data-ng_id?, data-rtrn_id?
         with validation_errors_logging(role_number, name="Role Number"):
