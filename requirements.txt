@@ -13,6 +13,8 @@ uvicorn
 
 # dev
 ipython
+
+# linting
 black
 isort
 pre-commit
