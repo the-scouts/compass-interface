@@ -248,9 +248,9 @@ class PeopleScraper(InterfaceBase):
         details["occupation"] = personal_details.get("Occupation:").strip()
 
         # ## Other Sections
-        details["disabilities"] = dict(row[0][0].text.split(" - ", 1) for row in div_profile_tbl[9][2])
-        details["qualifications"] = dict(row[0][0].text.split(" - ", 1) for row in div_profile_tbl[13][2])
-        details["hobbies"] = dict(row[0][0].text.split(" - ", 1) for row in div_profile_tbl[17][2])
+        details["disabilities"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[9][2])
+        details["qualifications"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[13][2])
+        details["hobbies"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[17][2])
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
