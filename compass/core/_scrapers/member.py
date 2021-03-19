@@ -225,6 +225,9 @@ class PeopleScraper(InterfaceBase):
         div_profile_tbl = tree[1][0][5][0][1][2][0][0]
         personal_details = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
         contact_details = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
+        disability_details = dict(row[0][0].text.split(" - ", 1) for row in div_profile_tbl[9][2])
+        qualification_details = dict(row[0][0].text.split(" - ", 1) for row in div_profile_tbl[13][2])
+        hobby_details = dict(row[0][0].text.split(" - ", 1) for row in div_profile_tbl[17][2])
 
         # ## Core - Positional:
         details["name"] = personal_details["Name:"] # Full Name
@@ -250,7 +253,7 @@ class PeopleScraper(InterfaceBase):
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
         with validation_errors_logging(membership_num):
-            return schema.MemberDetails(**details)
+            return schema.MemberDetails(**details, **disability_details, **qualification_details, **hobby_details)
 
     def get_roles_tab(
         self,
