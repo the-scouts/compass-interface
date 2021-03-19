@@ -650,9 +650,9 @@ class PeopleScraper(InterfaceBase):
             tree = html.fromstring(response)
         else:
             tree = html.fromstring(response.content)
-        form = tree.forms[0]
-        inputs = form.inputs
-        fields = form.fields
+        form: html.FormElement = tree.forms[0]
+        inputs: html.InputGetter = form.inputs
+        fields: html.FieldsDict = form.fields
 
         if form.action == "./ScoutsPortal.aspx?Invalid=Access":
             raise PermissionError(f"You do not have permission to the details of role {role_number}")
@@ -660,32 +660,9 @@ class PeopleScraper(InterfaceBase):
         member_string = fields.get("ctl00$workarea$txt_p1_membername")
         ref_code = fields.get("ctl00$workarea$cbo_p2_referee_status")
 
-        role_details: dict[str, Union[None, int, str, datetime.date]] = dict()
-        # Approval and Role details
-        role_details["role_number"] = role_number
-        role_details["organisation_level"] = fields.get("ctl00$workarea$cbo_p1_level")  # Ignored, no field in MemberTrainingRole
-        role_details["birth_date"] = parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")) if Settings.debug else None
-        role_details["membership_number"] = int(fields.get("ctl00$workarea$txt_p1_memberno"))
-        role_details["name"] = member_string.split(" ", maxsplit=1)[1]  # Ignored, no corresponding field in MemberTrainingRole
-        role_details["role_title"] = fields.get("ctl00$workarea$txt_p1_alt_title")
-        role_details["role_start"] = parse(fields.get("ctl00$workarea$txt_p1_startdate"))
-        # Role Status
-        role_details["role_status"] = fields.get("ctl00$workarea$txt_p2_status")
-        # Line Manager
         line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
-        role_details["line_manager_number"] = line_manager_number
-        role_details["line_manager"] = line_manager_name
-        # Review Date
-        role_details["review_date"] = parse(fields.get("ctl00$workarea$txt_p2_review"))
-        # CE (Confidential Enquiry) Check  # TODO if CE check date != current date then is valid
-        ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")
-        role_details["ce_check"] = parse(ce_check) if ce_check != "Pending" else None
-        # Disclosure Check
+        ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")  # CE (Confidential Enquiry) Check
         disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
-        role_details["disclosure_check"] = disclosure_check
-        role_details["disclosure_date"] = disclosure_date
-        # References
-        role_details["references"] = references_codes.get(ref_code, ref_code)
 
         approval_values = {}
         for row in tree.xpath("//tr[@class='trProp']"):
@@ -695,37 +672,29 @@ class PeopleScraper(InterfaceBase):
             # select.get("title") gives title text, but this is not useful as it does not reflect latest changes,
             # but only who added the role to Compass.
 
-        role_details["appointment_panel_approval"] = approval_values.get("ROLPRP|AACA")
-        role_details["commissioner_approval"] = approval_values.get("ROLPRP|CAPR")
-        role_details["committee_approval"] = approval_values.get("ROLPRP|CCA")
+        role_details: dict[str, Union[None, int, str, datetime.date]] = dict(
+            role_number=role_number,
+            organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),  # Ignored, no field in MemberTrainingRole
+            birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")) if Settings.debug else None,
+            membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno")),
+            name=member_string.split(" ", maxsplit=1)[1],  # Ignored, no corresponding field in MemberTrainingRole
+            role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
+            role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate")),
+            role_status=fields.get("ctl00$workarea$txt_p2_status"),
+            line_manager_number=line_manager_number,
+            line_manager=line_manager_name,
+            review_date=parse(fields.get("ctl00$workarea$txt_p2_review")),
+            ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
+            disclosure_check=disclosure_check,
+            disclosure_date=disclosure_date,
+            references=references_codes.get(ref_code, ref_code),
+            appointment_panel_approval=approval_values.get("ROLPRP|AACA"),
+            commissioner_approval=approval_values.get("ROLPRP|CAPR"),
+            committee_approval=approval_values.get("ROLPRP|CCA"),
+        )
 
         # Filter null values
         role_details = {k: v for k, v in role_details.items() if v is not None}
-
-        # Getting Started
-        modules_output = {}
-        getting_started_modules = tree.xpath("//tr[@class='trTrain trTrainData']")
-        # Get all training modules and then extract the required modules to a dictionary
-        for module in getting_started_modules:
-            module_name = module[0][0].text.strip()
-            if module_name in module_names:
-                info = {
-                    # "name": module_names[module_name],  # short_name
-                    "validated": parse(module[2][0].value),  # Save module validation date
-                    "validated_by": module[1][1].get("value") or None,  # Save who validated the module
-                }
-                mod_code: str = module[2][0].get("data-ng_value")
-                modules_output[renamed_modules[mod_code]] = info
-
-        # Get all levels of the org hierarchy and select those that will have information:
-        # Get all inputs with location data
-        org_levels = [v for k, v in sorted(dict(inputs).items()) if "ctl00$workarea$cbo_p1_location" in k]
-        # TODO
-        all_locations = {row.get("title"): row.findtext("./option") for row in org_levels}
-
-        clipped_locations = {
-            renamed_levels.get(key, key).lower(): value for key, value in all_locations.items() if value not in unset_vals
-        }
 
         logger.debug(
             f"Processed details for role number: {role_number}. "
@@ -733,8 +702,12 @@ class PeopleScraper(InterfaceBase):
         )
         # TODO data-ng_id?, data-rtrn_id?
         with validation_errors_logging(role_number, name="Role Number"):
-            return schema.MemberRolePopup.parse_obj(
-                {"hierarchy": clipped_locations, "details": role_details, "getting_started": modules_output}
+            return schema.MemberRolePopup(
+                **{
+                    "hierarchy": dict(_process_hierarchy(inputs)),
+                    "details": role_details,
+                    "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
+                }
             )
 
 
@@ -957,3 +930,35 @@ def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Opt
         disclosure_check = disclosure_status or None
         disclosure_date = None
     return disclosure_check, disclosure_date
+
+
+def _process_hierarchy(inputs: html.InputGetter) -> Iterator[tuple[str, str]]:
+    """Get all levels of the org hierarchy and select those that will have information."""
+    # Get all inputs with location data
+    # TODO is sorted() needed?
+    for input_name, input_el in sorted(dict(inputs).items()):
+        if "ctl00$workarea$cbo_p1_location" not in input_name:
+            continue
+        level_name = input_el.get("title")
+        level_value = input_el[0].text
+        if level_value in unset_vals:
+            continue
+        yield renamed_levels.get(level_name, level_name).lower(), level_value
+
+
+def _process_getting_started(getting_started_modules: html.HtmlElement) -> dict[str, dict[str, Union[None, str, datetime.date]]]:
+    """Process getting started modules."""
+    modules_output = {}
+    # Get all training modules and then extract the required modules to a dictionary
+    for module in getting_started_modules:
+        module_name = module[0][0].text.strip()
+        if module_name in module_names:
+            info = {
+                # "name": module_names[module_name],  # short_name
+                "validated": parse(module[2][0].value),  # Save module validation date
+                "validated_by": module[1][1].get("value") or None,  # Save who validated the module
+            }
+            mod_code: str = module[2][0].get("data-ng_value")
+            modules_output[renamed_modules[mod_code]] = info
+
+    return modules_output
