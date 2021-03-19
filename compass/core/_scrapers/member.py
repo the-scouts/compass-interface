@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
 TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
-TYPES_TRAINING_OGL = dict[str, dict[str, Optional[datetime.date]]]
+TYPES_TRAINING_OGL = dict[str, dict[Literal["completed_date", "renewal_date"], Optional[datetime.date]]]
 
 # _get_member_profile_tab
 MEMBER_PROFILE_TAB_TYPES = Literal[
@@ -738,6 +738,39 @@ class PeopleScraper(InterfaceBase):
             )
 
 
+class _AddressData(TypedDict):
+    unparsed_address: Optional[str]
+    country: Optional[str]
+    postcode: Optional[str]
+    county: Optional[str]
+    town: Optional[str]
+    street: Optional[str]
+
+
+def _process_address(address: str) -> _AddressData:
+    if address:
+        addr_main, addr_code = address.rsplit(". ", 1)
+        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
+        try:
+            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
+            return dict(unparsed_address=address, country=country, postcode=postcode, county=county, town=town, street=street)
+        except ValueError:
+            street, town = addr_main.rsplit(", ", 1)
+            return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
+    return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)
+
+
+def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
+    if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
+        role_status = "Full"
+        review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
+    else:
+        role_status = review_status
+        review_date = None
+        assert isinstance(role_status, schema.TYPES_ROLE_STATUS)
+    return role_status, review_date
+
+
 def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
     """Reduce list of start and end dates to disjoint ranges.
 
@@ -787,42 +820,22 @@ def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -
     return membership_duration_days / 365.2425  # Leap year except thrice per 400 years.
 
 
-class _AddressData(TypedDict):
-    unparsed_address: Optional[str]
-    country: Optional[str]
-    postcode: Optional[str]
-    county: Optional[str]
-    town: Optional[str]
-    street: Optional[str]
-
-
-def _process_address(address: str) -> _AddressData:
-    if address:
-        addr_main, addr_code = address.rsplit(". ", 1)
-        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
-        try:
-            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
-            return dict(unparsed_address=address, country=country, postcode=postcode, county=county, town=town, street=street)
-        except ValueError:
-            street, town = addr_main.rsplit(", ", 1)
-            return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
-    return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)
-
-
-def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
-    if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
-        role_status = "Full"
-        review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
-    else:
-        role_status = review_status
-        review_date = None
-        assert isinstance(role_status, schema.TYPES_ROLE_STATUS)
-    return role_status, review_date
-
-
 def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.HtmlElement) -> TYPES_TRAINING_OGL:
-    # Handle GDPR:
-    # Get latest GDPR date
+    """Compiles ongoing learning data.
+
+    Uses PLP records for GDPR, and main OGL section for Safety, Safeguardin,
+    and First Aid.
+
+    Args:
+        training_plps: Parsed PLP data.
+        tree: LXML tree representing training tab
+
+    Returns:
+        A map of ogl type -> dates. Data returned here as native types (dicts),
+        see schema.MemberMandatoryTraining for full model.
+
+    """
+    # Handle GDPR (Get latest GDPR date)
     gdpr_dates = [mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR"]
     training_ogl = {"gdpr": dict(completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None))}
 
@@ -841,6 +854,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
 
 def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
+    """Parses a personal learning plan from a LXML row element containing data."""
     plp_data = []
     plp_table = plp.getchildren()[0].getchildren()[0]
     for module_row in plp_table:
@@ -881,11 +895,12 @@ def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -
 
 
 def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[None, str, int, datetime.date]]]:
+    """Parses a personal learning plan from a LXML row element containing data."""
     child_nodes = list(role)
 
     role_data: dict[str, Union[None, str, int, datetime.date]] = dict()  # NoQA
 
-    role_number = int(role.xpath("./@data-ng_mrn")[0])
+    role_number = int(role.get("data-ng_mrn"))
     role_data["role_number"] = role_number
     role_data["role_title"] = child_nodes[0].text_content()
     role_data["role_start"] = parse(child_nodes[1].text_content())
