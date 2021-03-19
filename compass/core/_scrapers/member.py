@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
-import time
-from typing import AnyStr, get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
+from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
 
@@ -18,8 +17,6 @@ from compass.core.utility import validation_errors_logging
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Iterator
-
-    import requests
 
 TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
 TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
@@ -597,7 +594,6 @@ class PeopleScraper(InterfaceBase):
 
         Args:
             role_number: Role Number to use
-            response: Pre-generated response to use
 
         Returns:
             A dicts mapping keys to the corresponding data from the
