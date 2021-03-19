@@ -31,6 +31,7 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 ]
 
 # get_roles_tab
+STATUSES = set(get_args(schema.TYPES_ROLE_STATUS))
 NON_VOLUNTEER_TITLES = {
     # occasional helper roles
     "group occasional helper",
@@ -97,6 +98,7 @@ references_codes = {
     "S": "References Satisfactory",
     "U": "References Unsatisfactory",
 }
+
 
 class PeopleScraper(InterfaceBase):
     """Class directly interfaces with Compass operations to extract member data.
@@ -305,7 +307,8 @@ class PeopleScraper(InterfaceBase):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
-        statuses_set = statuses is not None
+        if statuses is None:
+            statuses = STATUSES
 
         roles_dates = []
         roles_data = {}
@@ -328,7 +331,7 @@ class PeopleScraper(InterfaceBase):
                 role_title=cells[0].text_content().strip(),
                 role_class=cells[1].text_content().strip(),
                 # role_type only visible if access to System Admin tab
-                role_type=[*row.xpath("./td[1]/*/@title"), None][0],
+                role_type=cells[0][0].get("title", None),
                 # location_id only visible if role is in hierarchy AND location still exists
                 location_id=cells[2][0].get("data-ng_id"),
                 location_name=cells[2].text_content().strip(),
@@ -348,16 +351,14 @@ class PeopleScraper(InterfaceBase):
                 roles_dates.append((role_details.role_start, role_details.role_end or datetime.date.today()))
 
             # Role status filter
-            if statuses_set and role_status not in statuses:
+            if role_status not in statuses:
                 continue
 
             roles_data[role_details.role_number] = role_details
 
-        # Calculate days of membership (inclusive), normalise to years.
-        membership_duration_years = _membership_duration(roles_dates)
-
         with validation_errors_logging(membership_num):
-            return schema.MemberRolesCollection(roles=roles_data, membership_duration=membership_duration_years)
+            # Calculate days of membership (inclusive), normalise to years.
+            return schema.MemberRolesCollection(roles=roles_data, membership_duration=_membership_duration(roles_dates))
 
     def get_permits_tab(self, membership_num: int) -> list[schema.MemberPermit]:
         """Returns data from Permits tab for a given member.
@@ -731,13 +732,10 @@ class PeopleScraper(InterfaceBase):
             f"Compass: {(post_response_time - start_time):.3f}s; Processing: {(time.time() - post_response_time):.4f}s"
         )
         # TODO data-ng_id?, data-rtrn_id?
-        full_details = {
-            "hierarchy": clipped_locations,
-            "details": role_details,
-            "getting_started": modules_output,
-        }
         with validation_errors_logging(role_number, name="Role Number"):
-            return schema.MemberRolePopup.parse_obj(full_details)
+            return schema.MemberRolePopup.parse_obj(
+                {"hierarchy": clipped_locations, "details": role_details, "getting_started": modules_output}
+            )
 
 
 def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
@@ -811,13 +809,14 @@ def _process_address(address: str) -> _AddressData:
     return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)
 
 
-def _extract_review_date(review_status: str) -> tuple[str, Optional[datetime.date]]:
+def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
     if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
         role_status = "Full"
         review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
     else:
         role_status = review_status
         review_date = None
+        assert isinstance(role_status, schema.TYPES_ROLE_STATUS)
     return role_status, review_date
 
 

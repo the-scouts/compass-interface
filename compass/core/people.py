@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import get_args, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from compass.core._scrapers.member import PeopleScraper
+from compass.core._scrapers.member import STATUSES
 from compass.core.schemas.member import TYPES_ROLE_STATUS
 
 if TYPE_CHECKING:
@@ -14,8 +15,6 @@ if TYPE_CHECKING:
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
 # UTILITY CLASS - get_member_data, get_roles_from_members, etc
-
-STATUSES = set(get_args(TYPES_ROLE_STATUS))
 
 
 class People:
