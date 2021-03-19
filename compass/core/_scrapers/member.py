@@ -215,30 +215,37 @@ class PeopleScraper(InterfaceBase):
         # ### Extractors
         # ## Core:
         details["membership_number"] = membership_num
-        names = tree.xpath("//title//text()")[0].strip().split(" ")[3:]  # ("Scout", "-", membership_num, *names)
+        names = next(tree.iter("title")).text.strip().split(" ")[3:]  # ("Scout", "-", membership_num, *names)
         details["forenames"] = names[0]
         details["surname"] = " ".join(names[1:])
 
+        # Full path is:
+        # XP:   /html/body/form/div[5]/div[1]/div[2]/div[2]/div/div
+        # CSS:  html#mainhtml body form#aspnetForm div#ctl00_Popup_UpdatePanel div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
+        div_profile_tbl = tree[1][0][5][0][1][2][0][0]
+        personal_details = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
+        contact_details = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
+
         # ## Core - Positional:
-        details["name"] = tree.xpath("string(//*[@id='divProfile0']//tr[1]/td[2]/label)")  # Full Name
-        details["known_as"] = tree.xpath("string(//*[@id='divProfile0']//tr[2]/td[2]/label)")
-        join_date = tree.xpath("string(//*[@id='divProfile0']//tr[4]/td[2]/label)")  # TODO Unknown - take date from earliest role?
+        details["name"] = personal_details["Name:"] # Full Name
+        details["known_as"] = personal_details["Known As:"]
+        join_date = personal_details["Date of Joining:"]  # TODO Unknown - take date from earliest role?
         details["join_date"] = parse(join_date) if join_date != "Unknown" else None
 
         # ## Core - Position Varies:
-        details["sex"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Gender:']/../../td[2])")
+        details["sex"] = personal_details["Gender:"]
 
         # ## Additional - Position Varies, visible for most roles:
-        details["address"] = _process_address(tree.xpath('string(//*[text()="Address"]/../../../td[3])'))
-        details["main_phone"] = tree.xpath('string(//*[text()="Phone"]/../../../td[3])')
-        details["main_email"] = tree.xpath('string(//*[text()="Email"]/../../../td[3])')
+        details["address"] = _process_address(contact_details.get("Address"))
+        details["main_phone"] = contact_details.get("Phone")
+        details["main_email"] = contact_details.get("Email")
 
         # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
-        details["birth_date"] = parse(tree.xpath("string(//*[@id='divProfile0']//*[text()='Date of Birth:']/../../td[2])"))
-        details["nationality"] = tree.xpath("string(//*[@id='divProfile0']//*[text()='Nationality:']/../../td[2])")
-        details["ethnicity"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Ethnicity:']/../../td[2])")
-        details["religion"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Religion/Faith:']/../../td[2])")
-        details["occupation"] = tree.xpath("normalize-space(//*[@id='divProfile0']//*[text()='Occupation:']/../../td[2])")
+        details["birth_date"] = parse(personal_details.get("Date of Birth:"))
+        details["nationality"] = personal_details.get("Nationality:").strip()
+        details["ethnicity"] = personal_details.get("Ethnicity:").strip()
+        details["religion"] = personal_details.get("Religion/Faith:").strip()
+        details["occupation"] = personal_details.get("Occupation:").strip()
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
