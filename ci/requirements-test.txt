@@ -4,7 +4,7 @@ lxml
 # core-typing
 pydantic
 email-validator
-phonenumbers
+phonenumberslite
 
 # testing
 pytest
