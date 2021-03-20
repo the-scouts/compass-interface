@@ -200,7 +200,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         return schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
 
     def _extend_session_timeout(self, sto: TYPES_STO = "0") -> requests.Response:
-        # Session time phonenumbers-stubs. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
+        # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
         return utility.auth_header_get(
