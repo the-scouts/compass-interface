@@ -266,7 +266,7 @@ class Hierarchy:
             # Attempt to see if the members dict has been fetched already and is on the local system
             json_members: list[dict[str, list[dict[str, Union[None, int, str]]]]] = json.loads(filename.read_text(encoding="UTF8"))
             if isinstance(json_members, list):
-                return [schema.HierarchyUnitMembers(**unit_members) for unit_members in json_members]  # type: ignore[arg-type]
+                return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in json_members]
 
         # Fetch all members
         all_members = []
