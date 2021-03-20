@@ -12,7 +12,7 @@ class _SettingsModel(pydantic.BaseSettings):
     debug: bool = False
     validation_errors: bool = True
 
-    class Config:  # pylint: disable=too-few-public-methods
+    class Config:
         case_sensitive = False  # this is the default, but mark for clarity.
         env_prefix = "CI_"  # env variables named `REDIS_HOST` etc
 

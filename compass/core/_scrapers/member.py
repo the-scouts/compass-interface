@@ -711,7 +711,7 @@ class PeopleScraper(InterfaceBase):
             )
 
 
-class _AddressData(TypedDict):  # pylint: disable=too-few-public-methods
+class _AddressData(TypedDict):
     unparsed_address: Optional[str]
     country: Optional[str]
     postcode: Optional[str]
