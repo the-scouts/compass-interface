@@ -4,7 +4,6 @@ import contextlib
 import ctypes
 import datetime
 import functools
-import threading
 import time
 from typing import Any, Optional, TYPE_CHECKING
 
@@ -15,7 +14,6 @@ from compass.core.logger import logger
 from compass.core.settings import Settings
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
     from collections.abc import Iterator
     from collections.abc import Mapping
 
@@ -71,28 +69,28 @@ def validation_errors_logging(id_value: int, name: str = "Member No") -> Iterato
             raise err
 
 
-class PeriodicTimer:
-    def __init__(self, interval: float, callback: Callable[..., Any]):
-        """Constructor for PeriodicTimer."""
-        self.interval = interval
-
-        @functools.wraps(callback)
-        def wrapper(*args: Any, **kwargs: Any) -> None:
-            result = callback(*args, **kwargs)
-            if result is not None:
-                self.thread = threading.Timer(self.interval, self.callback)
-                self.thread.start()
-
-        self.callback = wrapper
-        self.thread: threading.Timer = threading.Timer(0.0, self.callback)  # type: ignore[no-redef]
-
-    def start(self) -> "PeriodicTimer":
-        self.thread.start()
-        return self
-
-    def cancel(self) -> "PeriodicTimer":
-        self.thread.cancel()
-        return self
+# class PeriodicTimer:
+#     def __init__(self, interval: float, callback: Callable[..., Any]):
+#         """Constructor for PeriodicTimer."""
+#         self.interval = interval
+#
+#         @functools.wraps(callback)
+#         def wrapper(*args: Any, **kwargs: Any) -> None:
+#             result = callback(*args, **kwargs)
+#             if result is not None:
+#                 self.thread = threading.Timer(self.interval, self.callback)
+#                 self.thread.start()
+#
+#         self.callback = wrapper
+#         self.thread: threading.Timer = threading.Timer(0.0, self.callback)
+#
+#     def start(self) -> "PeriodicTimer":
+#         self.thread.start()
+#         return self
+#
+#     def cancel(self) -> "PeriodicTimer":
+#         self.thread.cancel()
+#         return self
 
 
 def jk_hash(session: requests.Session, membership_number: int, role_number: int, jk: str) -> str:
