@@ -32,13 +32,10 @@ jobs=0  # auto-detect the number of processors to use
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
-    # no member warnings
    "no-member",
    "no-name-in-module",
-    # very high
    "fixme",
    "bad-continuation",
-    # high
    "trailing-whitespace",
    "missing-final-newline",
    "too-few-public-methods",
@@ -50,7 +47,6 @@ disable = [
    "assignment-from-none",
    "unused-format-string-key",
    "W5103",
-    # medium
    "invalid-name",
    "bad-classmethod-argument",
    "bad-mcs-method-argument",
@@ -91,7 +87,6 @@ disable = [
    "ungrouped-imports",
     # CI config:
    "import-error",  # TODO: something going wrong as complaining can't import dependencies
-   "unsubscriptable-object",  # TODO: pylint doesn't yet (22-01-2020) support Py 3.9
    "no-else-return",  # Probably bad style but this is cluttering the report
    "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
@@ -104,21 +99,16 @@ disable = [
 ]
 
 [tool.pylint."DESIGN"]
-# very high
 max-parents=7
 max-attributes=7
-# high
 max-locals=15
 max-returns=6
 max-branches=15
 max-statements=60
 min-public-methods=1
 max-public-methods=20
-# medium
-max-line-length=159
+max-line-length=132
 
 [tool.pylint."FORMAT"]
-# very high
 max-module-lines=1000
-# medium
 max-line-length=132
