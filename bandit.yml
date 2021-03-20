@@ -1,0 +1,4 @@
+# bandit configuration
+skips: [
+    'B101', # Used assertion
+]
