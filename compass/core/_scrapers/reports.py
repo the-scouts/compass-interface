@@ -59,7 +59,7 @@ class ReportsScraper(InterfaceBase):
 
     @staticmethod
     def get_report_export_url(report_page: str, filename: Optional[str] = None) -> tuple[str, dict[str, str]]:
-        full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
+        full_url = re.search(r'"ExportUrlBase":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")  # type: ignore[union-attr]
         fragments = urllib.parse.urlparse(full_url)
         export_url_path = fragments.path[1:]  # strip leading `/`
         report_export_url_data = dict(urllib.parse.parse_qsl(fragments.query, keep_blank_values=True))
@@ -133,7 +133,7 @@ class ReportsScraper(InterfaceBase):
 
     def report_keep_alive(self, report_page: str) -> str:
         logger.info(f"Extending Report Session {datetime.datetime.now()}")
-        keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
+        keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")  # type: ignore[union-attr]
         response = self.s.post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841 (unused variable)
 
         return keep_alive  # response

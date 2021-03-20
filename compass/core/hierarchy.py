@@ -4,7 +4,7 @@ import contextlib
 import enum
 import json
 from pathlib import Path
-from typing import Iterable, Literal, Optional, TYPE_CHECKING, Union
+from typing import Iterable, Literal, Optional, TypedDict, TYPE_CHECKING, Union, cast
 
 from pydantic.json import pydantic_encoder
 
@@ -18,6 +18,23 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
+
+
+class HierarchyState(TypedDict, total=False):
+    compass: int
+    name: Optional[str]
+    Organisation_ID: int
+    Organisation_name: Optional[str]
+    Country_ID: int
+    Country_name: Optional[str]
+    Region_ID: int
+    Region_name: Optional[str]
+    County_ID: int
+    County_name: Optional[str]
+    District_ID: int
+    District_name: Optional[str]
+    Group_ID: int
+    Group_name: Optional[str]    
 
 
 class Levels(enum.IntEnum):
@@ -152,14 +169,15 @@ class Hierarchy:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
 
         logger.debug(f"getting data for unit {unit_id}")
-        descendants = level_numeric in set(UnitChildren)  # Do child units exist? (i.e. is this level != group)
+        # Do child units exist? (i.e. is this level != group)
+        descendants = level_numeric in set(UnitChildren)  # type: ignore[comparison-overlap]
 
         # All to handle as Group doesn't have grand-children
         descendant_data = {"unit_id": unit_id, "level": level_numeric.name}
 
         child_level = Levels(level_numeric + 1) if descendants else None
         if descendants:
-            children = self._scraper.get_units_from_hierarchy(unit_id, UnitChildren(level_numeric).name)
+            children = self._scraper.get_units_from_hierarchy(unit_id, UnitChildren(level_numeric).name)  # type: ignore[arg-type]
             children_updated = []
             for child in children:
                 if not child:
@@ -167,13 +185,12 @@ class Hierarchy:
                 grandchildren = self._get_descendants_recursive(child.unit_id, hier_num=child_level)
                 children_updated.append(child.dict() | grandchildren)
             descendant_data["child"] = children_updated
-        descendant_data["sections"] = self._scraper.get_units_from_hierarchy(unit_id, UnitSections(level_numeric).name)
+        descendant_data["sections"] = self._scraper.get_units_from_hierarchy(unit_id, UnitSections(level_numeric).name)  # type: ignore[arg-type]
 
         return descendant_data
 
-    # Google hanging indent not yet (2021-03-20) in pydocstyle - https://github.com/PyCQA/pydocstyle/issues/449
     @staticmethod
-    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[dict[str, Union[int, str]]]:  # noqa: D417 (hanging indent)
+    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[HierarchyState]:  # noqa: D417 (hanging indent)
         """Flattens a hierarchy tree / graph to a flat sequence of mappings.
 
         Args:
@@ -182,28 +199,22 @@ class Hierarchy:
                 object, whilst all recursion will be on `schema.DescendantData` objects.
 
         """
-        # This args style is allowed, but not yet (2021-02-20) implemented in PyDocStyle, so D417 disabled above.
+        # This args style is allowed, but not yet (2021-03-20) implemented in PyDocStyle, so D417 disabled above.
         # https://github.com/PyCQA/pydocstyle/issues/449
-
-        def flatten(
-            d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: dict[str, Union[int, str]]
-        ) -> Iterator[dict[str, Union[int, str]]]:
+        def flatten(d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: HierarchyState) -> Iterator[HierarchyState]:
             """Generator expresion to recursively flatten hierarchy."""
             level_name = d.level
             unit_id = d.unit_id
-            name = d.name if "name" in hierarchy_dict.__fields__ else None  # ~900ns
-            level_data = {
-                **hierarchy_state,
-                f"{level_name}_ID": unit_id,
-                f"{level_name}_name": name,
-            }
-            yield {"compass": unit_id, "name": name, **level_data}
+            name = d.name if isinstance(d, schema.DescendantData) else None
+            level_data = hierarchy_state | {f"{level_name}_ID": unit_id, f"{level_name}_name": name}  # type: ignore[operator]
+            yield cast(HierarchyState, {"compass": unit_id, "name": name} | dict(level_data))
             for val in d.child or []:
-                yield from flatten(val, level_data)
+                yield from flatten(val, cast(HierarchyState, level_data))
             for val in d.sections:
-                yield {"compass": val.unit_id, "name": val.name, **level_data}  # TODO section=True flag?
+                yield cast(HierarchyState, {"compass": val.unit_id, "name": val.name} | level_data)  # TODO section=True flag?
 
-        return flatten(hierarchy_dict, dict())
+        blank_state: HierarchyState = dict()
+        return flatten(hierarchy_dict, blank_state)
 
     def get_unique_members(
         self,
@@ -253,9 +264,9 @@ class Hierarchy:
 
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
-            all_members = json.loads(filename.read_text(encoding="utf-8"))
-            if isinstance(all_members, list):
-                return [schema.HierarchyUnitMembers(**unit_members) for unit_members in all_members]
+            json_members: list[dict[str, list[dict[str,  Union[None, int, str]]]]] = json.loads(filename.read_text(encoding="UTF8"))
+            if isinstance(json_members, list):
+                return [schema.HierarchyUnitMembers(**unit_members) for unit_members in json_members]  # type: ignore[arg-type]
 
         # Fetch all members
         all_members = []
