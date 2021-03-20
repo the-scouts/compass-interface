@@ -33,7 +33,6 @@ jobs=0  # auto-detect the number of processors to use
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
    "fixme",
-   "too-many-instance-attributes",
    "import-error",  # pylint does not (2021-03-20) support namespace packages
    "no-else-return",  # Probably bad style but this is cluttering the report
    "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
@@ -67,7 +66,6 @@ disable = [
 ]
 
 [tool.pylint.DESIGN]
-max-branches=15  # redundant as we disable the `too-many-branches` check
 max-statements=60
 min-public-methods=1
 

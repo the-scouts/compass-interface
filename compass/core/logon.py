@@ -33,7 +33,7 @@ def login(username: str, password: str, /, *, role: Optional[str] = None, locati
     return Logon.from_logon((username, password), role, location)
 
 
-class Logon:
+class Logon:  # pylint: disable=too-many-instance-attributes
     """Create connection to Compass and authenticate. Holds session state.
 
     Logon flow is:
