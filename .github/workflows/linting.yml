@@ -24,7 +24,10 @@ jobs:
           - tool: "pydocstyle"
             command: "python -m pydocstyle ."
             deps: "pydocstyle"
-#          - tool: "bandit"
+          # Common security issues
+          - tool: "bandit"
+            command: "python -m bandit -r ."
+            deps: "bandit"
           # packaging (CheeseShop) compliance
           - tool: "pyroma"
             command: "pyroma ."
