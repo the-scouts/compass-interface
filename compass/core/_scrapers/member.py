@@ -130,11 +130,11 @@ class PeopleScraper(InterfaceBase):
     All functions in the class output native types.
     """
 
-    def _get_member_profile_tab(self, membership_num: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
+    def _get_member_profile_tab(self, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
         """Returns data from a given tab in MemberProfile for a given member.
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
             profile_tab: Tab requested from Compass
 
         Returns:
@@ -152,7 +152,7 @@ class PeopleScraper(InterfaceBase):
         """
         tab_upper: str = profile_tab.upper()  # No longer type MEMBER_PROFILE_TAB_TYPES as upper case
         tabs = tuple(tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES))
-        url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_num}"
+        url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_number}"
         if tab_upper == "PERSONAL":  # Personal tab has no key so is a special case
             response = self.s.get(url)
         elif tab_upper in tabs:
@@ -163,11 +163,11 @@ class PeopleScraper(InterfaceBase):
 
         return response.content
 
-    def get_personal_tab(self, membership_num: int) -> schema.MemberDetails:
+    def get_personal_tab(self, membership_number: int) -> schema.MemberDetails:
         """Returns data from Personal Details tab for a given member.
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
 
         Returns:
             A dict mapping keys to the corresponding data from the personal
@@ -204,19 +204,19 @@ class PeopleScraper(InterfaceBase):
                 Access to the member is not given by the current authentication
 
         """
-        response = self._get_member_profile_tab(membership_num, "Personal")
+        response = self._get_member_profile_tab(membership_number, "Personal")
 
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+            raise PermissionError(f"You do not have permission to the details of {membership_number}")
 
         details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
 
         # ### Extractors
         # ## Core:
-        details["membership_number"] = membership_num
-        names = next(tree.iter("title")).text.strip().split(" ")[3:]  # ("Scout", "-", membership_num, *names)
+        details["membership_number"] = membership_number
+        names = next(tree.iter("title")).text.strip().split(" ")[3:]  # ("Scout", "-", membership_number, *names)
         details["forenames"] = names[0]
         details["surname"] = " ".join(names[1:])
 
@@ -263,12 +263,12 @@ class PeopleScraper(InterfaceBase):
                 if f"No {additional.title()} Entered" in add_sect:
                     details[additional] = {}
 
-        with validation_errors_logging(membership_num):
+        with validation_errors_logging(membership_number):
             return schema.MemberDetails.parse_obj(details)
 
     def get_roles_tab(
         self,
-        membership_num: int,
+        membership_number: int,
         keep_non_volunteer_roles: bool = False,
         statuses: Optional[set[str]] = None,
     ) -> schema.MemberRolesCollection:
@@ -277,7 +277,7 @@ class PeopleScraper(InterfaceBase):
         Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
             keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
             statuses: Explicit set of role statuses to keep
 
@@ -318,12 +318,12 @@ class PeopleScraper(InterfaceBase):
             primary_role
 
         """
-        logger.debug(f"getting roles tab for member number: {membership_num}")
-        response = self._get_member_profile_tab(membership_num, "Roles")
+        logger.debug(f"getting roles tab for member number: {membership_number}")
+        response = self._get_member_profile_tab(membership_number, "Roles")
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+            raise PermissionError(f"You do not have permission to the details of {membership_number}")
 
         if statuses is None:
             statuses = STATUSES
@@ -345,7 +345,7 @@ class PeopleScraper(InterfaceBase):
 
             role_details = schema.MemberRoleCore(
                 role_number=int(row.get("data-pk")),
-                membership_number=membership_num,
+                membership_number=membership_number,
                 role_title=cells[0].text_content().strip(),
                 role_class=cells[1].text_content().strip(),
                 # role_type only visible if access to System Admin tab
@@ -374,17 +374,17 @@ class PeopleScraper(InterfaceBase):
 
             roles_data[role_details.role_number] = role_details
 
-        with validation_errors_logging(membership_num):
+        with validation_errors_logging(membership_number):
             # Calculate days of membership (inclusive), normalise to years.
             return schema.MemberRolesCollection(roles=roles_data, membership_duration=_membership_duration(roles_dates))
 
-    def get_permits_tab(self, membership_num: int) -> list[schema.MemberPermit]:
+    def get_permits_tab(self, membership_number: int) -> list[schema.MemberPermit]:
         """Returns data from Permits tab for a given member.
 
         If a permit has been revoked, the expires value is None and the status is PERM_REV
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
 
         Returns:
             A list of dicts mapping keys to the corresponding data from the
@@ -397,19 +397,19 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        response = self._get_member_profile_tab(membership_num, "Permits")
+        response = self._get_member_profile_tab(membership_number, "Permits")
         tree = html.fromstring(response)
 
         # Get rows with permit content
         rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
 
         permits = []
-        with validation_errors_logging(membership_num):
+        with validation_errors_logging(membership_number):
             for row in rows:
                 child_nodes = list(row)
                 expires = child_nodes[5].text_content()
                 permit = schema.MemberPermit(
-                    membership_number=membership_num,
+                    membership_number=membership_number,
                     permit_type=child_nodes[1].text_content(),
                     category=child_nodes[2].text_content(),
                     type=child_nodes[3].text_content(),
@@ -422,20 +422,20 @@ class PeopleScraper(InterfaceBase):
             return permits
 
     @overload
-    def get_training_tab(self, membership_num: int, ongoing_only: Literal[True]) -> schema.MemberMandatoryTraining:
+    def get_training_tab(self, membership_number: int, ongoing_only: Literal[True]) -> schema.MemberMandatoryTraining:
         ...
 
     @overload
-    def get_training_tab(self, membership_num: int, ongoing_only: Literal[False]) -> schema.MemberTrainingTab:
+    def get_training_tab(self, membership_number: int, ongoing_only: Literal[False]) -> schema.MemberTrainingTab:
         ...
 
     def get_training_tab(
-        self, membership_num: int, ongoing_only: bool = False
+        self, membership_number: int, ongoing_only: bool = False
     ) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
         """Returns data from Training tab for a given member.
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
             ongoing_only: Return a dataframe of role training & OGL info? Otherwise returns all data
 
         Returns:
@@ -477,9 +477,9 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        logger.debug(f"getting training tab for member number: {membership_num}")
+        logger.debug(f"getting training tab for member number: {membership_number}")
 
-        response = self._get_member_profile_tab(membership_num, "Training")
+        response = self._get_member_profile_tab(membership_number, "Training")
         tree = html.fromstring(response)
 
         rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
@@ -502,17 +502,17 @@ class PeopleScraper(InterfaceBase):
         training_ogl = _compile_ongoing_learning(training_plps, tree)
 
         if ongoing_only:
-            with validation_errors_logging(membership_num):
+            with validation_errors_logging(membership_number):
                 return schema.MemberMandatoryTraining.parse_obj(training_ogl)
 
-        with validation_errors_logging(membership_num):
+        with validation_errors_logging(membership_number):
             return schema.MemberTrainingTab.parse_obj({"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})
 
-    def get_awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
+    def get_awards_tab(self, membership_number: int) -> list[schema.MemberAward]:
         """Returns data from Awards tab for a given member.
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
 
         Returns:
             A MemberAward object with corresponding data from the awards tab.
@@ -532,19 +532,19 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        response = self._get_member_profile_tab(membership_num, "Awards")
+        response = self._get_member_profile_tab(membership_number, "Awards")
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+            raise PermissionError(f"You do not have permission to the details of {membership_number}")
 
         awards = []
         rows = tree.xpath("//table[@class='msAward']/tr")
-        with validation_errors_logging(membership_num):
+        with validation_errors_logging(membership_number):
             for row in rows:
                 award_props = row[1][0]  # Properties are stored as yet another sub-table
                 award_data = schema.MemberAward(
-                    membership_number=membership_num,
+                    membership_number=membership_number,
                     type=award_props[0][1].text_content(),
                     location=award_props[1][1].text_content() or None,
                     date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
@@ -552,11 +552,11 @@ class PeopleScraper(InterfaceBase):
                 awards.append(award_data)
         return awards
 
-    def get_disclosures_tab(self, membership_num: int) -> list[schema.MemberDisclosure]:
+    def get_disclosures_tab(self, membership_number: int) -> list[schema.MemberDisclosure]:
         """Returns data from Disclosures tab for a given member.
 
         Args:
-            membership_num: Membership Number to use
+            membership_number: Membership Number to use
 
         Returns:
             A MemberAward object with corresponding data from the disclosures
@@ -582,21 +582,21 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        response = self._get_member_profile_tab(membership_num, "Disclosures")
+        response = self._get_member_profile_tab(membership_number, "Disclosures")
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_num}")
+            raise PermissionError(f"You do not have permission to the details of {membership_number}")
 
         disclosures = []
         rows = tree.xpath("//tbody/tr")
-        with validation_errors_logging(membership_num):
+        with validation_errors_logging(membership_number):
             for row in rows:
                 # Get children (cells in row)
                 cells = list(row)
 
                 disclosure = schema.MemberDisclosure(
-                    membership_number=membership_num,
+                    membership_number=membership_number,
                     country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
                     provider=cells[1].text_content(),
                     type=cells[2].text_content(),

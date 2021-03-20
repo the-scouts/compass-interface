@@ -283,12 +283,12 @@ class MemberDetails(MemberBase):
         try:
             n = phonenumbers.parse(v, "GB")
         except phonenumbers.NumberParseException as err:
-            cn = values["membership_number"]
-            raise ValueError(f"Member No {cn}: phone number {v} is not valid!") from err
+            membership_number = values["membership_number"]
+            raise ValueError(f"Member No {membership_number}: phone number {v} is not valid!") from err
 
         if not phonenumbers.is_valid_number(n):
-            cn = values["membership_number"]
-            warnings.warn(f"Member No {cn}: phone number {v} is not valid!", RuntimeWarning)
+            membership_number = values["membership_number"]
+            warnings.warn(f"Member No {membership_number}: phone number {v} is not valid!", RuntimeWarning)
 
         fmt = phonenumbers.PhoneNumberFormat.NATIONAL if n.country_code == 44 else phonenumbers.PhoneNumberFormat.INTERNATIONAL
         return str(phonenumbers.format_number(n, fmt))

@@ -30,10 +30,10 @@ class ReportTypes(enum.IntEnum):
 class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
-        self._scraper = ReportsScraper(session._session, session.member_number, session.role_number, session._jk)
+        self._scraper = ReportsScraper(session._session, session.membership_number, session.role_number, session._jk)
         self.current_role: tuple[str, str] = session.current_role
 
-        self.member_number = session.member_number
+        self.membership_number = session.membership_number
         self.role_number = session.role_number
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
@@ -101,7 +101,7 @@ class Reports:
 
         # TODO Debug check
         time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
-        filename = f"{time_string} - {self.member_number} ({' - '.join(self.current_role)}).csv"
+        filename = f"{time_string} - {self.membership_number} ({' - '.join(self.current_role)}).csv"
 
         # start = time.time()
         # TODO TRAINING REPORT ETC.
