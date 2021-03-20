@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
+from typing import cast, get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
 
@@ -20,7 +20,8 @@ if TYPE_CHECKING:
 
 TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
 TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
-TYPES_TRAINING_OGL = dict[str, dict[Literal["completed_date", "renewal_date"], Optional[datetime.date]]]
+TYPES_TRAINING_OGL_DATES = dict[Literal["completed_date", "renewal_date"], Optional[datetime.date]]
+TYPES_TRAINING_OGL = dict[str, TYPES_TRAINING_OGL_DATES]
 
 # _get_member_profile_tab
 MEMBER_PROFILE_TAB_TYPES = Literal[
@@ -54,12 +55,12 @@ NON_VOLUNTEER_TITLES = {
 }  # TODO add PVG, TSA council, etc
 
 # get_training_tab
-mogl_map = {
+mogl_modules = {
     "SA": "safety",
     "SG": "safeguarding",
     "FA": "first_aid",
+    "gdpr": "gdpr"  #  phony entry, used for key
 }
-mogl_types = {"gdpr", *mogl_map.values()}
 
 # get_roles_detail
 renamed_levels = {
@@ -210,7 +211,7 @@ class PeopleScraper(InterfaceBase):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
-        details: dict[str, Union[None, int, str, datetime.date, _AddressData]] = dict()
+        details: dict[str, Union[None, int, str, datetime.date, _AddressData,  dict[str, str]]] = dict()
 
         # ### Extractors
         # ## Core:
@@ -223,8 +224,8 @@ class PeopleScraper(InterfaceBase):
         # XP:   /html/body/form/div[5]/div[1]/div[2]/div[2]/div/div
         # CSS:  html body form div div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
         div_profile_tbl = tree[1][0][5][0][1][2][0][0]
-        personal_details = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
-        contact_details = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
+        personal_details: dict[str, str] = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
+        contact_details: dict[str, str] = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
 
         # ## Core - Positional:
         details["name"] = personal_details["Name:"]  # Full Name
@@ -236,26 +237,26 @@ class PeopleScraper(InterfaceBase):
         details["sex"] = personal_details["Gender:"]
 
         # ## Additional - Position Varies, visible for most roles:
-        details["address"] = _process_address(contact_details.get("Address"))
+        details["address"] = _process_address(contact_details.get("Address", ""))
         details["main_phone"] = contact_details.get("Phone")
         details["main_email"] = contact_details.get("Email")
 
         # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
-        details["birth_date"] = parse(personal_details.get("Date of Birth:"))
-        details["nationality"] = personal_details.get("Nationality:").strip()
-        details["ethnicity"] = personal_details.get("Ethnicity:").strip()
-        details["religion"] = personal_details.get("Religion/Faith:").strip()
-        details["occupation"] = personal_details.get("Occupation:").strip()
+        details["birth_date"] = parse(personal_details.get("Date of Birth:", ""))
+        details["nationality"] = personal_details.get("Nationality:", "").strip()
+        details["ethnicity"] = personal_details.get("Ethnicity:", "").strip()
+        details["religion"] = personal_details.get("Religion/Faith:", "").strip()
+        details["occupation"] = personal_details.get("Occupation:", "").strip()
 
         # ## Other Sections
-        details["disabilities"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[9][2])
-        details["qualifications"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[13][2])
-        details["hobbies"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[17][2])
+        details["disabilities"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[9][2])  # type: ignore[misc]
+        details["qualifications"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[13][2])  # type: ignore[misc]
+        details["hobbies"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[17][2])  # type: ignore[misc]
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
         with validation_errors_logging(membership_num):
-            return schema.MemberDetails(**details)
+            return schema.MemberDetails(**details)  # type: ignore[arg-type]
 
     def get_roles_tab(
         self,
@@ -344,9 +345,9 @@ class PeopleScraper(InterfaceBase):
                 # location_id only visible if role is in hierarchy AND location still exists
                 location_id=cells[2][0].get("data-ng_id"),
                 location_name=cells[2].text_content().strip(),
-                role_start=parse(cells[3].text_content().strip()),
+                role_start=parse(cells[3].text_content().strip()),  # type: ignore[arg-type]
                 role_end=parse(cells[4].text_content().strip()),
-                role_status=role_status,  # type: ignore[arg-type]  # literal validation is done by Pydantic
+                role_status=role_status,
                 review_date=review_date,
                 can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
             )
@@ -494,10 +495,10 @@ class PeopleScraper(InterfaceBase):
 
         if ongoing_only:
             with validation_errors_logging(membership_num):
-                return schema.MemberMandatoryTraining(**training_ogl)
+                return schema.MemberMandatoryTraining(**training_ogl)  # type: ignore[arg-type]
 
         with validation_errors_logging(membership_num):
-            return schema.MemberTrainingTab(**{"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})
+            return schema.MemberTrainingTab(**{"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})  # type: ignore[arg-type]
 
     def get_awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
         """Returns data from Awards tab for a given member.
@@ -538,7 +539,7 @@ class PeopleScraper(InterfaceBase):
                     membership_number=membership_num,
                     type=award_props[0][1].text_content(),
                     location=award_props[1][1].text_content() or None,
-                    date=parse(award_props[2][1].text_content() or ""),
+                    date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
                 )
                 awards.append(award_data)
         return awards
@@ -703,7 +704,7 @@ class PeopleScraper(InterfaceBase):
         # TODO data-ng_id?, data-rtrn_id?
         with validation_errors_logging(role_number, name="Role Number"):
             return schema.MemberRolePopup(
-                **{
+                **{  # type: ignore[arg-type]
                     "hierarchy": dict(_process_hierarchy(inputs)),
                     "details": role_details,
                     "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
@@ -735,13 +736,10 @@ def _process_address(address: str) -> _AddressData:
 
 def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
     if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
-        role_status = "Full"
+        role_status: schema.TYPES_ROLE_STATUS = "Full"
         review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
-    else:
-        role_status = review_status
-        review_date = None
-        assert isinstance(role_status, schema.TYPES_ROLE_STATUS)  # nosec (B101, here we assert for the type checker)
-    return role_status, review_date
+        return role_status, review_date
+    return cast(schema.TYPES_ROLE_STATUS, review_status), None
 
 
 def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
@@ -809,22 +807,30 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
     """
     # Handle GDPR (Get latest GDPR date)
-    gdpr_dates = [mod["validated_date"] for plp in training_plps.values() for mod in plp if mod["code"] == "GDPR"]
-    training_ogl = {"gdpr": dict(completed_date=next(reversed(sorted(date for date in gdpr_dates if date is not None)), None))}
+    training_ogl: TYPES_TRAINING_OGL = dict()
+    gdpr_generator: Iterator[datetime.date] = (
+        module["validated_date"]
+        for plp
+        in training_plps.values()
+        for module
+        in plp
+        if module["code"] == "GDPR" and isinstance(module["validated_date"], datetime.date)
+    )
+    training_ogl["gdpr"] = dict(completed_date=next(reversed(sorted(gdpr_generator)), None))
 
     # Get main OGL - safety, safeguarding, first aid
     for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
         cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
 
-        training_ogl[mogl_map[ongoing_learning.get("data-ng_code")]] = dict(
+        training_ogl[mogl_modules[ongoing_learning.get("data-ng_code")]] = dict(
             completed_date=parse(cell_text.get("tdLastComplete")),  # type: ignore[arg-type]
             renewal_date=parse(cell_text.get("tdRenewal")),  # type: ignore[arg-type]
         )
         # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
     # Update training_ogl with missing mandatory ongoing learning types
-    return {mogl_type: training_ogl.get(mogl_type, dict()) for mogl_type in mogl_types}
-
+    blank_module = cast(TYPES_TRAINING_OGL_DATES, dict(completed_date=None, renewal_date=None))
+    return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules}
 
 def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
     """Parses a personal learning plan from a LXML row element containing data."""
@@ -838,7 +844,7 @@ def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -
         child_nodes = list(module_row)
         module_data["pk"] = int(module_row.get("data-pk"))
         module_data["module_id"] = int(child_nodes[0].get("id")[4:])
-        matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()
+        matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()  # type: ignore[union-attr]
         if matches:
             code = str(matches[0])
             module_data["code"] = code
@@ -923,13 +929,11 @@ def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Option
 
 
 def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Optional[datetime.date]]:
+    """Return tuple of disclosure check status, disclosure date."""
     if disclosure_status.startswith("Disclosure Issued : "):
-        disclosure_check = "Disclosure Issued"
-        disclosure_date = parse(disclosure_status.removeprefix("Disclosure Issued : "))
+        return "Disclosure Issued", parse(disclosure_status.removeprefix("Disclosure Issued : "))
     else:
-        disclosure_check = disclosure_status or None
-        disclosure_date = None
-    return disclosure_check, disclosure_date
+        return disclosure_status or None, None
 
 
 def _process_hierarchy(inputs: html.InputGetter) -> Iterator[tuple[str, str]]:

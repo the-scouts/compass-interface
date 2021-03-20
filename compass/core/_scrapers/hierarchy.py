@@ -82,7 +82,7 @@ class HierarchyScraper(InterfaceBase):
 
         # Handle unauthorised access TODO raise???
         if result_json == {"Message": "Authorization has been denied for this request."}:
-            return list()
+            return list()  # type: ignore[return-value]
 
         result_units = []
         for unit_dict in result_json:

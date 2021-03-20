@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Literal, Optional, TYPE_CHECKING, Union
+from typing import Any, cast, Literal, Optional, TYPE_CHECKING, Union
 import urllib.parse
 
 from lxml import html
@@ -23,7 +23,21 @@ TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", 
 TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
 TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
-
+TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_UNIT_LEVELS]
+level_map: TYPES_LEVEL_MAP = cast(TYPES_LEVEL_MAP, {
+    "ORG": "Organisation",
+    # "ORST": "Organisation Sections",
+    "CNTR": "Country",
+    # "CNST": "Country Sections",
+    "REG": "Region",
+    # "RGST": "Regional Sections",
+    "CNTY": "County",  # Also Area/Scot Reg/Branch
+    # "CTST": "County Sections",  # Also Area/Scot Reg/Branch
+    "DIST": "District",
+    # "DTST": "District Sections",
+    "SGRP": "Group",
+    # "SGST": "Group Sections",
+})
 
 def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
     """Log in to compass, return a compass.logon.Logon object.
@@ -72,21 +86,25 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         # self._sto_thread.start()
 
         self._asp_net_id: str = session.cookies["ASP.NET_SessionId"]
-        self._session_id: str = self.compass_props.master.sys.session_id
+        self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
 
         # For session timeout logic
-        self._session = session
+        self._session: requests.Session = session
 
         # Set these last, treat as immutable after we leave init. Role can
         # theoretically change, but this is not supported behaviour.
-        self.member_number = self.compass_props.master.user.cn  # Contact Number
-        self.role_number = self.compass_props.master.user.mrn  # Member Role Number
-        self._jk = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512
+
+        # Contact Number
+        self.member_number: int = self.compass_props.master.user.cn  # type: ignore[assignment]
+        # Member Role Number
+        self.role_number: int = self.compass_props.master.user.mrn  # type: ignore[assignment]
+        # ???? Key?  # Join Key??? SHA2-512
+        self._jk: str = self.compass_props.master.user.jk  # type: ignore[assignment]
 
     @classmethod
     def from_logon(
         cls: type[Logon],
-        credentials: tuple[str, str] = None,
+        credentials: tuple[str, str],
         role_to_use: Optional[str] = None,
         role_location: Optional[str] = None,
     ) -> Logon:
@@ -119,7 +137,8 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             session=session,
             compass_props=props,
             roles_dict=roles,
-            current_role=roles[props.master.user.mrn],  # Set explicitly as work done in worker
+            # Set current_role explicitly as work done in worker
+            current_role=roles[props.master.user.mrn],  # type: ignore[index]
         )
 
         if role_to_use is not None:
@@ -150,7 +169,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         """
         session: requests.Session = utility.CountingSession()
-        session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
+        session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
 
         logon = cls(
             session=session,
@@ -168,23 +187,10 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
-        unit_number = self.compass_props.master.user.on  # Organisation Number
-        unit_level = self.compass_props.master.user.lvl  # Level
-        level_map = {
-            "ORG": "Organisation",
-            # "ORST": "Organisation Sections",
-            "CNTR": "Country",
-            # "CNST": "Country Sections",
-            "REG": "Region",
-            # "RGST": "Regional Sections",
-            "CNTY": "County",  # Also Area/Scot Reg/Branch
-            # "CTST": "County Sections",  # Also Area/Scot Reg/Branch
-            "DIST": "District",
-            # "DTST": "District Sections",
-            "SGRP": "Group",
-            # "SGST": "Group Sections",
-        }
-
+        # Organisation Number
+        unit_number: int = self.compass_props.master.user.on  # type: ignore[assignment]
+        # Level
+        unit_level: schema.TYPES_ORG_LEVELS = self.compass_props.master.user.lvl  # type: ignore[assignment]
         return schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
 
     def _extend_session_timeout(self, sto: TYPES_STO = "0") -> requests.Response:
@@ -295,9 +301,9 @@ class LogonCore(InterfaceBase):
         compass_props = self._create_compass_props(form)  # Updates MRN property etc.
         roles_dict = dict(self._roles_iterator(form))
 
-        member_number = compass_props.master.user.cn
-        role_number = compass_props.master.user.mrn
-        session_id = compass_props.master.sys.session_id
+        member_number: int = compass_props.master.user.cn  # type: ignore[assignment]
+        role_number: int = compass_props.master.user.mrn  # type: ignore[assignment]
+        session_id: str = compass_props.master.sys.session_id  # type: ignore[assignment]
 
         # Set auth headers for new role
         _update_auth_headers(self.s, member_number, role_number, session_id)
