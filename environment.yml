@@ -15,7 +15,7 @@ dependencies:
   # Type validation
   - pydantic
   - email-validator
-  - phonenumbers  # phonenumberslite?
+#  - phonenumberslite  # not on conda (2021-03-20)
 
   # Testing
   - pytest
@@ -31,12 +31,11 @@ dependencies:
   - isort>=5
   - pre-commit
 
-  # Pins
-  - virtualenv==20.0.33  # Solve regression, see
-      # https://github.com/ContinuumIO/anaconda-issues/issues/12094
-      # https://github.com/pypa/virtualenv/issues/1986
-      # https://github.com/pre-commit/pre-commit/issues/1675
+  # Build
+  - build  # PyPA build package (not on conda 04/01/21)
 
   - pip:
-    # Build
-    - build  # PyPA build package (not on conda 04/01/21)
+    # Type validation
+    - phonenumberslite
+
+
