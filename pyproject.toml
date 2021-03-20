@@ -34,7 +34,6 @@ jobs=0  # auto-detect the number of processors to use
 disable = [
    "fixme",
    "import-error",  # pylint does not (2021-03-20) support namespace packages
-   "no-else-return",  # Probably bad style but this is cluttering the report
    "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
    # pycodestyle duplication

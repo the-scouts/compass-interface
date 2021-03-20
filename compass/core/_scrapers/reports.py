@@ -51,11 +51,10 @@ class ReportsScraper(InterfaceBase):
         report_token_uri = str(response.json().get("d"))
         if report_token_uri not in {"-1", "-2", "-3", "-4"}:
             return report_token_uri
-        elif report_token_uri in {"-2", "-3"}:
+        if report_token_uri in {"-2", "-3"}:
             raise CompassReportError("Report aborted: Report No Longer Available")
-        elif report_token_uri == "-4":  # nosec (false positive B105; not a hardcoded passwordstring)
+        if report_token_uri == "-4":  # nosec (false positive B105; not a hardcoded passwordstring)
             raise CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
-
         raise CompassReportError("Report aborted")
 
     @staticmethod
