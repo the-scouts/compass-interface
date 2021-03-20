@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     import requests
 
 
-class InterfaceBase:
+class InterfaceBase:  # pylint: disable=too-few-public-methods
     """Base class for interacting with the Compass server."""
 
     def __init__(self, session: requests.Session):
