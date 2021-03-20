@@ -35,7 +35,7 @@ jobs:
           # type checking
           - tool: "mypy"
             command: "mypy --namespace-packages -p compass"
-            deps: "mypy"
+            deps: "-r ci/requirements-run.txt mypy"
     name: lint using ${{ matrix.tool }}
     steps:
       - uses: actions/checkout@v2
