@@ -2,4 +2,4 @@
 
 # skip checking usages of assertions in test files
 assert_used:
-  skips: ['*_test.py', 'test_*.py']
+  skips: ['*/*_test.py', '*/test_*.py']
