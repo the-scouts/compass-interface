@@ -248,13 +248,21 @@ class PeopleScraper(InterfaceBase):
         details["religion"] = personal_details.get("Religion/Faith:", "").strip()
         details["occupation"] = personal_details.get("Occupation:", "").strip()
 
-        # ## Other Sections
-        details["disabilities"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[9][2])  # type: ignore[misc]
-        details["qualifications"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[13][2])  # type: ignore[misc]
-        details["hobbies"] = dict((*row[0][0].text.split(" - ", 1), "")[:2] for row in div_profile_tbl[17][2])  # type: ignore[misc]
+        # ## Other Sections (note double looping but hopefully not large impact)
+        details["disabilities"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[9][2])}
+        details["qualifications"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[13][2])}
+        details["hobbies"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[17][2])}
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
+
+        # Filter out no-info sections. After the filter as empty here means we found the section, but it was empty
+        for additional in ("disabilities", "qualifications", "hobbies"):
+            if additional in details:
+                add_sect: dict[str, str] = details[additional]  # type: ignore[assignment]
+                if f"No {additional.title()} Entered" in add_sect:
+                    details[additional] = {}
+
         with validation_errors_logging(membership_num):
             return schema.MemberDetails(**details)  # type: ignore[arg-type]
 

@@ -86,7 +86,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         self.roles_dict: TYPES_ROLES_DICT = roles_dict or {}
         self.current_role: TYPES_ROLE = current_role or ("", "")
 
-        self._sto_thread = utility.PeriodicTimer(150, self._extend_session_timeout)
+        # self._sto_thread = utility.PeriodicTimer(150, self._extend_session_timeout)
         # self._sto_thread.start()
 
         self._asp_net_id: str = session.cookies["ASP.NET_SessionId"]
