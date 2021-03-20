@@ -10,6 +10,7 @@ from pydantic.json import pydantic_encoder
 
 from compass.core import utility
 from compass.core._scrapers.hierarchy import HierarchyScraper
+from compass.core._scrapers.hierarchy import TYPES_ENDPOINT_LEVELS
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
@@ -185,7 +186,8 @@ class Hierarchy:
                 grandchildren = self._get_descendants_recursive(child.unit_id, hier_num=child_level)
                 children_updated.append(child.dict() | grandchildren)
             descendant_data["child"] = children_updated
-        descendant_data["sections"] = self._scraper.get_units_from_hierarchy(unit_id, UnitSections(level_numeric).name)  # type: ignore[arg-type]
+        section_level: TYPES_ENDPOINT_LEVELS = UnitSections(level_numeric).name  # type: ignore[assignment]
+        descendant_data["sections"] = self._scraper.get_units_from_hierarchy(unit_id, section_level)
 
         return descendant_data
 
