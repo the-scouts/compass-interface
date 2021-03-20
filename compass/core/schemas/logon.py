@@ -10,7 +10,7 @@ TYPES_ORG_LEVELS = Literal["ORG", "ORST", "CNTR", "CNST", "REG", "RGST", "CNTY",
 
 
 class CompassPropsBase(pydantic.BaseModel):
-    class Config:  # pylint: disable=too-few-public-methods
+    class Config:  # pylint: disable=too-few-public-methods  # noqa: D106 (missing docstring)
         allow_population_by_field_name = True
         extra = "allow"
 

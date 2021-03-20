@@ -171,8 +171,9 @@ class Hierarchy:
 
         return descendant_data
 
+    # Google hanging indent not yet (2021-03-20) in pydocstyle - https://github.com/PyCQA/pydocstyle/issues/449
     @staticmethod
-    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[dict[str, Union[int, str]]]:  # noqa: D417
+    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[dict[str, Union[int, str]]]:  # noqa: D417 (hanging indent)
         """Flattens a hierarchy tree / graph to a flat sequence of mappings.
 
         Args:
