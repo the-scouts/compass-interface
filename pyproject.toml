@@ -26,7 +26,7 @@ testpaths = [
 ]
 
 # pylint configuration
-[tool.pylint."MASTER"]
+[tool.pylint.MASTER]
 persistent="n"  # pylint runs on CI, so no point saving
 jobs=0  # auto-detect the number of processors to use
 
@@ -54,17 +54,10 @@ disable = [
    "wrong-import-order",
 ]
 
-[tool.pylint."DESIGN"]
-max-parents=7
-max-attributes=7
-max-locals=15
-max-returns=6
-max-branches=15
+[tool.pylint.DESIGN]
+max-branches=15  # redundant as we disable the `too-many-branches` check
 max-statements=60
 min-public-methods=1
-max-public-methods=20
-max-line-length=132
 
-[tool.pylint."FORMAT"]
-max-module-lines=1000
+[tool.pylint.FORMAT]
 max-line-length=132
