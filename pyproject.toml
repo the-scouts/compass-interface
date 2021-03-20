@@ -26,9 +26,11 @@ testpaths = [
 ]
 
 # pylint configuration
-[tool.pylint.MASTER]
-persistent="n"  # pylint runs on CI, so no point saving
-jobs=0  # auto-detect the number of processors to use
+[tool.pylint]
+MASTER.persistent="n"  # pylint runs on CI, so no point saving
+MASTER.jobs=0  # auto-detect the number of processors to use
+DESIGN.max-statements=60
+FORMAT.max-line-length=132
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
@@ -64,9 +66,3 @@ disable = [
    # isort duplication
    "wrong-import-order",
 ]
-
-[tool.pylint.DESIGN]
-max-statements=60
-
-[tool.pylint.FORMAT]
-max-line-length=132
