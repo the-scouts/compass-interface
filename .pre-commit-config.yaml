@@ -1,7 +1,7 @@
 repos:
     # Enforce code style
   - repo: https://github.com/psf/black
-    rev: stable
+    rev: 20.8b1
     hooks:
       - id: black
         name: Enforce code style (Black)
@@ -24,6 +24,6 @@ repos:
 
     # Consistent setup.cfg formatting
   - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: stable
+    rev: v1.17.0
     hooks:
       - id: setup-cfg-fmt
