@@ -1,4 +1,5 @@
 # bandit configuration
-skips: [
-    'B101', # Used assertion
-]
+
+# skip checking usages of assertions in test files
+assert_used:
+  skips: ['*_test.py', 'test_*.py']
