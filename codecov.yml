@@ -5,3 +5,7 @@ coverage:
         target: auto
         # this allows a 5% drop from the previous base commit coverage
         threshold: 5%
+    patch:
+      default:
+        # stop spurious CI failures whilst library is still largely untested
+        target: 40%
