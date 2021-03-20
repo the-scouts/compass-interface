@@ -33,7 +33,7 @@ jobs:
           - tool: "vulture"
             command: "python -m vulture ."
             deps: "vulture"
-
+    name: lint using ${{ matrix.tool }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
