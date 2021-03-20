@@ -22,8 +22,8 @@ repos:
       - id: isort
         name: Enforce import ordering (isort)
 
-#    # Consistent setup.cfg formatting
-#  - repo: https://github.com/asottile/setup-cfg-fmt
-#    rev: stable
-#    hooks:
-#      - id: setup-cfg-fmt
+    # Consistent setup.cfg formatting
+  - repo: https://github.com/asottile/setup-cfg-fmt
+    rev: stable
+    hooks:
+      - id: setup-cfg-fmt
