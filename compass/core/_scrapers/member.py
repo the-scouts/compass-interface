@@ -59,7 +59,7 @@ mogl_modules = {
     "SA": "safety",
     "SG": "safeguarding",
     "FA": "first_aid",
-    "gdpr": "gdpr"  #  phony entry, used for key
+    "gdpr": "gdpr",  # phony entry, used for key
 }
 
 # get_roles_detail
@@ -211,7 +211,7 @@ class PeopleScraper(InterfaceBase):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise PermissionError(f"You do not have permission to the details of {membership_num}")
 
-        details: dict[str, Union[None, int, str, datetime.date, _AddressData,  dict[str, str]]] = dict()
+        details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
 
         # ### Extractors
         # ## Core:
@@ -810,10 +810,8 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
     training_ogl: TYPES_TRAINING_OGL = dict()
     gdpr_generator: Iterator[datetime.date] = (
         module["validated_date"]
-        for plp
-        in training_plps.values()
-        for module
-        in plp
+        for plp in training_plps.values()
+        for module in plp
         if module["code"] == "GDPR" and isinstance(module["validated_date"], datetime.date)
     )
     training_ogl["gdpr"] = dict(completed_date=next(reversed(sorted(gdpr_generator)), None))
@@ -831,6 +829,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
     # Update training_ogl with missing mandatory ongoing learning types
     blank_module = cast(TYPES_TRAINING_OGL_DATES, dict(completed_date=None, renewal_date=None))
     return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules}
+
 
 def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
     """Parses a personal learning plan from a LXML row element containing data."""
@@ -932,8 +931,7 @@ def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Opt
     """Return tuple of disclosure check status, disclosure date."""
     if disclosure_status.startswith("Disclosure Issued : "):
         return "Disclosure Issued", parse(disclosure_status.removeprefix("Disclosure Issued : "))
-    else:
-        return disclosure_status or None, None
+    return disclosure_status or None, None
 
 
 def _process_hierarchy(inputs: html.InputGetter) -> Iterator[tuple[str, str]]:
