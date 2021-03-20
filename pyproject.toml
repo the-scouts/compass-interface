@@ -32,61 +32,10 @@ jobs=0  # auto-detect the number of processors to use
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [
-   "no-member",
-   "no-name-in-module",
    "fixme",
-   "bad-continuation",
-   "trailing-whitespace",
-   "missing-final-newline",
    "too-few-public-methods",
-   "too-many-public-methods",
-   "deprecated-lambda",
-   "bad-builtin",
-   "star-args",
-   "global-statement",
-   "assignment-from-none",
-   "unused-format-string-key",
-   "W5103",
-   "invalid-name",
-   "bad-classmethod-argument",
-   "bad-mcs-method-argument",
-   "bad-mcs-classmethod-argument",
-   "too-many-lines",
-   "multiple-statements",
-   "C0322",
-   "C0323",
-   "C0324",
-   "superfluous-parens",
-   "bad-whitespace",
-   "bad-continuation",
-   "no-self-argument",
-   "E1103",
-   "I0014",
-   "no-self-use",
-   "too-many-ancestors",
    "too-many-instance-attributes",
-   "too-many-return-statements",
-   "abstract-class-little-used",
-   "exec-used",
-   "attribute-defined-outside-init",
-   "abstract-method",
-   "super-init-not-called",
-   "no-init",
-   "unnecessary-semicolon",
-   "wildcard-import",
-   "relative-import",
-   "global-variable-undefined",
-   "redefined-outer-name",
-   "W0701",
-   "broad-except",
-   "pointless-except",
-   "W0713",
-   "property-on-old-class",
-   "anomalous-backslash-in-string",
-   "wrong-import-order",
-   "ungrouped-imports",
-    # CI config:
-   "import-error",  # TODO: something going wrong as complaining can't import dependencies
+   "import-error",  # pylint does not (2021-03-20) support namespace packages
    "no-else-return",  # Probably bad style but this is cluttering the report
    "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
@@ -96,6 +45,13 @@ disable = [
    "missing-module-docstring",
    "missing-class-docstring",
    "missing-function-docstring",
+   # pep8-naming duplication
+   "invalid-name",
+   "bad-classmethod-argument",
+   "bad-mcs-classmethod-argument",
+   "no-self-argument",
+   # isort duplication
+   "wrong-import-order",
 ]
 
 [tool.pylint."DESIGN"]
