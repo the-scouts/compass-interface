@@ -26,12 +26,16 @@ jobs:
             deps: "pydocstyle"
           # Common security issues
           - tool: "bandit"
-            command: "python -m bandit -c bandit.yml -r ."
+            command: "python -m bandit -c ci/bandit.yml -r ."
             deps: "bandit"
           # packaging (CheeseShop) compliance
           - tool: "pyroma"
             command: "pyroma ."
             deps: "pyroma"
+#          # type checking
+#          - tool: "mypy"
+#            command: "mypy --namespace-packages -p compass"
+#            deps: "mypy"
     name: lint using ${{ matrix.tool }}
     steps:
       - uses: actions/checkout@v2
