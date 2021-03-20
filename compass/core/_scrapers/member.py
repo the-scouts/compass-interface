@@ -264,7 +264,7 @@ class PeopleScraper(InterfaceBase):
                     details[additional] = {}
 
         with validation_errors_logging(membership_num):
-            return schema.MemberDetails(**details)  # type: ignore[arg-type]
+            return schema.MemberDetails.parse_obj(details)
 
     def get_roles_tab(
         self,
@@ -503,10 +503,10 @@ class PeopleScraper(InterfaceBase):
 
         if ongoing_only:
             with validation_errors_logging(membership_num):
-                return schema.MemberMandatoryTraining(**training_ogl)  # type: ignore[arg-type]
+                return schema.MemberMandatoryTraining.parse_obj(training_ogl)
 
         with validation_errors_logging(membership_num):
-            return schema.MemberTrainingTab(**{"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})  # type: ignore[arg-type]
+            return schema.MemberTrainingTab.parse_obj({"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})
 
     def get_awards_tab(self, membership_num: int) -> list[schema.MemberAward]:
         """Returns data from Awards tab for a given member.
@@ -711,8 +711,8 @@ class PeopleScraper(InterfaceBase):
         )
         # TODO data-ng_id?, data-rtrn_id?
         with validation_errors_logging(role_number, name="Role Number"):
-            return schema.MemberRolePopup(
-                **{  # type: ignore[arg-type]
+            return schema.MemberRolePopup.parse_obj(
+                {
                     "hierarchy": dict(_process_hierarchy(inputs)),
                     "details": role_details,
                     "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
@@ -829,8 +829,8 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
         cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
 
         training_ogl[mogl_modules[ongoing_learning.get("data-ng_code")]] = dict(
-            completed_date=parse(cell_text.get("tdLastComplete")),  # type: ignore[arg-type]
-            renewal_date=parse(cell_text.get("tdRenewal")),  # type: ignore[arg-type]
+            completed_date=parse(cell_text.get("tdLastComplete", "")),
+            renewal_date=parse(cell_text.get("tdRenewal", "")),
         )
         # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
 
