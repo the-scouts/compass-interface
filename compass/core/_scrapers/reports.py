@@ -21,14 +21,14 @@ if TYPE_CHECKING:
 
 
 class ReportsScraper(InterfaceBase):
-    def __init__(self, session: requests.Session, member_number: int, role_number: int, jk: str):
+    def __init__(self, session: requests.Session, membership_number: int, role_number: int, jk: str):
         """Constructor for ReportsScraper.
 
         takes an initialised Session object from Logon
         """
         super().__init__(session)
 
-        self._member_number = member_number
+        self._membership_number = membership_number
         self._role_number = role_number
         self._jk = jk
 
@@ -39,7 +39,7 @@ class ReportsScraper(InterfaceBase):
         }
         logger.debug("Getting report token")
         response = utility.auth_header_get(
-            self._member_number,
+            self._membership_number,
             self._role_number,
             self._jk,
             self.s,

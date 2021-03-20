@@ -99,7 +99,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         # theoretically change, but this is not supported behaviour.
 
         # Contact Number
-        self.member_number: int = self.compass_props.master.user.cn  # type: ignore[assignment]
+        self.membership_number: int = self.compass_props.master.user.cn  # type: ignore[assignment]
         # Member Role Number
         self.role_number: int = self.compass_props.master.user.mrn  # type: ignore[assignment]
         # ???? Key?  # Join Key??? SHA2-512
@@ -181,13 +181,13 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             current_role=current_role,
         )
 
-        _update_auth_headers(session, logon.member_number, logon.role_number, logon._session_id)  # pylint: disable=protected-access
+        _update_auth_headers(session, logon.membership_number, logon.role_number, logon._session_id)  # pylint: disable=protected-access
 
         return logon
 
     def __repr__(self) -> str:
         """String representation of the Logon class."""
-        return f"{self.__class__} Compass ID: {self.member_number} ({' - '.join(self.current_role)})"
+        return f"{self.__class__} Compass ID: {self.membership_number} ({' - '.join(self.current_role)})"
 
     @property
     def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
@@ -202,7 +202,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
         return utility.auth_header_get(
-            self.member_number,
+            self.membership_number,
             self.role_number,
             self._jk,
             self._session,
@@ -305,12 +305,12 @@ class LogonCore(InterfaceBase):
         compass_props = self._create_compass_props(form)  # Updates MRN property etc.
         roles_dict = dict(self._roles_iterator(form))
 
-        member_number: int = compass_props.master.user.cn  # type: ignore[assignment]
+        membership_number: int = compass_props.master.user.cn  # type: ignore[assignment]
         role_number: int = compass_props.master.user.mrn  # type: ignore[assignment]
         session_id: str = compass_props.master.sys.session_id  # type: ignore[assignment]
 
         # Set auth headers for new role
-        _update_auth_headers(self.s, member_number, role_number, session_id)
+        _update_auth_headers(self.s, membership_number, role_number, session_id)
 
         # Update current role properties
         current_role_title, current_role_location = roles_dict[role_number]
