@@ -1,0 +1,7 @@
+# core
+requests
+lxml
+# core-typing
+pydantic
+email-validator
+phonenumberslite

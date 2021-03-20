@@ -1,10 +1,4 @@
-# core
-requests
-lxml
-# core-typing
-pydantic
-email-validator
-phonenumberslite
+-r requirements-run.txt
 
 # testing
 pytest
