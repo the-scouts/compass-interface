@@ -24,20 +24,24 @@ TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
 TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
 TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_UNIT_LEVELS]
-level_map: TYPES_LEVEL_MAP = cast(TYPES_LEVEL_MAP, {
-    "ORG": "Organisation",
-    # "ORST": "Organisation Sections",
-    "CNTR": "Country",
-    # "CNST": "Country Sections",
-    "REG": "Region",
-    # "RGST": "Regional Sections",
-    "CNTY": "County",  # Also Area/Scot Reg/Branch
-    # "CTST": "County Sections",  # Also Area/Scot Reg/Branch
-    "DIST": "District",
-    # "DTST": "District Sections",
-    "SGRP": "Group",
-    # "SGST": "Group Sections",
-})
+level_map: TYPES_LEVEL_MAP = cast(
+    TYPES_LEVEL_MAP,
+    {
+        "ORG": "Organisation",
+        # "ORST": "Organisation Sections",
+        "CNTR": "Country",
+        # "CNST": "Country Sections",
+        "REG": "Region",
+        # "RGST": "Regional Sections",
+        "CNTY": "County",  # Also Area/Scot Reg/Branch
+        # "CTST": "County Sections",  # Also Area/Scot Reg/Branch
+        "DIST": "District",
+        # "DTST": "District Sections",
+        "SGRP": "Group",
+        # "SGST": "Group Sections",
+    },
+)
+
 
 def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
     """Log in to compass, return a compass.logon.Logon object.

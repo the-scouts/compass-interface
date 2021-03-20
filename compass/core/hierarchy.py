@@ -4,7 +4,7 @@ import contextlib
 import enum
 import json
 from pathlib import Path
-from typing import Iterable, Literal, Optional, TypedDict, TYPE_CHECKING, Union, cast
+from typing import cast, Iterable, Literal, Optional, TYPE_CHECKING, TypedDict, Union
 
 from pydantic.json import pydantic_encoder
 
@@ -34,7 +34,7 @@ class HierarchyState(TypedDict, total=False):
     District_ID: int
     District_name: Optional[str]
     Group_ID: int
-    Group_name: Optional[str]    
+    Group_name: Optional[str]
 
 
 class Levels(enum.IntEnum):
@@ -264,7 +264,7 @@ class Hierarchy:
 
         with contextlib.suppress(FileNotFoundError):
             # Attempt to see if the members dict has been fetched already and is on the local system
-            json_members: list[dict[str, list[dict[str,  Union[None, int, str]]]]] = json.loads(filename.read_text(encoding="UTF8"))
+            json_members: list[dict[str, list[dict[str, Union[None, int, str]]]]] = json.loads(filename.read_text(encoding="UTF8"))
             if isinstance(json_members, list):
                 return [schema.HierarchyUnitMembers(**unit_members) for unit_members in json_members]  # type: ignore[arg-type]
 
