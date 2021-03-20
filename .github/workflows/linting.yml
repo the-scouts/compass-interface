@@ -14,7 +14,7 @@ jobs:
         tool:
           - flake8  # (pyflakes, pycodestyle, mccabe) + pep8-naming
 #          - pylint  # source linting
-#          - pydocstyle  # PEP 257 compliance
+          - pydocstyle  # PEP 257 compliance
 #          - bandit
 #          - pyroma
           - vulture
