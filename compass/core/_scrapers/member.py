@@ -914,11 +914,11 @@ def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Option
     line_manager_el = next((op for op in line_manager_list if op.get("selected")), None)
     if line_manager_el is None:
         return None, None
-    else:
-        number = maybe_int(line_manager_el.get("value"))
-        name = line_manager_el.text.strip()
-        if name in unset_vals:
-            name = None
+
+    number = maybe_int(line_manager_el.get("value"))
+    name = line_manager_el.text.strip()
+    if name in unset_vals:
+        return number, None
     return number, name
 
 

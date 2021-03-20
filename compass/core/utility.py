@@ -46,11 +46,10 @@ def maybe_int(value: Any) -> Optional[int]:
 def parse(date_time_str: str) -> Optional[datetime.date]:
     if not date_time_str:
         return None
-    else:
-        try:
-            return datetime.datetime.strptime(date_time_str, "%d %B %Y").date()  # e.g. 01 January 2000
-        except ValueError:
-            return datetime.datetime.strptime(date_time_str, "%d %b %Y").date()  # e.g. 01 Jan 2000
+    try:
+        return datetime.datetime.strptime(date_time_str, "%d %B %Y").date()  # e.g. 01 January 2000
+    except ValueError:
+        return datetime.datetime.strptime(date_time_str, "%d %b %Y").date()  # e.g. 01 Jan 2000
 
 
 @contextlib.contextmanager
