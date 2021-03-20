@@ -135,7 +135,7 @@ class ReportsScraper(InterfaceBase):
     def report_keep_alive(self, report_page: str) -> str:
         logger.info(f"Extending Report Session {datetime.datetime.now()}")
         keep_alive = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1).encode().decode("unicode-escape")
-        _response = self.s.post(f"{Settings.base_url}{keep_alive}")
+        response = self.s.post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841 (unused variable)
 
         return keep_alive  # response
 
