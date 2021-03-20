@@ -11,17 +11,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        args: ["."]
         tool:
 #          - flake8  # (pyflakes, pycodestyle, mccabe) + pep8-naming
-          - pylint  # source linting
+#          - pylint  # source linting
 #          - pydocstyle  # PEP 257 compliance
 #          - bandit
-          - pyroma
+#          - pyroma
           - vulture
+        args: ["."]
+        invocation: ["python -m"]
         include:
-          - tool: "pylint"
+          - tool: "pylint"  # source linting
             args: "compass"
+            invocation: "python -m"
+          - tool: "pyroma"  # dead code
+            args: "."
+            invocation: ""
 
     steps:
       - uses: actions/checkout@v2
@@ -36,4 +41,4 @@ jobs:
           pip install flake8 pep8-naming pylint pydocstyle bandit pyroma vulture
 
       - name: Run ${{ matrix.tool }}
-        run:  python -m ${{ matrix.tool }} ${{ matrix.args }}
+        run:  ${{ matrix.invocation }} ${{ matrix.tool }} ${{ matrix.args }}
