@@ -1,5 +1,5 @@
 # core, testing
--r requirements-test.txt
+-r ci/requirements-test.txt
 
 # dev
 ipython
