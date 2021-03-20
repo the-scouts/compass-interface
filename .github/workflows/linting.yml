@@ -29,10 +29,6 @@ jobs:
           - tool: "pyroma"
             command: "pyroma ."
             deps: "pyroma"
-          # dead code
-          - tool: "vulture"
-            command: "python -m vulture ."
-            deps: "vulture"
     name: lint using ${{ matrix.tool }}
     steps:
       - uses: actions/checkout@v2
