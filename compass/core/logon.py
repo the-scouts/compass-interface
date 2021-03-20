@@ -158,8 +158,7 @@ class Logon:
             current_role=current_role,
         )
 
-        # Disable pylint protected-access check
-        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)  # pylint: disable=W0212
+        _update_auth_headers(session, logon.member_number, logon.role_number, logon._session_id)  # pylint: disable=protected-access
 
         return logon
 
@@ -301,7 +300,7 @@ class LogonCore(InterfaceBase):
         session_id = compass_props.master.sys.session_id
 
         # Set auth headers for new role
-        self.update_auth_headers(member_number, role_number, session_id)
+        _update_auth_headers(self.s, member_number, role_number, session_id)
 
         # Update current role properties
         current_role_title, current_role_location = roles_dict[role_number]
@@ -315,13 +314,6 @@ class LogonCore(InterfaceBase):
                 raise CompassAuthenticationError("Role failed to update in Compass")
 
         return compass_props, roles_dict
-
-    def update_auth_headers(self, membership_number: int, role_number: int, session_id: str) -> None:
-        auth_headers = {
-            "Authorization": f"{membership_number}~{role_number}",
-            "SID": session_id,  # Session ID
-        }
-        self.s.headers.update(auth_headers)
 
     @staticmethod
     def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
@@ -353,3 +345,10 @@ class LogonCore(InterfaceBase):
         for row in roles_rows:
             if "Full" in row[5].text_content():  # TODO do prov roles show up in selector???
                 yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
+
+
+def _update_auth_headers(session: requests.Session, membership_number: int, role_number: int, session_id: str) -> None:
+    session.headers.update(
+        Authorization=f"{membership_number}~{role_number}",
+        SID=session_id,  # Session ID
+    )
