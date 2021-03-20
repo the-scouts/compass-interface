@@ -159,7 +159,7 @@ class Logon:
         )
 
         # Disable pylint protected-access check
-        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)  # NoQA: W0212
+        LogonCore(session=session).update_auth_headers(logon.member_number, logon.role_number, logon._session_id)  # pylint: disable=W0212
 
         return logon
 

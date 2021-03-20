@@ -147,7 +147,7 @@ class Hierarchy:
                 level_numeric = Levels[hier_level]
             except KeyError:
                 valid_levels = [level.name for level in Levels]
-                raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_levels}")
+                raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_levels}") from None
         else:
             raise ValueError("A numeric or string hierarchy level needs to be passed")
 

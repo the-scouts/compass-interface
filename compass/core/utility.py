@@ -174,7 +174,7 @@ class CountingSession(requests.Session):
 
     def request(self, *args, **kwargs) -> requests.Response:
         Settings.total_requests += 1
-        return super(CountingSession, self).request(*args, **kwargs)
+        return super().request(*args, **kwargs)
 
 
 #
