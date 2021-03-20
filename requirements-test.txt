@@ -1,0 +1,12 @@
+# core
+requests
+lxml
+# core-typing
+pydantic
+email-validator
+phonenumbers
+
+# testing
+pytest
+starlette
+uvicorn
