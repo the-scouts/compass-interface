@@ -711,7 +711,7 @@ class PeopleScraper(InterfaceBase):
             )
 
 
-class _AddressData(TypedDict):
+class _AddressData(TypedDict):  # pylint: disable=too-few-public-methods
     unparsed_address: Optional[str]
     country: Optional[str]
     postcode: Optional[str]
@@ -871,7 +871,7 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     """Parses a personal learning plan from a LXML row element containing data."""
     child_nodes = list(role)
 
-    role_data: dict[str, Union[None, str, int, datetime.date]] = dict()  # NoQA
+    role_data: dict[str, Union[None, str, int, datetime.date]] = dict()
 
     role_number = int(role.get("data-ng_mrn"))
     role_data["role_number"] = role_number
