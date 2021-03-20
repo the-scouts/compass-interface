@@ -22,16 +22,16 @@ dependencies:
   - starlette
   - uvicorn
 
-  # Development (Tools, Style, Linting)
+  # Development
   - ipython
+
+  # Linting
   - mypy
   - black
   - isort>=5
-  #  - prospector
-    # prospector currently pins to pylint==2.5.3, which itself pins to isort<5.
-    # To use isort>=5.0.0, we must use pylint>=2.6.0, and wait for prospector to update.
-    # Current as at 20-01-2021
   - pre-commit
+
+  # Pins
   - virtualenv==20.0.33  # Solve regression, see
       # https://github.com/ContinuumIO/anaconda-issues/issues/12094
       # https://github.com/pypa/virtualenv/issues/1986
