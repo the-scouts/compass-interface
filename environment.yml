@@ -26,10 +26,16 @@ dependencies:
   - ipython
 
   # Linting
-  - mypy
   - black
   - isort>=5
   - pre-commit
+  - pylint
+  - flake8
+  - pep8-naming
+  - pydocstyle
+  - bandit
+  - pyroma
+  - mypy
 
   # Build
   - build  # PyPA build package (not on conda 04/01/21)

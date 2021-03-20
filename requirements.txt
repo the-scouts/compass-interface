@@ -8,6 +8,12 @@ ipython
 black
 isort
 pre-commit
+pylint
+flake8
+pep8-naming
+pydocstyle
+bandit
+pyroma
 mypy
 
 # build
