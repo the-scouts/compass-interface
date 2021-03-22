@@ -795,6 +795,8 @@ def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iter
 
 def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
     """Calculate days of membership (inclusive), normalise to years."""
+    if not dates:  # handle empty iterable
+        return 0
     membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(dates))
     return membership_duration_days / 365.2425  # Leap year except thrice per 400 years.
 
