@@ -209,11 +209,11 @@ class Hierarchy:
             unit_id = d.unit_id
             name = d.name if isinstance(d, schema.DescendantData) else None
             level_data = hierarchy_state | {f"{level_name}_ID": unit_id, f"{level_name}_name": name}  # type: ignore[operator]
-            yield cast(HierarchyState, {"compass": unit_id, "name": name} | dict(level_data))
-            for val in d.child or []:
-                yield from flatten(val, cast(HierarchyState, level_data))
-            for val in d.sections:
-                yield cast(HierarchyState, {"compass": val.unit_id, "name": val.name} | level_data)  # TODO section=True flag?
+            yield cast(HierarchyState, {"compass": unit_id, "name": name, "section": False} | level_data)
+            for child in d.child or []:
+                yield from flatten(child, cast(HierarchyState, level_data))
+            for section in d.sections:
+                yield cast(HierarchyState, {"compass": section.unit_id, "name": section.name, "section": True} | level_data)
 
         blank_state: HierarchyState = dict()
         return flatten(hierarchy_dict, blank_state)
