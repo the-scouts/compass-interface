@@ -317,7 +317,8 @@ class PeopleScraper(InterfaceBase):
                     ),
                     ...
                 },
-                membership_duration=...
+                membership_duration=...,
+                primary_role=...,
             )
 
         Raises:
@@ -325,9 +326,6 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
             PermissionError:
                 Access to the member is not given by the current authentication
-
-        Todo:
-            primary_role
 
         """
         logger.debug(f"getting roles tab for member number: {membership_number}")
