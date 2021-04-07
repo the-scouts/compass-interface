@@ -331,8 +331,7 @@ class PeopleScraper(InterfaceBase):
         primary_role = None
         roles_dates = []
         roles_data = {}
-        rows = tree.xpath("//tbody/tr")
-        for row in rows:
+        for row in tree.xpath("//tbody/tr"):
             # Get children (cells in row)
             cells = list(row)  # filter out empty elements
 
