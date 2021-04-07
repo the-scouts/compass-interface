@@ -10,7 +10,7 @@ from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceBase
 from compass.core.schemas import hierarchy as schema
 from compass.core.settings import Settings
-from compass.core.utility import compass_restify
+from compass.core.util.compass_helpers import compass_restify
 
 # TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
 TYPES_ENDPOINT_LEVELS = Literal[

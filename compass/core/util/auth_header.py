@@ -8,7 +8,7 @@ import requests
 
 from compass.core.logger import logger
 from compass.core.settings import Settings
-from compass.core.utility import compass_restify
+from compass.core.util.compass_helpers import compass_restify
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
