@@ -965,8 +965,7 @@ def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Opt
 def _process_hierarchy(inputs: html.InputGetter) -> Iterator[tuple[str, str]]:
     """Get all levels of the org hierarchy and select those that will have information."""
     # Get all inputs with location data
-    # TODO is sorted() needed?
-    for input_name, input_el in sorted(dict(inputs).items()):
+    for input_name, input_el in dict(inputs).items():
         if "ctl00$workarea$cbo_p1_location" not in input_name:
             continue
         level_name = input_el.get("title")
