@@ -15,6 +15,7 @@ class _SettingsModel(pydantic.BaseSettings):
     debug: bool = False
     validation_errors: bool = True
     log_file: Optional[Path] = None
+    cache_to_file: bool = True
 
     class Config:
         case_sensitive = False  # this is the default, but mark for clarity.
