@@ -9,13 +9,13 @@ import urllib.parse
 
 from lxml import html
 
-from compass.core import utility
 from compass.core.errors import CompassReportError
 from compass.core.errors import CompassReportPermissionError
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.settings import Settings
 from compass.core.util import auth_header
+from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     import requests
@@ -143,7 +143,7 @@ class ReportsScraper(InterfaceBase):
     def download_report_streaming(self, url: str, params: dict[str, str], filename: str) -> None:
         with self.s.get(url, params=params, stream=True) as r:
             r.raise_for_status()
-            with utility.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:  # TODO swap `with` stmts?
+            with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:  # TODO swap `with` stmts?
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                     f.write(chunk)
 
@@ -152,7 +152,7 @@ class ReportsScraper(InterfaceBase):
         csv_export = self.s.get(url, params=params)
         logger.debug(f"Exporting took {time.time() - start}s")
         logger.info("Saving report")
-        with utility.filesystem_guard("Unable to write report export"):
+        with context_managers.filesystem_guard("Unable to write report export"):
             Path(filename).write_bytes(csv_export.content)  # TODO Debug check
         logger.info("Report Saved")
 
