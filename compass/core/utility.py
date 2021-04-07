@@ -7,7 +7,6 @@ import functools
 from typing import Any, Optional, TYPE_CHECKING
 
 import pydantic
-import requests
 
 from compass.core.logger import logger
 from compass.core.settings import Settings
@@ -89,14 +88,6 @@ def validation_errors_logging(id_value: int, name: str = "Member No") -> Iterato
 #     def cancel(self) -> "PeriodicTimer":
 #         self.thread.cancel()
 #         return self
-
-
-class CountingSession(requests.Session):
-    """Counts the number of requests sent."""
-
-    def request(self, *args: Any, **kwargs: Any) -> requests.Response:
-        Settings.total_requests += 1
-        return super().request(*args, **kwargs)
 
 
 #

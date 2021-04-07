@@ -8,7 +8,6 @@ from lxml import html
 import requests
 
 from compass.core import schemas
-from compass.core import utility
 from compass.core.errors import CompassAuthenticationError
 from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceBase
@@ -16,6 +15,7 @@ from compass.core.logger import logger
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
 from compass.core.util import auth_header
+from compass.core.util import counting_session
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -173,7 +173,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
                 For errors while executing the HTTP call
 
         """
-        session: requests.Session = utility.CountingSession()
+        session: requests.Session = counting_session.CountingSession()
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
 
         logon = cls(
@@ -253,7 +253,7 @@ class LogonCore(InterfaceBase):
     @classmethod
     def create_session(cls: type[LogonCore]) -> LogonCore:
         """Create a session and get ASP.Net Session ID cookie from the compass server."""
-        session: requests.Session = utility.CountingSession()
+        session: requests.Session = counting_session.CountingSession()
 
         session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
         Settings.total_requests += 1
