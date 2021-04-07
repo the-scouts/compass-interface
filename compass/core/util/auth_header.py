@@ -26,16 +26,16 @@ def jk_hash(session: requests.Session, membership_number: int, role_number: int,
 
 
 def auth_header_get(
-        membership_number: int,
-        role_number: int,
-        jk: str,
-        session: requests.Session,
-        url: str,
-        *,
-        params: Optional[Mapping[str, Optional[str]]] = None,
-        headers: Optional[Mapping[str, str]] = None,
-        stream: Optional[bool] = None,
-        **kwargs: Any,
+    membership_number: int,
+    role_number: int,
+    jk: str,
+    session: requests.Session,
+    url: str,
+    *,
+    params: Optional[Mapping[str, Optional[str]]] = None,
+    headers: Optional[Mapping[str, str]] = None,
+    stream: Optional[bool] = None,
+    **kwargs: Any,
 ) -> requests.Response:
     """Sends a HTTP GET request.
 
