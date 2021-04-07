@@ -72,7 +72,7 @@ class People:
 
         """
         if only_active:
-            # TODO look into `ROLE_HIDEME` in the roles rows - does this apply to (Pre-)Prov or just Closed/Cancelled?
+            # List taken from `ROLE_HIDEME` css class - only applied to Cancelled/Closed roles
             unique_statuses: Optional[set[str]] = STATUSES - {"Closed", "Cancelled"}
         elif statuses is None:
             unique_statuses = None
