@@ -8,12 +8,12 @@ from typing import cast, Iterable, Literal, Optional, TYPE_CHECKING, TypedDict, 
 
 from pydantic.json import pydantic_encoder
 
-from compass.core import utility
 from compass.core._scrapers.hierarchy import HierarchyScraper
 from compass.core._scrapers.hierarchy import TYPES_ENDPOINT_LEVELS
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
+from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -148,7 +148,7 @@ class Hierarchy:
         out = self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level)
 
         # Try and write to a file for caching
-        with utility.filesystem_guard("Unable to write cache file"):
+        with context_managers.filesystem_guard("Unable to write cache file"):
             filename.write_text(schema.UnitData.parse_obj(out).json(ensure_ascii=False), encoding="utf-8")
 
         return schema.UnitData.parse_obj(out)
@@ -278,7 +278,7 @@ class Hierarchy:
             all_members.append(data)
 
         # Try and write to a file for caching
-        with utility.filesystem_guard("Unable to write cache file"):
+        with context_managers.filesystem_guard("Unable to write cache file"):
             filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4, default=pydantic_encoder), encoding="utf-8")
 
         return all_members
