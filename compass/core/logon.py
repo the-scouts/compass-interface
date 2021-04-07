@@ -355,7 +355,7 @@ class LogonCore(InterfaceBase):
         """Generate role number to role name mapping."""
         roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
         for row in roles_rows:
-            if "Full" in row[5].text_content():  # TODO do prov roles show up in selector???
+            if "Full" in row[5].text_content():  # from looking at the compass support group, only `Full` roles can be selected
                 yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
 
 
