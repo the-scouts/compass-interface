@@ -31,23 +31,6 @@ def compass_restify(data: dict[str, Any]) -> list[dict[str, str]]:
     return [{"Key": f"{k}", "Value": f"{v}"} for k, v in data.items()]
 
 
-def maybe_int(value: Any) -> Optional[int]:
-    """Casts value to int or None."""
-    try:
-        return int(value)
-    except ValueError:
-        return None
-
-
-def parse(date_time_str: str) -> Optional[datetime.date]:
-    if not date_time_str:
-        return None
-    try:
-        return datetime.datetime.strptime(date_time_str, "%d %B %Y").date()  # e.g. 01 January 2000
-    except ValueError:
-        return datetime.datetime.strptime(date_time_str, "%d %b %Y").date()  # e.g. 01 Jan 2000
-
-
 @contextlib.contextmanager
 def filesystem_guard(msg: str) -> Iterator[None]:
     try:

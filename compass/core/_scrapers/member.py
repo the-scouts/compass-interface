@@ -10,8 +10,8 @@ from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
-from compass.core.utility import maybe_int
-from compass.core.utility import parse
+from compass.core.util.type_coercion import maybe_int
+from compass.core.util.type_coercion import parse
 from compass.core.utility import validation_errors_logging
 
 if TYPE_CHECKING:
