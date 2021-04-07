@@ -143,7 +143,7 @@ class ReportsScraper(InterfaceBase):
     def download_report_streaming(self, url: str, params: dict[str, str], filename: str) -> None:
         with self.s.get(url, params=params, stream=True) as r:
             r.raise_for_status()
-            with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:  # TODO swap `with` stmts?
+            with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                     f.write(chunk)
 
