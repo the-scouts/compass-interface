@@ -80,9 +80,9 @@ class HierarchyScraper(InterfaceBase):
         result = self.s.post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
         result_json = result.json()
 
-        # Handle unauthorised access TODO raise???
+        # Handle unauthorised access
         if result_json == {"Message": "Authorization has been denied for this request."}:
-            return list()  # type: ignore[return-value]
+            raise errors.CompassPermissionError(f"You do not have permission for unit ID:{parent_unit}! E:{level} S:{is_sections}")
 
         result_units = []
         for unit_dict in result_json:
