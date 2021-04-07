@@ -936,8 +936,6 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
         parts = completion_string.split(":")
         role_data["completion_type"] = parts[0].strip()
         role_data["completion_date"] = parse(parts[1].strip())
-        assert len(parts) <= 2, parts[2:]  # nosec (B101, here we assert to check if we can remove the line below)
-        # role_data["ct"] = parts[3:]  # TODO what is this? From CompassRead.php
     role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
 
     return role_number, role_data
