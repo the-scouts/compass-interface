@@ -14,8 +14,6 @@ from tests.util.fake_compass import asp_net_id
 base_domain = "127.0.0.1"
 base_url = "http://127.0.0.1:4200"
 
-# TODO we don't validate cookie presence except initially (LogonCore._create_session)
-
 
 class TestLogon:
     def test_login_get_cookie(self, server):
@@ -51,6 +49,7 @@ class TestLogon:
 
         # Then
         expected_response = b"<head><title>Compass - System Startup</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"https://compass.scouts.org.uk/ScoutsPortal.aspx\"'></body>"  # NoQA: E501
+        assert worker.s.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
         assert response.content == expected_response
 
     def test_login_post_incorrect_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
@@ -66,6 +65,7 @@ class TestLogon:
 
         # Then
         expected_response = b"<head><title>Compass - Failed Login</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"\"'></body>"  # NoQA: E501
+        assert worker.s.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
         assert response.content == expected_response
 
     def test_login_check_login(self, server):
@@ -129,5 +129,6 @@ class TestLogon:
             6857721: ("TSA Council Member - Nominated Member (18-24)", "The Scout Association"),
         }
 
+        assert worker.s.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
         assert props == expected_props
         assert roles == expected_roles
