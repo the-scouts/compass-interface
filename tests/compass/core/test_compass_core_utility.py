@@ -3,6 +3,8 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING
 
+import hypothesis
+import hypothesis.strategies as st
 import pytest
 
 from compass.core.util import compass_helpers
@@ -23,23 +25,44 @@ class TestUtility:
 
         # Then
         assert isinstance(result, int)
-        # TODO Aim for property based aspects instead of fixed values!
-        assert result == -1422446064  # TODO max/min = +/- 2**32?
+        assert result == -1422446064
+
+    @hypothesis.given(st.text())
+    def test_hash_code_range(self, data):
+        # Given data from hypothesis, When
+        result = compass_helpers.hash_code(data)
+
+        # Then
+        assert isinstance(result, int)
+        assert -2_147_483_648 <= result <= 2_147_483_647  # -2**31 to 2**31-1
 
     def test_compass_restify(self):
         # Given
         data = {"a": 1, "b": 2, "c": 3}
-        num_pairs = len(data)
+
+        # When
+        result = compass_helpers.compass_restify(data)
+
+        # Then
+        assert result == [{"Key": "a", "Value": "1"}, {"Key": "b", "Value": "2"}, {"Key": "c", "Value": "3"}]
+
+    @hypothesis.given(st.dictionaries(st.text(), (st.none() | st.booleans() | st.floats() | st.integers() | st.text())))
+    def test_compass_restify2(self, data):
+        # Given data from hypothesis
+        size = len(data)
 
         # When
         result = compass_helpers.compass_restify(data)
 
         # Then
         assert isinstance(result, list)
-        assert len(result) == num_pairs
-        assert all(item.keys() == {"Key", "Value"} for item in result)
-        # TODO Aim for property based aspects instead of fixed values!
-        assert result == [{"Key": "a", "Value": "1"}, {"Key": "b", "Value": "2"}, {"Key": "c", "Value": "3"}]
+        assert len(result) == size
+        for pair in result:
+            assert isinstance(pair, dict)
+            assert len(pair) == 2
+            assert pair.keys() == {"Key", "Value"}
+            for val in pair.values():
+                assert isinstance(val, str)
 
     def test_maybe_int_int(self):
         # Given
