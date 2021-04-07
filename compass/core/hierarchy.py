@@ -140,10 +140,9 @@ class Hierarchy:
 
         filename = Path(f"hierarchy-{unit_level.unit_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
-        with contextlib.suppress(FileNotFoundError):
-            out = json.loads(filename.read_text(encoding="utf-8"))
-            if isinstance(out, dict):
-                return schema.UnitData.parse_obj(out)
+        with context_managers.get_cached_json(filename, expected_type=dict) as cached_data:
+            if cached_data is not None:
+                return schema.UnitData.parse_obj(cached_data)
 
         # Fetch the hierarchy
         out = self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level)
@@ -238,11 +237,10 @@ class Hierarchy:
     def get_members_in_units(self, parent_id: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
         filename = Path(f"all-members-{parent_id}.json")
 
-        with contextlib.suppress(FileNotFoundError):
+        with context_managers.get_cached_json(filename, expected_type=list) as cached_data:
             # Attempt to see if the members dict has been fetched already and is on the local system
-            json_members: list[dict[str, list[dict[str, Union[None, int, str]]]]] = json.loads(filename.read_text(encoding="UTF8"))
-            if isinstance(json_members, list):
-                return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in json_members]
+            if cached_data is not None:
+                return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in cached_data]
 
         # Fetch all members
         all_members = []
