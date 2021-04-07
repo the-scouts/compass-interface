@@ -72,7 +72,7 @@ class TestErrors:
         try:
             raise errors.CompassReportPermissionError(data)
         # Then
-        except PermissionError as err:
+        except Exception as err:
             assert str(err) == data
 
         # When
