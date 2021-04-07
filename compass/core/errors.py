@@ -6,9 +6,13 @@ class CompassAuthenticationError(CompassError):
     pass
 
 
+class CompassPermissionError(CompassError, PermissionError):
+    pass
+
+
 class CompassReportError(CompassError):
     pass
 
 
-class CompassReportPermissionError(PermissionError, CompassError):
+class CompassReportPermissionError(CompassReportError, CompassPermissionError):
     pass
