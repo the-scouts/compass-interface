@@ -1,11 +1,7 @@
-from __future__ import annotations
-
-from typing import Optional, TYPE_CHECKING
+from pathlib import Path
+from typing import Optional
 
 import pydantic
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class _SettingsModel(pydantic.BaseSettings):
