@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from compass.core import utility
+from compass.core.util import type_coercion
 
 if TYPE_CHECKING:
     import pathlib
@@ -44,8 +45,8 @@ class TestUtility:
         data = 123
 
         # When
-        result = utility.maybe_int(data)
-        result_str = utility.maybe_int(str(data))
+        result = type_coercion.maybe_int(data)
+        result_str = type_coercion.maybe_int(str(data))
 
         # Then
         assert result == data
@@ -56,7 +57,7 @@ class TestUtility:
         data = "abc"
 
         # When
-        result = utility.maybe_int(data)
+        result = type_coercion.maybe_int(data)
 
         # Then
         assert result is None
@@ -66,7 +67,7 @@ class TestUtility:
         data = "01 Jan 2000"
 
         # When
-        result = utility.parse(data)
+        result = type_coercion.parse(data)
 
         # Then
         assert isinstance(result, datetime.date)
@@ -77,7 +78,7 @@ class TestUtility:
         data = "01 January 2000"
 
         # When
-        result = utility.parse(data)
+        result = type_coercion.parse(data)
 
         # Then
         assert isinstance(result, datetime.date)
@@ -90,14 +91,14 @@ class TestUtility:
         # Then
         with pytest.raises(ValueError, match=f"time data '{data}' does not match format '%d %b %Y'"):
             # When
-            utility.parse(data)
+            type_coercion.parse(data)
 
     def test_parse_empty(self):
         # Given
         data = ""
 
         # When
-        result = utility.parse(data)
+        result = type_coercion.parse(data)
 
         # Then
         assert result is None
