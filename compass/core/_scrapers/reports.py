@@ -15,6 +15,7 @@ from compass.core.errors import CompassReportPermissionError
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.settings import Settings
+from compass.core.util import auth_header
 
 if TYPE_CHECKING:
     import requests
@@ -38,7 +39,7 @@ class ReportsScraper(InterfaceBase):
             "pMemberRoleNumber": str(role_number),
         }
         logger.debug("Getting report token")
-        response = utility.auth_header_get(
+        response = auth_header.auth_header_get(
             self._membership_number,
             self._role_number,
             self._jk,

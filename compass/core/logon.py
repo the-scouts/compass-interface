@@ -15,6 +15,7 @@ from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
+from compass.core.util import auth_header
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -203,7 +204,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
-        return utility.auth_header_get(
+        return auth_header.auth_header_get(
             self.membership_number,
             self.role_number,
             self._jk,
