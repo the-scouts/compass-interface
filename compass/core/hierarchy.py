@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import enum
 import json
 from pathlib import Path
@@ -14,6 +13,7 @@ from compass.core._scrapers.hierarchy import TYPES_ENDPOINT_LEVELS
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
+from compass.core.settings import Settings
 from compass.core.util import context_managers
 
 if TYPE_CHECKING:
@@ -146,6 +146,8 @@ class Hierarchy:
 
         # Fetch the hierarchy
         out = self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level)
+        if Settings.cache_to_file is False:
+            return schema.UnitData.parse_obj(out)
 
         # Try and write to a file for caching
         with context_managers.filesystem_guard("Unable to write cache file"):
@@ -248,6 +250,9 @@ class Hierarchy:
             logger.debug(f"Getting members for {unit_id}")
             data = schema.HierarchyUnitMembers(unit_id=unit_id, member=self._scraper.get_members_with_roles_in_unit(unit_id))
             all_members.append(data)
+
+        if Settings.cache_to_file is False:
+            return all_members
 
         # Try and write to a file for caching
         with context_managers.filesystem_guard("Unable to write cache file"):
