@@ -192,33 +192,6 @@ class Hierarchy:
 
         return descendant_data
 
-    @staticmethod
-    def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[HierarchyState]:  # noqa: D417 (hanging indent)
-        """Flattens a hierarchy tree / graph to a flat sequence of mappings.
-
-        Args:
-            hierarchy_dict:
-                The current object to be flattened. The user will pass in a `schema.UnitData`
-                object, whilst all recursion will be on `schema.DescendantData` objects.
-
-        """
-        # This args style is allowed, but not yet (2021-03-20) implemented in PyDocStyle, so D417 disabled above.
-        # https://github.com/PyCQA/pydocstyle/issues/449
-        def flatten(d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: HierarchyState) -> Iterator[HierarchyState]:
-            """Generator expresion to recursively flatten hierarchy."""
-            level_name = d.level
-            unit_id = d.unit_id
-            name = d.name if isinstance(d, schema.DescendantData) else None
-            level_data = hierarchy_state | {f"{level_name}_ID": unit_id, f"{level_name}_name": name}  # type: ignore[operator]
-            yield cast(HierarchyState, {"compass": unit_id, "name": name, "section": False} | level_data)
-            for child in d.child or []:
-                yield from flatten(child, cast(HierarchyState, level_data))
-            for section in d.sections:
-                yield cast(HierarchyState, {"compass": section.unit_id, "name": section.name, "section": True} | level_data)
-
-        blank_state: HierarchyState = dict()
-        return flatten(hierarchy_dict, blank_state)
-
     def get_unique_members(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
@@ -251,7 +224,7 @@ class Hierarchy:
         hierarchy_dict = self.get_hierarchy(unit_level)
 
         # flatten tree
-        flat_hierarchy = self.flatten_hierarchy(hierarchy_dict)
+        flat_hierarchy = flatten_hierarchy(hierarchy_dict)
 
         # generator for compass unit IDs
         compass_ids = (unit["compass"] for unit in flat_hierarchy)
@@ -283,3 +256,30 @@ class Hierarchy:
             filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4, default=pydantic_encoder), encoding="utf-8")
 
         return all_members
+
+
+def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[HierarchyState]:  # noqa: D417 (hanging indent)
+    """Flattens a hierarchy tree / graph to a flat sequence of mappings.
+
+    Args:
+        hierarchy_dict:
+            The current object to be flattened. The user will pass in a `schema.UnitData`
+            object, whilst all recursion will be on `schema.DescendantData` objects.
+
+    """
+    # This args style is allowed, but not yet (2021-03-20) implemented in PyDocStyle, so D417 disabled above.
+    # https://github.com/PyCQA/pydocstyle/issues/449
+    def flatten(d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: HierarchyState) -> Iterator[HierarchyState]:
+        """Generator expresion to recursively flatten hierarchy."""
+        level_name = d.level
+        unit_id = d.unit_id
+        name = d.name if isinstance(d, schema.DescendantData) else None
+        level_data = hierarchy_state | {f"{level_name}_ID": unit_id, f"{level_name}_name": name}  # type: ignore[operator]
+        yield cast(HierarchyState, {"compass": unit_id, "name": name, "section": False} | level_data)
+        for child in d.child or []:
+            yield from flatten(child, cast(HierarchyState, level_data))
+        for section in d.sections:
+            yield cast(HierarchyState, {"compass": section.unit_id, "name": section.name, "section": True} | level_data)
+
+    blank_state: HierarchyState = dict()
+    return flatten(hierarchy_dict, blank_state)
