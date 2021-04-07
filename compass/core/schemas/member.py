@@ -268,8 +268,8 @@ class MemberDetails(MemberBase):
     main_email: Optional[pydantic.EmailStr] = None
     address: MemberDetailsAddress = MemberDetailsAddress()
 
-    # Additional / miscellaneous details
-    disabilities: Optional[dict[str, str]] = None  # TODO keyed models
+    # Additional / miscellaneous details (TODO keyed models)
+    disabilities: Optional[dict[str, str]] = None
     qualifications: Optional[dict[str, str]] = None
     hobbies: Optional[dict[str, str]] = None
 

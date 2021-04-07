@@ -99,8 +99,7 @@ class Reports:
         logger.info("Exporting report")
         export_url_path, export_url_params = self._scraper.get_report_export_url(report_page.decode("UTF-8"))
 
-        # TODO Debug check
-        time_string = datetime.datetime.now().replace(microsecond=0).isoformat().replace(":", "-")  # colons are illegal on windows
+        time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
         filename = f"{time_string} - {self.membership_number} ({' - '.join(self.current_role)}).csv"
 
         # start = time.time()

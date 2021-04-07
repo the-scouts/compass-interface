@@ -152,7 +152,7 @@ class ReportsScraper(InterfaceBase):
         logger.debug(f"Exporting took {time.time() - start}s")
         logger.info("Saving report")
         with context_managers.filesystem_guard("Unable to write report export"):
-            Path(filename).write_bytes(csv_export.content)  # TODO Debug check
+            Path(filename).write_bytes(csv_export.content)
         logger.info("Report Saved")
 
         logger.debug(len(csv_export.content))
