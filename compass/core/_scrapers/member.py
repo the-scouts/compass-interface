@@ -160,7 +160,7 @@ class PeopleScraper(InterfaceBase):
             url += f"&Page={tab_upper}&TAB"
             response = self.s.get(url)
         else:
-            raise ValueError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs}")
+            raise errors.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {tabs}")
 
         return response.content
 
