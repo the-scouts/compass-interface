@@ -22,6 +22,15 @@ class TestErrors:
             # When
             raise errors.CompassAuthenticationError(data)
 
+    def test_compass_permission_error(self):
+        # Given
+        data = "message"
+
+        # Then
+        with pytest.raises(errors.CompassPermissionError, match=data):
+            # When
+            raise errors.CompassPermissionError(data)
+
     def test_compass_report_error(self):
         # Given
         data = "message"
@@ -51,6 +60,17 @@ class TestErrors:
         except errors.CompassError as err:
             assert str(err) == data
 
+    def test_compass_permission_error_inheritance(self):
+        # Given
+        data = "message"
+
+        # When
+        try:
+            raise errors.CompassPermissionError(data)
+        # Then
+        except errors.CompassError as err:
+            assert str(err) == data
+
     def test_compass_report_error_inheritance(self):
         # Given
         data = "message"
@@ -72,7 +92,14 @@ class TestErrors:
         try:
             raise errors.CompassReportPermissionError(data)
         # Then
-        except Exception as err:
+        except errors.CompassReportError as err:
+            assert str(err) == data
+
+        # When
+        try:
+            raise errors.CompassReportPermissionError(data)
+        # Then
+        except errors.CompassPermissionError as err:
             assert str(err) == data
 
         # When
