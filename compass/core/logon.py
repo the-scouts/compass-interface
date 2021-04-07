@@ -7,9 +7,8 @@ import urllib.parse
 from lxml import html
 import requests
 
+from compass.core import errors
 from compass.core import schemas
-from compass.core.errors import CompassAuthenticationError
-from compass.core.errors import CompassError
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 import compass.core.schemas.logon as schema
@@ -259,7 +258,7 @@ class LogonCore(InterfaceBase):
         Settings.total_requests += 1
 
         if not session.cookies:
-            raise CompassError(
+            raise errors.CompassError(
                 "Could not create a session with Compass. Please check that this programme can "
                 "access Compass (including firewalls etc.) and that Compass is currently online. "
             )
@@ -299,7 +298,7 @@ class LogonCore(InterfaceBase):
         # Naive check for error, Compass redirects to an error page when something goes wrong
         # TODO what is the error page URL - what do we expect? From memory Error.aspx
         if response.url != portal_url:
-            raise CompassAuthenticationError("Login has failed")
+            raise errors.CompassAuthenticationError("Login has failed")
 
         # Create lxml html.FormElement
         form = html.fromstring(response.content).forms[0]
@@ -324,7 +323,7 @@ class LogonCore(InterfaceBase):
             logger.debug("Confirming role has been changed")
             # Check that the role has been changed to the desired role. If not, raise exception.
             if check_role_number != role_number:
-                raise CompassAuthenticationError("Role failed to update in Compass")
+                raise errors.CompassAuthenticationError("Role failed to update in Compass")
 
         return compass_props, roles_dict
 
