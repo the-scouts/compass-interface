@@ -87,7 +87,7 @@ class Reports:
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
             types = [rt.name.title().replace("_", " ") for rt in ReportTypes]
-            raise errors.CompassReportError(f"{report_type} is not a valid report type. Existing report types are {types}") from None
+            raise errors.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
 
         # Get initial reports page, for export URL and config:
         report_page = self._scraper.get_report_page(run_report_url)
