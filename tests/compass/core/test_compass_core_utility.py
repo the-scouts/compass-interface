@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from compass.core import utility
+from compass.core.util import compass_helpers
 from compass.core.util import type_coercion
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ class TestUtility:
         data = "testing"
 
         # When
-        result = utility.hash_code(data)
+        result = compass_helpers.hash_code(data)
 
         # Then
         assert isinstance(result, int)
@@ -31,7 +32,7 @@ class TestUtility:
         num_pairs = len(data)
 
         # When
-        result = utility.compass_restify(data)
+        result = compass_helpers.compass_restify(data)
 
         # Then
         assert isinstance(result, list)
