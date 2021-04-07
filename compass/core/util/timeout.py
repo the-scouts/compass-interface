@@ -1,3 +1,15 @@
+# from __future__ import annotations
+#
+# import asyncio
+# import contextlib
+# import functools
+# import threading
+# from typing import Any, TYPE_CHECKING
+#
+# if TYPE_CHECKING:
+#     from collections.abc import Callable
+#
+#
 # class PeriodicTimer:
 #     def __init__(self, interval: float, callback: Callable[..., Any]):
 #         """Constructor for PeriodicTimer."""
@@ -20,8 +32,7 @@
 #     def cancel(self) -> "PeriodicTimer":
 #         self.thread.cancel()
 #         return self
-
-
+#
 #
 # def set_interval(interval: int):
 #     def decorator(function: Callable):
@@ -38,9 +49,6 @@
 #             return stopped
 #         return wrapper
 #     return decorator
-#
-#
-# import asyncio
 #
 #
 # async def periodic(n):
