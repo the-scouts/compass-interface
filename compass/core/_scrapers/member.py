@@ -6,6 +6,7 @@ from typing import cast, get_args, Literal, Optional, overload, TYPE_CHECKING, T
 
 from lxml import html
 
+from compass.core import errors
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.schemas import member as schema
@@ -209,7 +210,7 @@ class PeopleScraper(InterfaceBase):
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_number}")
+            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
 
         details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
 
@@ -323,7 +324,7 @@ class PeopleScraper(InterfaceBase):
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_number}")
+            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
 
         if statuses is None:
             statuses = STATUSES
@@ -544,7 +545,7 @@ class PeopleScraper(InterfaceBase):
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_number}")
+            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
 
         awards = []
         rows = tree.xpath("//table[@class='msAward']/tr")
@@ -594,7 +595,7 @@ class PeopleScraper(InterfaceBase):
         tree = html.fromstring(response)
 
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise PermissionError(f"You do not have permission to the details of {membership_number}")
+            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
 
         disclosures = []
         rows = tree.xpath("//tbody/tr")
@@ -676,7 +677,7 @@ class PeopleScraper(InterfaceBase):
         fields: html.FieldsDict = form.fields
 
         if form.action == "./ScoutsPortal.aspx?Invalid=Access":
-            raise PermissionError(f"You do not have permission to the details of role {role_number}")
+            raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
 
         line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
         ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")  # CE (Confidential Enquiry) Check
