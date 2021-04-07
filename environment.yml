@@ -18,6 +18,7 @@ dependencies:
 #  - phonenumberslite  # not on conda (2021-03-20)
 
   # Testing
+  - hypothesis
   - pytest
   - starlette
   - uvicorn
@@ -43,5 +44,3 @@ dependencies:
   - pip:
     # Type validation
     - phonenumberslite
-
-
