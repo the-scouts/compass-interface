@@ -32,18 +32,36 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 # get_roles_tab
 STATUSES = set(get_args(schema.TYPES_ROLE_STATUS))
 NON_VOLUNTEER_TITLES = {
-    # occasional helper roles
+    # occasional helper roles:
     "group occasional helper",
     "group occasional helper.",
     "district occasional helper",
     "county occasional helper",
-    "pvg",  # TODO is this ever a role title?
-    "occasional helper",  # TODO is this ever a role title?
+    "country occasional helper",
+    # pvg roles:
+    "group non member pvg only"
+    "group non member pvg only (prov)"
+    "group non member pvg only (pre-prov)"
+    "group non memberdetails pvg only"
+    "district non member pvg only"
+    "scotland region non-member pvg"
+    "non member pvg only"
+    "non member pvg only (prov)"
+    "non member pvg only (pre-prov)"
     # council roles:
     "county scout council member",
     "county scout council member - nominated representative",
     "county scout council member - nominated youth representative",
     "county scout council member - nominated member (18-24)",
+    "country scout council member - nominated representative",
+    "scotland region scout council member",
+    "scotland region scout council member - nominated representative ",
+    "scotland region scout council member - nominated youth representative ",
+    "tsa council member",
+    "tsa council member - elected member",
+    "tsa council member - ex-officio member",
+    "tsa council member - nominated member",
+    "tsa council member - nominated member (18-24)",
     # staff roles:
     "district staff",
     "county staff",
@@ -53,7 +71,8 @@ NON_VOLUNTEER_TITLES = {
     "district scout network",
     "district scout network member",
     "county scout network member",
-}  # TODO add PVG, TSA council, etc
+    "bso scout network member"
+}
 
 # get_training_tab
 mogl_modules = {
@@ -365,7 +384,7 @@ class PeopleScraper(InterfaceBase):
             if primary_role is True:
                 primary_role = role_details.role_number
             # Remove OHs etc from list
-            if "helper" in role_details.role_class.lower() or {role_details.role_title.lower()} <= NON_VOLUNTEER_TITLES:
+            if "helper" in role_details.role_class.lower() or role_details.role_title.lower() in NON_VOLUNTEER_TITLES:
                 if keep_non_volunteer_roles is False:
                     continue
             # If role is a full volunteer role, potentially add to date list
