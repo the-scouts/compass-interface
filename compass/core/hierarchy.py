@@ -8,6 +8,7 @@ from typing import cast, Iterable, Literal, Optional, TYPE_CHECKING, TypedDict, 
 
 from pydantic.json import pydantic_encoder
 
+from compass.core import errors
 from compass.core._scrapers.hierarchy import HierarchyScraper
 from compass.core._scrapers.hierarchy import TYPES_ENDPOINT_LEVELS
 from compass.core.logger import logger
@@ -105,7 +106,7 @@ class Hierarchy:
         elif use_default:
             data = self.session.hierarchy  # as this is a property, it will update when roles change
         else:
-            raise ValueError("No level data specified! unit_level, id and level, or use_default must be set!")
+            raise errors.CompassError("No level data specified! unit_level, id and level, or use_default must be set!")
 
         logger.debug(f"found unit data: id: {data.unit_id}, level: {data.level}")
 
@@ -165,9 +166,9 @@ class Hierarchy:
                 level_numeric = Levels[hier_level]
             except KeyError:
                 valid_levels = [level.name for level in Levels]
-                raise ValueError(f"Passed level: {hier_level} is illegal. Valid values are {valid_levels}") from None
+                raise errors.CompassError(f"Passed level: {hier_level} is illegal. Valid values are {valid_levels}") from None
         else:
-            raise ValueError("A numeric or string hierarchy level needs to be passed")
+            raise errors.CompassError("A numeric or string hierarchy level needs to be passed")
 
         logger.debug(f"getting data for unit {unit_id}")
         # Do child units exist? (i.e. is this level != group)
