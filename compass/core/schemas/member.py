@@ -315,6 +315,7 @@ class MemberRoleCore(MemberBase, MemberRoleBase):
 class MemberRolesCollection(pydantic.BaseModel):
     roles: dict[int, MemberRoleCore]
     membership_duration: float  # Membership duration in qualifying roles, in years
+    primary_role: Union[int, None]  # Primary role number. None if no primary role found
 
 
 # Roles Tab (Role Detail Popup - Main)

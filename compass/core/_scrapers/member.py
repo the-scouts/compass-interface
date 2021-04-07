@@ -328,6 +328,7 @@ class PeopleScraper(InterfaceBase):
         if statuses is None:
             statuses = STATUSES
 
+        primary_role = None
         roles_dates = []
         roles_data = {}
         rows = tree.xpath("//tbody/tr")
@@ -341,12 +342,13 @@ class PeopleScraper(InterfaceBase):
             if any(el.tag == "input" for el in cells[0]) or cells[0].getchildren() == []:
                 cells.pop(0)
 
+            role_title, primary_role = _extract_primary_role(cells[0].text_content().strip(), primary_role)
             role_status, review_date = _extract_review_date(cells[5].text_content().strip())
 
             role_details = schema.MemberRoleCore(
                 role_number=int(row.get("data-pk")),
                 membership_number=membership_number,
-                role_title=cells[0].text_content().strip(),
+                role_title=role_title,
                 role_class=cells[1].text_content().strip(),
                 # role_type only visible if access to System Admin tab
                 role_type=cells[0][0].get("title", None),
@@ -359,6 +361,9 @@ class PeopleScraper(InterfaceBase):
                 review_date=review_date,
                 can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
             )
+            # Save role number if role is primary
+            if primary_role is True:
+                primary_role = role_details.role_number
             # Remove OHs etc from list
             if "helper" in role_details.role_class.lower() or {role_details.role_title.lower()} <= NON_VOLUNTEER_TITLES:
                 if keep_non_volunteer_roles is False:
@@ -376,7 +381,11 @@ class PeopleScraper(InterfaceBase):
 
         with validation_errors_logging(membership_number):
             # Calculate days of membership (inclusive), normalise to years.
-            return schema.MemberRolesCollection(roles=roles_data, membership_duration=_membership_duration(roles_dates))
+            return schema.MemberRolesCollection(
+                roles=roles_data,
+                membership_duration=_membership_duration(roles_dates),
+                primary_role=primary_role,
+            )
 
     def get_permits_tab(self, membership_number: int) -> list[schema.MemberPermit]:
         """Returns data from Permits tab for a given member.
@@ -740,6 +749,15 @@ def _process_address(address: str) -> _AddressData:
             street, town = addr_main.rsplit(", ", 1)
             return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
     return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)
+
+
+def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tuple[str, Union[int, Literal[True], None]]:
+    if primary_role is not None:
+        return role_title, primary_role
+    if role_title.endswith(" [Primary]"):
+        role_title = role_title.removesuffix(" [Primary]")
+        return role_title, True
+    return role_title, primary_role
 
 
 def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
