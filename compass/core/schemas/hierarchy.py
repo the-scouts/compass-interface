@@ -5,6 +5,7 @@ from typing import Literal, Optional
 import pydantic
 
 TYPES_SECTION = Literal[
+    "All",
     "Early Years Pilot",
     "Beavers",
     "Beaver Scout",
@@ -46,7 +47,7 @@ class UnitData(HierarchyLevel):
     sections: list[HierarchySection]
 
 
-class DescendantData(HierarchyUnit, UnitData):
+class DescendantData(UnitData, HierarchyUnit):
     pass
 
 
