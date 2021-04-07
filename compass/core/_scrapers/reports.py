@@ -9,8 +9,7 @@ import urllib.parse
 
 from lxml import html
 
-from compass.core.errors import CompassReportError
-from compass.core.errors import CompassReportPermissionError
+from compass.core import errors
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.settings import Settings
@@ -53,10 +52,10 @@ class ReportsScraper(InterfaceBase):
         if report_token_uri not in {"-1", "-2", "-3", "-4"}:
             return report_token_uri
         if report_token_uri in {"-2", "-3"}:
-            raise CompassReportError("Report aborted: Report No Longer Available")
+            raise errors.CompassReportError("Report aborted: Report No Longer Available")
         if report_token_uri == "-4":  # nosec (false positive B105; not a hardcoded passwordstring)
-            raise CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
-        raise CompassReportError("Report aborted")
+            raise errors.CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
+        raise errors.CompassReportError("Report aborted")
 
     @staticmethod
     def get_report_export_url(report_page: str, filename: Optional[str] = None) -> tuple[str, dict[str, str]]:
@@ -130,7 +129,7 @@ class ReportsScraper(InterfaceBase):
 
         # Check error state
         if "compass.scouts.org.uk%2fError.aspx|" in report.text:
-            raise CompassReportError("Compass Error!")
+            raise errors.CompassReportError("Compass Error!")
 
     def report_keep_alive(self, report_page: str) -> str:
         logger.info(f"Extending Report Session {datetime.datetime.now()}")

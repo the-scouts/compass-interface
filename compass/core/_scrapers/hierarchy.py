@@ -6,7 +6,7 @@ from typing import Literal, Union
 
 from lxml import html
 
-from compass.core.errors import CompassError
+from compass.core import errors
 from compass.core.interface_base import InterfaceBase
 from compass.core.schemas import hierarchy as schema
 from compass.core.settings import Settings
@@ -162,7 +162,7 @@ class HierarchyScraper(InterfaceBase):
 
         # If the search hasn't worked the form returns an InvalidSearchError
         if form.action == "./ScoutsPortal.aspx?Invalid=SearchError":
-            raise CompassError("Invalid Search")
+            raise errors.CompassError("Invalid Search")
 
         # Get the encoded JSON data from the HTML
         member_data_string = form.fields["ctl00$plInnerPanel_head$txt_h_Data"] or "[]"
