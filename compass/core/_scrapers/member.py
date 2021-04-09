@@ -848,7 +848,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
     # Update training_ogl with missing mandatory ongoing learning types
     blank_module = cast(TYPES_TRAINING_OGL_DATES, dict(completed_date=None, renewal_date=None))
-    return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules}
+    return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules.values()}
 
 
 def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
