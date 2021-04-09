@@ -239,7 +239,10 @@ class PeopleScraper(InterfaceBase):
         # CSS:  html body form div div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
         div_profile_tbl = tree[1][0][5][0][1][2][0][0]
         personal_details: dict[str, str] = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
-        contact_details: dict[str, str] = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
+        if len(div_profile_tbl) >= 5:
+            contact_details: dict[str, str] = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
+        else:
+            contact_details = {}
 
         # ## Core - Positional:
         details["name"] = personal_details["Name:"]  # Full Name
@@ -263,9 +266,10 @@ class PeopleScraper(InterfaceBase):
         details["occupation"] = personal_details.get("Occupation:", "").strip()
 
         # ## Other Sections (note double looping but hopefully not large impact)
-        details["disabilities"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[9][2])}
-        details["qualifications"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[13][2])}
-        details["hobbies"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[17][2])}
+        if len(div_profile_tbl) >= 17:  # As far as I know, the `other' sections are all-or-nothing, so we can skip to check hobbies
+            details["disabilities"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[9][2])}
+            details["qualifications"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[13][2])}
+            details["hobbies"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[17][2])}
 
         # Filter out keys with no value.
         details = {k: v for k, v in details.items() if v}
