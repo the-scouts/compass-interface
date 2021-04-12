@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
+import time
 from typing import cast, get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
@@ -116,6 +117,7 @@ references_codes = {
     "S": "References Satisfactory",
     "U": "References Unsatisfactory",
 }
+_cache = {}
 
 
 class PeopleScraper(InterfaceBase):
@@ -218,6 +220,11 @@ class PeopleScraper(InterfaceBase):
                 Access to the member is not given by the current authentication
 
         """
+        if ("personal", membership_number) in _cache:
+            time_stored, parsed_data = _cache["personal", membership_number]
+            if time.time() - time.mktime(time_stored + (0, 0, 0, 0)) < 60*60*1:
+                return parsed_data
+
         response = self._get_member_profile_tab(membership_number, "Personal")
 
         tree = html.fromstring(response)
@@ -282,7 +289,9 @@ class PeopleScraper(InterfaceBase):
                     details[additional] = {}
 
         with validation_errors_logging(membership_number):
-            return schema.MemberDetails.parse_obj(details)
+            parsed_data = schema.MemberDetails.parse_obj(details)
+            _cache["personal", membership_number] = time.gmtime()[:5], parsed_data
+            return parsed_data
 
     def get_roles_tab(
         self,
