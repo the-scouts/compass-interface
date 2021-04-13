@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import time
-from typing import TypeVar
+from typing import TypeVar, TYPE_CHECKING
 
-T = TypeVar("T", bound=object)
+if TYPE_CHECKING:
+    T = TypeVar("T", bound=object)
+
 _cache: dict[tuple[str, int], T] = {}
 
 
