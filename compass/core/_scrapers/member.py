@@ -83,10 +83,6 @@ mogl_modules = {
     "gdpr": "gdpr",  # phony entry, used for key
 }
 
-# get_roles_detail
-renamed_levels = {
-    "County / Area / Scottish Region / Overseas Branch": "County",
-}
 renamed_modules = {
     "001": "module_01",
     "TRST": "trustee_intro",
@@ -987,11 +983,10 @@ def _process_hierarchy(inputs: html.InputGetter) -> Iterator[tuple[str, str]]:
     for input_name, input_el in dict(inputs).items():
         if "ctl00$workarea$cbo_p1_location" not in input_name:
             continue
-        level_name = input_el.get("title")
+        level_name = input_el.get("title").lower()
         level_value = input_el[0].text
-        if level_value in unset_vals:
-            continue
-        yield renamed_levels.get(level_name, level_name).lower(), level_value
+        if level_value not in unset_vals:
+            yield "county" if level_name == "county / area / scottish region / overseas branch" else level_name, level_value
 
 
 def _process_getting_started(getting_started_modules: html.HtmlElement) -> dict[str, dict[str, Union[None, str, datetime.date]]]:
