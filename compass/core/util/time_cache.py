@@ -19,9 +19,9 @@ def get_key(key_type: str, key_id: int, /) -> T | None:
     if pair is None:
         return None
     time_stored, value = pair
-    if time.time() - time.mktime(time_stored + (0, 0, 0, 0)) < 60 * 60 * 1:
+    if time.time() - time.mktime(time_stored) < 60 * 60 * 1:
         return value
     del _cache[key_type, key_id]
 
 
-clear = _cache.clear()
+clear = _cache.clear
