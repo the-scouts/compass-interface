@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import re
-import time
 from typing import cast, get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
@@ -12,6 +11,7 @@ from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
+from compass.core.util import time_cache
 from compass.core.util.context_managers import validation_errors_logging
 from compass.core.util.type_coercion import maybe_int
 from compass.core.util.type_coercion import parse
@@ -220,10 +220,8 @@ class PeopleScraper(InterfaceBase):
                 Access to the member is not given by the current authentication
 
         """
-        if ("personal", membership_number) in _cache:
-            time_stored, parsed_data = _cache["personal", membership_number]
-            if time.time() - time.mktime(time_stored + (0, 0, 0, 0)) < 60*60*1:
-                return parsed_data
+        if (cached := time_cache.get_key("personal", membership_number)) is not None:
+            return cached
 
         response = self._get_member_profile_tab(membership_number, "Personal")
 
@@ -289,9 +287,7 @@ class PeopleScraper(InterfaceBase):
                     details[additional] = {}
 
         with validation_errors_logging(membership_number):
-            parsed_data = schema.MemberDetails.parse_obj(details)
-            _cache["personal", membership_number] = time.gmtime()[:5], parsed_data
-            return parsed_data
+            return time_cache.set_key(("personal", membership_number), schema.MemberDetails.parse_obj(details))
 
     def get_roles_tab(
         self,
