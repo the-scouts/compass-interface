@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
     TYPES_TRAINING_OGL_DATES = dict[Literal["completed_date", "renewal_date"], Optional[datetime.date]]
     TYPES_TRAINING_OGL = dict[str, TYPES_TRAINING_OGL_DATES]
+else:
+    TYPES_TRAINING_OGL_DATES = ...  # needed for runtime cast. grrr mypy etc
 
 # _get_member_profile_tab
 MEMBER_PROFILE_TAB_TYPES = Literal[
@@ -114,7 +116,6 @@ references_codes = {
     "S": "References Satisfactory",
     "U": "References Unsatisfactory",
 }
-_cache = {}
 
 
 class PeopleScraper(InterfaceBase):
