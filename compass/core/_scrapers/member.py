@@ -338,6 +338,10 @@ class PeopleScraper(InterfaceBase):
 
         """
         logger.debug(f"getting roles tab for member number: {membership_number}")
+
+        if (cached := time_cache.get_key("roles", membership_number)) is not None:
+            return cached
+
         response = self._get_member_profile_tab(membership_number, "Roles")
         tree = html.fromstring(response)
 
@@ -399,10 +403,13 @@ class PeopleScraper(InterfaceBase):
 
         with validation_errors_logging(membership_number):
             # Calculate days of membership (inclusive), normalise to years.
-            return schema.MemberRolesCollection(
-                roles=roles_data,
-                membership_duration=_membership_duration(roles_dates),
-                primary_role=primary_role,
+            return time_cache.set_key(
+                ("roles", membership_number),
+                schema.MemberRolesCollection(
+                    roles=roles_data,
+                    membership_duration=_membership_duration(roles_dates),
+                    primary_role=primary_role,
+                ),
             )
 
     def get_permits_tab(self, membership_number: int) -> list[schema.MemberPermit]:
@@ -422,6 +429,9 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
+        if (cached := time_cache.get_key("permits", membership_number)) is not None:
+            return cached
+
         response = self._get_member_profile_tab(membership_number, "Permits")
         tree = html.fromstring(response)
 
@@ -443,8 +453,7 @@ class PeopleScraper(InterfaceBase):
                     status=child_nodes[5].get("class"),
                 )
                 permits.append(permit)
-
-            return permits
+        return time_cache.set_key(("permits", membership_number), permits)
 
     @overload
     def get_training_tab(self, membership_number: int, ongoing_only: Literal[True]) -> schema.MemberMandatoryTraining:
@@ -501,6 +510,9 @@ class PeopleScraper(InterfaceBase):
         """
         logger.debug(f"getting training tab for member number: {membership_number}")
 
+        if (cached := time_cache.get_key("mogl" if ongoing_only else "training", membership_number)) is not None:
+            return cached
+
         response = self._get_member_profile_tab(membership_number, "Training")
         tree = html.fromstring(response)
 
@@ -525,10 +537,11 @@ class PeopleScraper(InterfaceBase):
 
         if ongoing_only:
             with validation_errors_logging(membership_number):
-                return schema.MemberMandatoryTraining.parse_obj(training_ogl)
+                return time_cache.set_key(("mogl", membership_number), schema.MemberMandatoryTraining.parse_obj(training_ogl))
 
         with validation_errors_logging(membership_number):
-            return schema.MemberTrainingTab.parse_obj({"roles": training_roles, "plps": training_plps, "mandatory": training_ogl})
+            details = {"roles": training_roles, "plps": training_plps, "mandatory": training_ogl}
+            return time_cache.set_key(("training", membership_number), schema.MemberTrainingTab.parse_obj(details))
 
     def get_awards_tab(self, membership_number: int) -> list[schema.MemberAward]:
         """Returns data from Awards tab for a given member.
@@ -552,6 +565,9 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
+        if (cached := time_cache.get_key("awards", membership_number)) is not None:
+            return cached
+
         response = self._get_member_profile_tab(membership_number, "Awards")
         tree = html.fromstring(response)
 
@@ -570,7 +586,7 @@ class PeopleScraper(InterfaceBase):
                     date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
                 )
                 awards.append(award_data)
-        return awards
+        return time_cache.set_key(("awards", membership_number), awards)
 
     def get_disclosures_tab(self, membership_number: int) -> list[schema.MemberDisclosure]:
         """Returns data from Disclosures tab for a given member.
@@ -599,6 +615,9 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
+        if (cached := time_cache.get_key("disclosures", membership_number)) is not None:
+            return cached
+
         response = self._get_member_profile_tab(membership_number, "Disclosures")
         tree = html.fromstring(response)
 
@@ -624,7 +643,7 @@ class PeopleScraper(InterfaceBase):
                     expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
                 )
                 disclosures.append(disclosure)
-        return disclosures
+        return time_cache.set_key(("disclosures", membership_number), disclosures)
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(self, role_number: int) -> schema.MemberRolePopup:
@@ -671,6 +690,9 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
+        if (cached := time_cache.get_key("role_detail", role_number)) is not None:
+            return cached
+
         # start_time = time.time()
         response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
         # logger.debug(f"Getting details for role number: {role_number}. Request in {(time.time() - start_time):.2f}s")
@@ -722,12 +744,15 @@ class PeopleScraper(InterfaceBase):
         logger.debug(f"Processed details for role number: {role_number}.")
         # TODO data-ng_id?, data-rtrn_id?
         with validation_errors_logging(role_number, name="Role Number"):
-            return schema.MemberRolePopup.parse_obj(
-                {
-                    "hierarchy": dict(_process_hierarchy(inputs)),
-                    "details": role_details,
-                    "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
-                }
+            return time_cache.set_key(
+                ("role_detail", role_number),
+                schema.MemberRolePopup.parse_obj(
+                    {
+                        "hierarchy": dict(_process_hierarchy(inputs)),
+                        "details": role_details,
+                        "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
+                    }
+                ),
             )
 
 
@@ -906,7 +931,6 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     child_nodes = list(role)
 
     role_data: dict[str, Union[None, str, int, datetime.date]] = dict()
-
     role_number = int(role.get("data-ng_mrn"))
     role_data["role_number"] = role_number
     role_data["role_title"] = child_nodes[0].text_content()
@@ -920,9 +944,7 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     else:
         role_data["role_status"] = status_with_review
         role_data["review_date"] = None
-
     role_data["location"] = child_nodes[3].text_content()
-
     training_advisor_string = child_nodes[4].text_content()
     if training_advisor_string:
         role_data["ta_data"] = training_advisor_string
@@ -930,7 +952,6 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
         training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
         role_data["ta_number"] = maybe_int(training_advisor_data[0])
         role_data["ta_name"] = training_advisor_data[1]
-
     completion_string = child_nodes[5].text_content()
     if completion_string:
         role_data["completion"] = completion_string
@@ -946,7 +967,6 @@ def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Option
     line_manager_el = next((op for op in line_manager_list if op.get("selected")), None)
     if line_manager_el is None:
         return None, None
-
     number = maybe_int(line_manager_el.get("value"))
     name = line_manager_el.text.strip()
     if name in unset_vals:
