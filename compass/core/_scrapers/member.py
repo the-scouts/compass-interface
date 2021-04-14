@@ -34,7 +34,6 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 TABS = {tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES)}
 
 # get_roles_tab
-STATUSES = set(get_args(schema.TYPES_ROLE_STATUS))
 NON_VOLUNTEER_TITLES = {
     # occasional helper roles:
     "group occasional helper",
@@ -285,7 +284,6 @@ class PeopleScraper(InterfaceBase):
         self,
         membership_number: int,
         keep_non_volunteer_roles: bool = False,
-        statuses: Optional[set[str]] = None,
     ) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
 
@@ -294,7 +292,6 @@ class PeopleScraper(InterfaceBase):
         Args:
             membership_number: Membership Number to use
             keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
-            statuses: Explicit set of role statuses to keep
 
         Returns:
             A MemberRolesCollection object with the data from the roles tab
@@ -339,9 +336,6 @@ class PeopleScraper(InterfaceBase):
         if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
             raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
 
-        if statuses is None:
-            statuses = STATUSES
-
         primary_role = None
         roles_dates = []
         roles_data = {}
@@ -385,9 +379,7 @@ class PeopleScraper(InterfaceBase):
                 # If role_end is a falsy value (None), replace with today's date
                 roles_dates.append((role_details.role_start, role_details.role_end or datetime.date.today()))
 
-            # Role status filter
-            if role_status in statuses:
-                roles_data[role_details.role_number] = role_details
+            roles_data[role_details.role_number] = role_details
 
         with validation_errors_logging(membership_number):
             # Calculate days of membership (inclusive), normalise to years.

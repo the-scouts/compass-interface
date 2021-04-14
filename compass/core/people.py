@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
 
-from compass.core._scrapers.member import PeopleScraper
-from compass.core._scrapers.member import STATUSES
-from compass.core.schemas.member import TYPES_ROLE_STATUS
+from compass.core._scrapers import member as scraper
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
-
     from compass.core.logon import Logon
     from compass.core.schemas import member as schema
 
@@ -19,7 +15,7 @@ if TYPE_CHECKING:
 class People:
     def __init__(self, session: Logon):
         """Constructor for People."""
-        self._scraper = PeopleScraper(session._session)
+        self._scraper = scraper.PeopleScraper(session._session)
         self.membership_number = session.membership_number
 
     def personal(self, membership_number: int) -> schema.MemberDetails:
@@ -47,7 +43,6 @@ class People:
         membership_number: int,
         keep_non_volunteer_roles: bool = False,
         only_active: bool = False,
-        statuses: Optional[Iterable[TYPES_ROLE_STATUS]] = None,
     ) -> schema.MemberRolesCollection:
         """Gets the data from the Role tab in Compass for the specified member.
 
@@ -55,9 +50,8 @@ class People:
 
         Args:
             membership_number: Membership Number to use
-            keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
-            only_active: Keep only active (Full, Provisional, Pre-Provisional) roles?
-            statuses: Explicit set of role statuses to keep
+            keep_non_volunteer_roles: If True, Helper (OH/PVG) & Network are kept.
+            only_active: If True, inactive roles (Closed, Cancelled) are not returned.
 
         Returns:
             A MemberRolesDict object containing all data.
@@ -70,14 +64,17 @@ class People:
                 data for the requested member.
 
         """
-        if only_active:
-            # List taken from `ROLE_HIDEME` css class - only applied to Cancelled/Closed roles
-            unique_statuses: Optional[set[str]] = STATUSES - {"Closed", "Cancelled"}
-        elif statuses is None:
-            unique_statuses = None
-        else:
-            unique_statuses = set(statuses)
-        return self._scraper.get_roles_tab(membership_number, keep_non_volunteer_roles, unique_statuses)
+        roles_data = self._scraper.get_roles_tab(membership_number, keep_non_volunteer_roles)
+        if only_active is False:
+            return roles_data
+        # Role status filter
+        status_blacklist = {"Closed", "Cancelled"}  # Inactive roles inferred from `ROLE_HIDEME` css class
+        filtered_roles = {number: model for number, model in roles_data.roles.items() if model.role_status not in status_blacklist}
+        # if role list hasn't changed return original model
+        if filtered_roles.keys() == roles_data.roles.keys():
+            return roles_data
+        # don't mutate cached model
+        return roles_data.__class__.parse_obj(roles_data.__dict__ | {"roles": filtered_roles})
 
     def role_detail(self, role_number: int) -> schema.MemberRolePopup:
         """Get detailed information for specified role.
