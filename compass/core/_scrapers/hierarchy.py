@@ -87,7 +87,7 @@ class HierarchyScraper(InterfaceBase):
             parsed = {
                 "unit_id": int(unit_dict["Value"]),
                 "name": unit_dict["Description"],
-                "parent_id": unit_dict["Parent"],
+                # "parent_id": unit_dict["Parent"],
             }
             if unit_dict["Tag"]:
                 tag = json.loads(unit_dict["Tag"])[0]
