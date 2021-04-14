@@ -656,12 +656,12 @@ class PeopleScraper(InterfaceBase):
             raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
 
         inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(form.inputs)
-        fields: dict[str, Union[None, str]] = {k: v.value for k, v in inputs.items()}
+        fields: dict[str, Union[str]] = {k: v.value for k, v in inputs.items() if v.value is not None}
 
         line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
-        ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")  # CE (Confidential Enquiry) Check
+        ce_check = fields.get("ctl00$workarea$txt_p2_cecheck", "")  # CE (Confidential Enquiry) Check
         disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
-        ref_code = fields.get("ctl00$workarea$cbo_p2_referee_status")
+        ref_code = fields.get("ctl00$workarea$cbo_p2_referee_status", "")
 
         approval_values = {row[1][0].get("data-app_code"): row[1][0].get("data-db") for row in tree.xpath("//tr[@class='trProp']")}
         # row[1][0].get("title") gives title text, but this is not useful as it does not reflect latest changes,
@@ -672,15 +672,15 @@ class PeopleScraper(InterfaceBase):
             # `organisation_level` is ignored, no corresponding field in MemberTrainingRole:
             organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),
             birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
-            membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno")),
+            membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno", 0)),
             # `name` is ignored, no corresponding field in MemberTrainingRole:
-            name=fields.get("ctl00$workarea$txt_p1_membername").split(" ", 1)[1],
+            name=fields.get("ctl00$workarea$txt_p1_membername", " ").split(" ", 1)[1],
             role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
-            role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate")),
+            role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate", "")),
             role_status=fields.get("ctl00$workarea$txt_p2_status"),
             line_manager_number=line_manager_number,
             line_manager=line_manager_name,
-            review_date=parse(fields.get("ctl00$workarea$txt_p2_review")),
+            review_date=parse(fields.get("ctl00$workarea$txt_p2_review", "")),
             ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
             disclosure_check=disclosure_check,
             disclosure_date=disclosure_date,
