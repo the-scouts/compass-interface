@@ -184,6 +184,29 @@ class People:
 
     # Convenience methods:
 
+    def adult_service_length(self, membership_number: int) -> float:
+        """Returns length of service in qualifying roles in years
+
+        Excludes non-volunteer roles (e.g. Occasional Helper, PVG, Network),
+        and returns total membership duration in fractional years. Correctly
+        accounts for role overlap and gaps in service, as well as role statuses
+
+        Args:
+            membership_number: Membership Number to use
+
+        Returns:
+            Length of service in fractional years
+
+        Raises:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+            PermissionError:
+                If the current user does not have permission to view roles
+                data for the requested member.
+
+        """
+        return self._scraper.get_roles_tab(membership_number).membership_duration
+
     def latest_disclosure(self, membership_number: int) -> Optional[schema.MemberDisclosure]:
         """Gets latest disclosure for a given member.
 

@@ -809,7 +809,7 @@ def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -
     if not dates:  # handle empty iterable
         return 0
     membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(dates))
-    return membership_duration_days / 365.2425  # Leap year except thrice per 400 years.
+    return round(membership_duration_days / 365.2425, 3)  # Leap year except thrice per 400 years.
 
 
 def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.HtmlElement) -> TYPES_TRAINING_OGL:
