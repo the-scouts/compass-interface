@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import typing
-from typing import Literal, Union
+from typing import Literal
 
 from lxml import html
 
@@ -31,16 +31,14 @@ endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOIN
 
 class HierarchyScraper(InterfaceBase):
     # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
-    def get_units_from_hierarchy(
-        self, parent_unit: int, level: TYPES_ENDPOINT_LEVELS
-    ) -> Union[list[schema.HierarchySection], list[schema.HierarchyUnit]]:
+    def get_units_from_hierarchy(self, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[schema.HierarchyUnit]:
         """Get all children of a given unit.
 
         If LiveData=Y is passed, the resulting JSON additionally contains:
             - (duplicated) parent id
             - the unit address
             - number of members
-            - SectionType1 and SectionTypeDesc1 keys, if requesting sections data
+            - section type details, if requesting sections data
 
         Args:
             parent_unit: The unit ID to get descendants from
@@ -97,8 +95,8 @@ class HierarchyScraper(InterfaceBase):
                 parsed["address"] = tag["address"]
                 parsed["member_count"] = tag["Members"]
                 # Only include section_type if there is section type data
-                if "SectionTypeDesc" in tag:
-                    parsed["section_type"] = tag["SectionTypeDesc"]
+                if "SectionTypeDesc" in tag or "SectionTypeDesc1" in tag:
+                    parsed["section_type"] = tag.get("SectionTypeDesc") or tag.get("SectionTypeDesc1")
 
             result_units.append(model_class(**parsed))
         return result_units
