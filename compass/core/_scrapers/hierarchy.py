@@ -27,6 +27,18 @@ TYPES_ENDPOINT_LEVELS = Literal[
     "group_sections",
 ]
 endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOINT_LEVELS)}
+section_type_map = {
+    "Early Years Pilot": "EY Pilot",
+    "Beavers": "Beavers",
+    "Beaver Scout": "Beavers",
+    "Cub Scout": "Cubs",
+    "Scout": "Scouts",
+    "Explorer Scouts": "Explorers",
+    "Scout Network": "Network",
+    "Scout Active Support": "ASU",
+    "All": "Other",
+    "Other": "Other",
+}
 
 
 class HierarchyScraper(InterfaceBase):
@@ -96,7 +108,8 @@ class HierarchyScraper(InterfaceBase):
                 # parsed["member_count"] = tag["Members"]
                 # Only include section_type if there is section type data
                 if "SectionTypeDesc" in tag or "SectionTypeDesc1" in tag:
-                    parsed["section_type"] = tag.get("SectionTypeDesc") or tag.get("SectionTypeDesc1")
+                    section_type = tag.get("SectionTypeDesc") or tag.get("SectionTypeDesc1") or "MISSING"
+                    parsed["section_type"] = section_type_map.get(section_type, section_type)
 
             result_units.append(model_class(**parsed))
         return result_units

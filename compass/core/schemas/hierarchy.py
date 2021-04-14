@@ -5,15 +5,13 @@ from typing import Literal, Optional
 import pydantic
 
 TYPES_SECTION = Literal[
-    "All",
-    "Early Years Pilot",
+    "EY Pilot",
     "Beavers",
-    "Beaver Scout",
-    "Cub Scout",
-    "Explorer Scouts",
-    "Scout",
-    "Scout Active Support",
-    "Scout Network",
+    "Cubs",
+    "Scouts",
+    "Explorers",
+    "Network",
+    "ASU",
     "Other",
 ]
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
@@ -25,7 +23,7 @@ class HierarchyBase(pydantic.BaseModel):
 
 class HierarchyUnit(HierarchyBase):
     name: str
-    parent_id: int
+    # parent_id: int
 
     # # metadata
     # status: Literal["ACT"]
