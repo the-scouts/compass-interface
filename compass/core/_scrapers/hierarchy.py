@@ -91,9 +91,9 @@ class HierarchyScraper(InterfaceBase):
             }
             if unit_dict["Tag"]:
                 tag = json.loads(unit_dict["Tag"])[0]
-                parsed["status"] = tag["org_status"]
-                parsed["address"] = tag["address"]
-                parsed["member_count"] = tag["Members"]
+                # parsed["status"] = tag["org_status"]
+                # parsed["address"] = tag["address"]
+                # parsed["member_count"] = tag["Members"]
                 # Only include section_type if there is section type data
                 if "SectionTypeDesc" in tag or "SectionTypeDesc1" in tag:
                     parsed["section_type"] = tag.get("SectionTypeDesc") or tag.get("SectionTypeDesc1")
