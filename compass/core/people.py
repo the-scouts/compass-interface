@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
-# UTILITY CLASS - get_member_data, get_roles_from_members, etc
 
 
 class People:
@@ -182,6 +181,8 @@ class People:
         """
         return self._scraper.get_disclosures_tab(membership_number)
 
+    # Convenience methods:
+
     def latest_disclosure(self, membership_number: int) -> Optional[schema.MemberDisclosure]:
         """Gets latest disclosure for a given member.
 
@@ -203,6 +204,4 @@ class People:
         """
         disclosures = self.disclosures(membership_number)
         date_map = {disc.expiry_date: disc for disc in disclosures if disc.expiry_date}
-        if not date_map:
-            return None
-        return date_map[max(date_map)]
+        return date_map[max(date_map)] if date_map else None
