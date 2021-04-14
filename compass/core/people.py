@@ -128,21 +128,7 @@ class People:
             A MemberTrainingTab object containing all data.
 
         """
-        return self._scraper.get_training_tab(membership_number, ongoing_only=False)
-
-    def ongoing_learning(self, membership_number: int) -> schema.MemberMandatoryTraining:
-        """Gets ongoing learning data for a given member.
-
-        Args:
-            membership_number: Membership Number to use
-
-        Returns:
-            requests.exceptions.RequestException:
-                For errors while executing the HTTP call
-            A MemberMOGLList object containing all data.
-
-        """
-        return self._scraper.get_training_tab(membership_number, ongoing_only=True)
+        return self._scraper.get_training_tab(membership_number)
 
     def awards(self, membership_number: int) -> list[schema.MemberAward]:
         """Gets awards tab data for a given member.
@@ -206,6 +192,20 @@ class People:
 
         """
         return self._scraper.get_roles_tab(membership_number).membership_duration
+
+    def ongoing_learning(self, membership_number: int) -> schema.MemberMandatoryTraining:
+        """Gets ongoing learning data for a given member.
+
+        Args:
+            membership_number: Membership Number to use
+
+        Returns:
+            requests.exceptions.RequestException:
+                For errors while executing the HTTP call
+            A MemberMOGLList object containing all data.
+
+        """
+        return self._scraper.get_training_tab(membership_number).mandatory
 
     def latest_disclosure(self, membership_number: int) -> Optional[schema.MemberDisclosure]:
         """Gets latest disclosure for a given member.

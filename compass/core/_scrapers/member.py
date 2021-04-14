@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import cast, get_args, Literal, Optional, overload, TYPE_CHECKING, TypedDict, Union
+from typing import cast, get_args, Literal, Optional, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
 
@@ -280,11 +280,7 @@ class PeopleScraper(InterfaceBase):
         with validation_errors_logging(membership_number):
             return time_cache.set_key(("personal", membership_number), schema.MemberDetails.parse_obj(details))
 
-    def get_roles_tab(
-        self,
-        membership_number: int,
-        only_volunteer_roles: bool = True,
-    ) -> schema.MemberRolesCollection:
+    def get_roles_tab(self, membership_number: int, only_volunteer_roles: bool = True) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
 
         Parses the data to a common format, and removes Occasional Helper, PVG,
@@ -435,22 +431,11 @@ class PeopleScraper(InterfaceBase):
                 ))
         return time_cache.set_key(("permits", membership_number), permits)
 
-    @overload
-    def get_training_tab(self, membership_number: int, ongoing_only: Literal[True]) -> schema.MemberMandatoryTraining:
-        ...
-
-    @overload
-    def get_training_tab(self, membership_number: int, ongoing_only: Literal[False]) -> schema.MemberTrainingTab:
-        ...
-
-    def get_training_tab(
-        self, membership_number: int, ongoing_only: bool = False
-    ) -> Union[schema.MemberTrainingTab, schema.MemberMandatoryTraining]:
+    def get_training_tab(self, membership_number: int) -> schema.MemberTrainingTab:
         """Returns data from Training tab for a given member.
 
         Args:
             membership_number: Membership Number to use
-            ongoing_only: Return a dataframe of role training & OGL info? Otherwise returns all data
 
         Returns:
             A model with the data from the training tab (keys will always be
@@ -490,7 +475,7 @@ class PeopleScraper(InterfaceBase):
         """
         logger.debug(f"getting training tab for member number: {membership_number}")
 
-        if (cached := time_cache.get_key("mogl" if ongoing_only else "training", membership_number)) is not None:
+        if (cached := time_cache.get_key("training", membership_number)) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Training")
@@ -505,7 +490,7 @@ class PeopleScraper(InterfaceBase):
 
             # Personal Learning Plan (PLP) data
             if "trPLP" in classes:
-                plp_number, plp_data = _process_personal_learning_plan(row, ongoing_only)
+                plp_number, plp_data = _process_personal_learning_plan(row)
                 training_plps[plp_number] = plp_data
 
             # Role data
@@ -513,14 +498,8 @@ class PeopleScraper(InterfaceBase):
                 role_number, role_data = _process_role_data(row)
                 training_roles[role_number] = role_data
 
-        training_ogl = _compile_ongoing_learning(training_plps, tree)
-
-        if ongoing_only:
-            with validation_errors_logging(membership_number):
-                return time_cache.set_key(("mogl", membership_number), schema.MemberMandatoryTraining.parse_obj(training_ogl))
-
+        details = {"roles": training_roles, "plps": training_plps, "mandatory": _compile_ongoing_learning(training_plps, tree)}
         with validation_errors_logging(membership_number):
-            details = {"roles": training_roles, "plps": training_plps, "mandatory": training_ogl}
             return time_cache.set_key(("training", membership_number), schema.MemberTrainingTab.parse_obj(details))
 
     def get_awards_tab(self, membership_number: int) -> list[schema.MemberAward]:
@@ -695,7 +674,7 @@ class PeopleScraper(InterfaceBase):
             birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")) if Settings.debug else None,
             membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno")),
             # `name` is ignored, no corresponding field in MemberTrainingRole:
-            name=fields.get("ctl00$workarea$txt_p1_membername").split(" ", maxsplit=1)[1],
+            name=fields.get("ctl00$workarea$txt_p1_membername").split(" ", 1)[1],
             role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
             role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate")),
             role_status=fields.get("ctl00$workarea$txt_p2_status"),
@@ -851,7 +830,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
     return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules.values()}
 
 
-def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
+def _process_personal_learning_plan(plp: html.HtmlElement) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
     """Parses a personal learning plan from a LXML row element containing data."""
     plp_data = []
     plp_table = plp.getchildren()[0].getchildren()[0]
@@ -865,13 +844,8 @@ def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -
         module_data["module_id"] = int(child_nodes[0].get("id")[4:])
         matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()  # type: ignore[union-attr]
         if matches:
-            code = str(matches[0])
-            module_data["code"] = code
+            module_data["code"] = str(matches[0])
             module_data["name"] = matches[1]
-
-            # Skip processing if we only want ongoing learning data and the module is not GDPR.
-            if ongoing_only and "gdpr" not in code.lower():
-                continue
 
         learning_required = child_nodes[1].text_content().lower()
         module_data["learning_required"] = "yes" in learning_required if learning_required else None
@@ -882,7 +856,7 @@ def _process_personal_learning_plan(plp: html.HtmlElement, ongoing_only: bool) -
         validated_by_string = child_nodes[4].text_content()
         if validated_by_string:
             # Add empty item to prevent IndexError
-            validated_by_data = validated_by_string.split(" ", maxsplit=1) + [""]
+            validated_by_data = validated_by_string.split(" ", 1) + [""]
             module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
             module_data["validated_name"] = validated_by_data[1]
         module_data["validated_date"] = parse(child_nodes[5].text_content())
@@ -915,7 +889,7 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     if training_advisor_string:
         role_data["ta_data"] = training_advisor_string
         # Add empty item to prevent IndexError
-        training_advisor_data = training_advisor_string.split(" ", maxsplit=1) + [""]
+        training_advisor_data = training_advisor_string.split(" ", 1) + [""]
         role_data["ta_number"] = maybe_int(training_advisor_data[0])
         role_data["ta_name"] = training_advisor_data[1]
     completion_string = child_nodes[5].text_content()
