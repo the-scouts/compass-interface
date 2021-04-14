@@ -206,23 +206,3 @@ class People:
         if not date_map:
             return None
         return date_map[max(date_map)]
-
-
-# class Member:
-#     def personal_details(self):
-#         pass
-#
-#     def role_details(self):
-#         pass
-#
-#     def ongoing_learning(self):
-#         pass
-#
-#     def training(self):
-#         pass
-#
-#     def permits(self):
-#         pass
-#
-#     # def awards(self):
-#     #     pass
