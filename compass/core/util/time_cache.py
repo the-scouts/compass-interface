@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import time
-from typing import cast, TypeVar, TYPE_CHECKING
+from typing import cast, TypeVar
 
-if TYPE_CHECKING:
-    T = TypeVar("T", bound=object)
-
+T = TypeVar("T", bound=object)
 _cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
 
 
