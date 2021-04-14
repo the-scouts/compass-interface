@@ -652,11 +652,11 @@ class PeopleScraper(InterfaceBase):
         tree = html.fromstring(response.content)
 
         form: html.FormElement = tree.forms[0]
-        inputs: html.InputGetter = form.inputs
-        fields: html.FieldsDict = form.fields
-
         if form.action == "./ScoutsPortal.aspx?Invalid=Access":
             raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
+
+        inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(form.inputs)
+        fields: dict[str, Union[None, str]] = {k: v.value for k, v in inputs.items()}
 
         line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
         ce_check = fields.get("ctl00$workarea$txt_p2_cecheck")  # CE (Confidential Enquiry) Check
@@ -671,7 +671,7 @@ class PeopleScraper(InterfaceBase):
             role_number=role_number,
             # `organisation_level` is ignored, no corresponding field in MemberTrainingRole:
             organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),
-            birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")) if Settings.debug else None,
+            birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
             membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno")),
             # `name` is ignored, no corresponding field in MemberTrainingRole:
             name=fields.get("ctl00$workarea$txt_p1_membername").split(" ", 1)[1],
@@ -921,10 +921,10 @@ def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Opt
     return disclosure_status or None, None
 
 
-def _process_hierarchy(inputs: html.InputGetter) -> Iterator[tuple[str, str]]:
+def _process_hierarchy(inputs: dict[str, html.HtmlElement]) -> Iterator[tuple[str, str]]:
     """Get all levels of the org hierarchy and select those that will have information."""
     # Get all inputs with location data
-    for input_name, input_el in dict(inputs).items():
+    for input_name, input_el in inputs.items():
         if "ctl00$workarea$cbo_p1_location" not in input_name:
             continue
         level_name = input_el.get("title").lower()
