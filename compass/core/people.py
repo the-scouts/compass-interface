@@ -41,17 +41,21 @@ class People:
     def roles(
         self,
         membership_number: int,
-        keep_non_volunteer_roles: bool = False,
+        *,
+        only_volunteer_roles: bool = True,
         only_active: bool = False,
     ) -> schema.MemberRolesCollection:
-        """Gets the data from the Role tab in Compass for the specified member.
+        """Gets the data from the Role tab in Compass for the given member.
 
-        Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
+        Parses the data to a common format, and removes Occasional Helper, PVG,
+        Network, Council and Staff roles by default.
 
         Args:
             membership_number: Membership Number to use
-            keep_non_volunteer_roles: If True, Helper (OH/PVG) & Network are kept.
-            only_active: If True, inactive roles (Closed, Cancelled) are not returned.
+            only_volunteer_roles: If True, only volunteer roles are returned,
+                and Helper, Council, Network, etc are dropped.
+            only_active: If True, inactive roles (Closed, Cancelled) are not
+                returned.
 
         Returns:
             A MemberRolesDict object containing all data.
@@ -64,7 +68,7 @@ class People:
                 data for the requested member.
 
         """
-        roles_data = self._scraper.get_roles_tab(membership_number, keep_non_volunteer_roles)
+        roles_data = self._scraper.get_roles_tab(membership_number, only_volunteer_roles)
         if only_active is False:
             return roles_data
         # Role status filter

@@ -283,15 +283,16 @@ class PeopleScraper(InterfaceBase):
     def get_roles_tab(
         self,
         membership_number: int,
-        keep_non_volunteer_roles: bool = False,
+        only_volunteer_roles: bool = True,
     ) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
 
-        Sanitises the data to a common format, and removes Occasional Helper, Network, and PVG roles by default.
+        Parses the data to a common format, and removes Occasional Helper, PVG,
+        Network, Council and Staff roles by default.
 
         Args:
             membership_number: Membership Number to use
-            keep_non_volunteer_roles: Keep Helper (OH/PVG) & Network roles?
+            only_volunteer_roles: If True, drop non-volunteer roles
 
         Returns:
             A MemberRolesCollection object with the data from the roles tab
@@ -372,7 +373,7 @@ class PeopleScraper(InterfaceBase):
                 primary_role = role_details.role_number
             # Remove OHs etc from list
             if "helper" in role_details.role_class.lower() or role_details.role_title.lower() in NON_VOLUNTEER_TITLES:
-                if keep_non_volunteer_roles is False:
+                if only_volunteer_roles is True:
                     continue
             # If role is a full volunteer role, potentially add to date list
             elif role_status != "Cancelled":
