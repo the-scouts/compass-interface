@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import json
-import typing
-from typing import Literal
+from typing import get_args, Literal
 
 from lxml import html
 
@@ -26,7 +25,7 @@ TYPES_ENDPOINT_LEVELS = Literal[
     "district_sections",
     "group_sections",
 ]
-endpoints = {i: f"/{i.replace('_', '/')}" for i in typing.get_args(TYPES_ENDPOINT_LEVELS)}
+endpoints = {i: f"/{i.replace('_', '/')}" for i in get_args(TYPES_ENDPOINT_LEVELS)}
 section_type_map = {
     "Early Years Pilot": "EY Pilot",
     "Beavers": "Beavers",
