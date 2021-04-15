@@ -146,14 +146,15 @@ class Hierarchy:
 
         # Fetch the hierarchy
         out = self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level)
+        model = schema.UnitData.parse_obj(out)
         if Settings.cache_to_file is False:
-            return schema.UnitData.parse_obj(out)
+            return model
 
         # Try and write to a file for caching
         with context_managers.filesystem_guard("Unable to write cache file"):
-            filename.write_text(schema.UnitData.parse_obj(out).json(ensure_ascii=False), encoding="utf-8")
+            filename.write_text(model.json(ensure_ascii=False), encoding="utf-8")
 
-        return schema.UnitData.parse_obj(out)
+        return model
 
     # See recurseRetrieve in PGS\Needle
     def _get_descendants_recursive(
