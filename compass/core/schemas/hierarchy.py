@@ -23,12 +23,6 @@ class HierarchyBase(pydantic.BaseModel):
 
 class HierarchyUnit(HierarchyBase):
     name: str
-    # parent_id: int
-
-    # # metadata
-    # status: Literal["ACT"]
-    # address: str
-    # member_count: int
 
 
 class HierarchySection(HierarchyUnit):
