@@ -420,15 +420,17 @@ class PeopleScraper(InterfaceBase):
             for row in rows:
                 child_nodes = list(row)
                 expires = child_nodes[5].text_content()
-                permits.append(schema.MemberPermit(
-                    membership_number=membership_number,
-                    permit_type=child_nodes[1].text_content(),
-                    category=child_nodes[2].text_content(),
-                    type=child_nodes[3].text_content(),
-                    restrictions=child_nodes[4].text_content(),
-                    expires=parse(expires) if expires != "Revoked" else None,
-                    status=child_nodes[5].get("class"),
-                ))
+                permits.append(
+                    schema.MemberPermit(
+                        membership_number=membership_number,
+                        permit_type=child_nodes[1].text_content(),
+                        category=child_nodes[2].text_content(),
+                        type=child_nodes[3].text_content(),
+                        restrictions=child_nodes[4].text_content(),
+                        expires=parse(expires) if expires != "Revoked" else None,
+                        status=child_nodes[5].get("class"),
+                    )
+                )
         return time_cache.set_key(("permits", membership_number), permits)
 
     def get_training_tab(self, membership_number: int) -> schema.MemberTrainingTab:
@@ -537,12 +539,14 @@ class PeopleScraper(InterfaceBase):
         with validation_errors_logging(membership_number):
             for row in rows:
                 award_props = row[1][0]  # Properties are stored as yet another sub-table
-                awards.append(schema.MemberAward(
-                    membership_number=membership_number,
-                    type=award_props[0][1].text_content(),
-                    location=award_props[1][1].text_content() or None,
-                    date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
-                ))
+                awards.append(
+                    schema.MemberAward(
+                        membership_number=membership_number,
+                        type=award_props[0][1].text_content(),
+                        location=award_props[1][1].text_content() or None,
+                        date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
+                    )
+                )
         return time_cache.set_key(("awards", membership_number), awards)
 
     def get_disclosures_tab(self, membership_number: int) -> list[schema.MemberDisclosure]:
@@ -587,17 +591,19 @@ class PeopleScraper(InterfaceBase):
                 # Get children (cells in row)
                 cells = list(row)
 
-                disclosures.append(schema.MemberDisclosure(
-                    membership_number=membership_number,
-                    country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
-                    provider=cells[1].text_content(),
-                    type=cells[2].text_content(),
-                    number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
-                    issuer=cells[4].text_content() or None,
-                    issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
-                    status=cells[6].text_content(),
-                    expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
-                ))
+                disclosures.append(
+                    schema.MemberDisclosure(
+                        membership_number=membership_number,
+                        country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
+                        provider=cells[1].text_content(),
+                        type=cells[2].text_content(),
+                        number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
+                        issuer=cells[4].text_content() or None,
+                        issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
+                        status=cells[6].text_content(),
+                        expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
+                    )
+                )
         return time_cache.set_key(("disclosures", membership_number), disclosures)
 
     # See getAppointment in PGS\Needle
