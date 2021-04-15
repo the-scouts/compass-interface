@@ -3,13 +3,12 @@ from __future__ import annotations
 import enum
 import json
 from pathlib import Path
-from typing import cast, Iterable, Literal, Optional, TYPE_CHECKING, TypedDict, Union
+from typing import cast, Iterable, Optional, TYPE_CHECKING, TypedDict, Union
 
 from pydantic.json import pydantic_encoder
 
 from compass.core import errors
-from compass.core._scrapers.hierarchy import HierarchyScraper
-from compass.core._scrapers.hierarchy import TYPES_ENDPOINT_LEVELS
+from compass.core._scrapers import hierarchy as scraper
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
@@ -18,8 +17,6 @@ from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 
 
 class HierarchyState(TypedDict, total=False):
@@ -37,6 +34,9 @@ class HierarchyState(TypedDict, total=False):
     District_name: Optional[str]
     Group_ID: int
     Group_name: Optional[str]
+
+
+HierarchyState.__or__ = dict.__or__  # for typing, as TypedDict doesn't have an default or method
 
 
 class Levels(enum.IntEnum):
@@ -68,14 +68,14 @@ class UnitSections(enum.IntEnum):
 class Hierarchy:
     def __init__(self, session: Logon):
         """Constructor for Hierarchy."""
-        self._scraper: HierarchyScraper = HierarchyScraper(session._session)
+        self._scraper: scraper.HierarchyScraper = scraper.HierarchyScraper(session._session)
         self.session: Logon = session
 
     def get_unit_data(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
-        level: Optional[TYPES_UNIT_LEVELS] = None,
+        level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
     ) -> schema.HierarchyLevel:
         """Helper function to construct unit level data.
@@ -117,7 +117,7 @@ class Hierarchy:
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
-        level: Optional[TYPES_UNIT_LEVELS] = None,
+        level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
     ) -> schema.UnitData:
         """Gets all units at given level and below, including sections.
@@ -158,7 +158,7 @@ class Hierarchy:
 
     # See recurseRetrieve in PGS\Needle
     def _get_descendants_recursive(
-        self, unit_id: int, hier_level: Optional[TYPES_UNIT_LEVELS] = None, hier_num: Optional[Levels] = None
+        self, unit_id: int, hier_level: Optional[schema.TYPES_UNIT_LEVELS] = None, hier_num: Optional[Levels] = None
     ) -> dict[str, object]:
         """Recursively get all children from given unit ID and level name/number, with caching."""
         if hier_num is not None:
@@ -189,7 +189,7 @@ class Hierarchy:
                 grandchildren = self._get_descendants_recursive(child.unit_id, hier_num=child_level)
                 children_updated.append(child.dict() | grandchildren)
             descendant_data["child"] = children_updated
-        section_level: TYPES_ENDPOINT_LEVELS = UnitSections(level_numeric).name  # type: ignore[assignment]
+        section_level: scraper.TYPES_ENDPOINT_LEVELS = UnitSections(level_numeric).name  # type: ignore[assignment]
         descendant_data["sections"] = self._scraper.get_units_from_hierarchy(unit_id, section_level)
 
         return descendant_data
@@ -198,7 +198,7 @@ class Hierarchy:
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
-        level: Optional[TYPES_UNIT_LEVELS] = None,
+        level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
     ) -> set[int]:
         """Get all unique members for a given level and its descendants.

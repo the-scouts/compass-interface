@@ -11,6 +11,7 @@ from compass.core import errors
 from compass.core import schemas
 from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
+from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
 from compass.core.util import auth_header
@@ -19,7 +20,6 @@ from compass.core.util import counting_session
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
 TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
 TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
