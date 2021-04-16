@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 import json
 from pathlib import Path
-from typing import cast, Iterable, Optional, TYPE_CHECKING, TypedDict, Union
+from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
 
 from pydantic.json import pydantic_encoder
 
@@ -34,9 +34,6 @@ class HierarchyState(TypedDict, total=False):
     District_name: Optional[str]
     Group_ID: int
     Group_name: Optional[str]
-
-
-HierarchyState.__or__ = dict.__or__  # for typing, as TypedDict doesn't have an default or method
 
 
 class Levels(enum.IntEnum):
@@ -279,11 +276,11 @@ def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[HierarchyStat
         unit_id = d.unit_id
         name = d.name if isinstance(d, schema.DescendantData) else None
         level_data = hierarchy_state | {f"{level_name}_ID": unit_id, f"{level_name}_name": name}  # type: ignore[operator]
-        yield cast(HierarchyState, {"compass": unit_id, "name": name, "section": False} | level_data)
+        yield {"compass": unit_id, "name": name, "section": False} | level_data
         for child in d.child or []:
-            yield from flatten(child, cast(HierarchyState, level_data))
+            yield from flatten(child, level_data)
         for section in d.sections:
-            yield cast(HierarchyState, {"compass": section.unit_id, "name": section.name, "section": True} | level_data)
+            yield {"compass": section.unit_id, "name": section.name, "section": True} | level_data
 
     blank_state: HierarchyState = dict()
     return flatten(hierarchy_dict, blank_state)
