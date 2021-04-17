@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, cast, Optional, TypeVar, TYPE_CHECKING
+from typing import cast, Optional, TypeVar, TYPE_CHECKING
+
+from pydantic.json import pydantic_encoder
 
 from compass.core.settings import Settings
 from compass.core.util import context_managers
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
     from pathlib import Path
 
 T = TypeVar("T", bound=object)
-AnyCollection = TypeVar("AnyCollection", bound=Collection[Any])
 _cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
 
 
@@ -35,7 +35,7 @@ def mem_get(key_type: str, key_id: int, /) -> T | None:
 clear = _cache.clear
 
 
-def file_get(filename: Path, /, *, expected_type: type[Collection[Any]] = Collection) -> Optional[Collection[Any]]:
+def file_get(filename: Path, /, *, expected_type: type[T] | None = None) -> Optional[T]:
     if Settings.cache_to_file is False:
         return None
     try:
@@ -49,8 +49,8 @@ def file_get(filename: Path, /, *, expected_type: type[Collection[Any]] = Collec
         return None
 
 
-def file_set(filename: Path, json_string: str, /) -> None:
+def file_set(filename: Path, value: T, /) -> None:
     if Settings.cache_to_file is False:
         return
     with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
-        filename.write_text(json_string, encoding="utf-8")
+        filename.write_text(json.dumps(value, ensure_ascii=False, default=pydantic_encoder), encoding="utf-8")
