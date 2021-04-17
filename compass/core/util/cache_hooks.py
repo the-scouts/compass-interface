@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import cast, TypeVar, TYPE_CHECKING
+from typing import cast, Literal, TypeVar, TYPE_CHECKING
 
 from pydantic.json import pydantic_encoder
 
@@ -14,14 +14,19 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound=object)
 _cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
+_BACKEND_DISK: bool = False
+_EXPIRY_MINUTES: int = 60
 
 
 def mem_set(key: tuple[str, int], /, value: T) -> T:
-    _cache[key] = time.gmtime(), value
+    if Settings.use_cache is True:
+        _cache[key] = time.gmtime(), value
     return value
 
 
 def mem_get(key_type: str, key_id: int, /) -> T | None:
+    if Settings.use_cache is False:
+        return None
     pair = _cache.get((key_type, key_id))
     if pair is None:
         return None
@@ -36,7 +41,7 @@ clear = _cache.clear
 
 
 def file_get(filename: Path, /) -> object | None:
-    if Settings.cache_to_file is False:
+    if Settings.use_cache is False:
         return None
     try:
         json_data: object = json.loads(filename.read_text(encoding="utf-8"))
@@ -48,7 +53,21 @@ def file_get(filename: Path, /) -> object | None:
 
 
 def file_set(filename: Path, value: T, /) -> None:
-    if Settings.cache_to_file is False:
+    if Settings.use_cache is False:
         return
     with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
         filename.write_text(json.dumps(value, ensure_ascii=False, default=pydantic_encoder), encoding="utf-8")
+
+
+def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
+    """Turn on caching and set options
+
+    Args:
+        backend: Cache to disk or in-memory
+        expiry: Cache expiry in minutes. 0 to disable time-based expiry
+
+    """
+    global _BACKEND_DISK, _EXPIRY_MINUTES
+    Settings.use_cache = True
+    _BACKEND_DISK = backend == "disk"
+    _EXPIRY_MINUTES = expiry
