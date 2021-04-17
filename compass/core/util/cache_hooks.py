@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import cast, Optional, TypeVar, TYPE_CHECKING
+from typing import cast, TypeVar, TYPE_CHECKING
 
 from pydantic.json import pydantic_encoder
 
@@ -35,14 +35,12 @@ def mem_get(key_type: str, key_id: int, /) -> T | None:
 clear = _cache.clear
 
 
-def file_get(filename: Path, /, *, expected_type: type[T] | None = None) -> Optional[T]:
+def file_get(filename: Path, /) -> object | None:
     if Settings.cache_to_file is False:
         return None
     try:
-        json_data = json.loads(filename.read_text(encoding="UTF8"))
-        if not json_data:
-            return None
-        if expected_type is None or isinstance(json_data, expected_type):
+        json_data: object = json.loads(filename.read_text(encoding="utf-8"))
+        if json_data:
             return json_data
         return None
     except FileNotFoundError:

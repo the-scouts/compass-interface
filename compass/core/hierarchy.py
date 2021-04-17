@@ -1,11 +1,8 @@
 from __future__ import annotations
 
 import enum
-import json
 from pathlib import Path
 from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
-
-from pydantic.json import pydantic_encoder
 
 from compass.core import errors
 from compass.core._scrapers import hierarchy as scraper
@@ -137,8 +134,8 @@ class Hierarchy:
 
         filename = Path(f"hierarchy-{unit_level.unit_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
-        cached_data = cache_hooks.file_get(filename, expected_type=dict)
-        if cached_data is not None:
+        cached_data = cache_hooks.file_get(filename)
+        if cached_data is not None and isinstance(cached_data, dict):
             return schema.UnitData.parse_obj(cached_data)
 
         # Fetch the hierarchy
@@ -236,9 +233,9 @@ class Hierarchy:
     def get_members_in_units(self, parent_id: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
         filename = Path(f"all-members-{parent_id}.json")
 
-        cached_data = cache_hooks.file_get(filename, expected_type=list)
+        cached_data = cache_hooks.file_get(filename)
         # Attempt to see if the members dict has been fetched already and is on the local system
-        if cached_data is not None:
+        if cached_data is not None and isinstance(cached_data, list):
             return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in cached_data]
 
         # Fetch all members
