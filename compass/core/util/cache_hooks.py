@@ -20,7 +20,7 @@ _cache: dict[tuple[str, int], tuple[int, object]] = {}
 clear = _cache.clear  # clear cache function
 
 
-def set(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | None = None) -> T:
+def set_val(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | None = None) -> T:
     if Settings.use_cache is True:
         if _BACKEND_DISK:
             if filename is None:
@@ -34,7 +34,7 @@ def set(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | Non
     return value
 
 
-def get(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> T | None:
+def get_val(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> T | None:
     if Settings.use_cache is False:
         return None
     if _BACKEND_DISK:
