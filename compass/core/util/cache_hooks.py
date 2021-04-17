@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import contextlib
 import json
 from pathlib import Path
 import time
-from typing import cast, Iterator, Optional, TypeVar
+from typing import Any, cast, Optional, TypeVar, TYPE_CHECKING
 
 from compass.core.settings import Settings
-from compass.core.util.context_managers import AnyCollection
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 T = TypeVar("T", bound=object)
 _cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
@@ -32,27 +33,15 @@ def get_key(key_type: str, key_id: int, /) -> T | None:
 clear = _cache.clear
 
 
-@contextlib.contextmanager
-def get_cached_json(filename: Path, /, *, expected_type: Optional[type[AnyCollection]] = None) -> Iterator[Optional[AnyCollection]]:
+def get_cached_json(filename: Path, /, *, expected_type: type[Collection[Any]] = Collection) -> Optional[Collection[Any]]:
     if Settings.cache_to_file is False:
-        yield None
-        return  # don't process the rest of this context manager
+        return None
     try:
-        # Attempt to see if the data has been fetched already and is on the local system
         json_data = json.loads(filename.read_text(encoding="UTF8"))
-        if json_data:
-            if expected_type is not None:
-                if isinstance(json_data, expected_type):
-                    yield json_data
-                else:
-                    yield None
-            else:
-                yield json_data
+        if not json_data:
+            return None
+        if expected_type is None or isinstance(json_data, expected_type):
+            return json_data
+        return None
     except FileNotFoundError:
-        # Otherwise run the function
-        yield None
-
-        # TODO automatic result caching
-        # # Try and write to a file for caching
-        # with filesystem_guard("Unable to write cache file"):
-        #     filename.write_text(json.dumps(x, ensure_ascii=False, indent=0, default=pydantic_encoder), encoding="utf-8")
+        return None
