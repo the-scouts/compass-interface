@@ -137,7 +137,7 @@ class Hierarchy:
 
         filename = Path(f"hierarchy-{unit_level.unit_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
-        cached_data = cache_hooks.get_cached_json(filename, expected_type=dict)
+        cached_data = cache_hooks.file_get(filename, expected_type=dict)
         if cached_data is not None:
             return schema.UnitData.parse_obj(cached_data)
 
@@ -148,7 +148,7 @@ class Hierarchy:
             return model
 
         # Try and write to a file for caching
-        cache_hooks.set_cached_json(filename, model.json(ensure_ascii=False))
+        cache_hooks.file_set(filename, model.json(ensure_ascii=False))
 
         return model
 
@@ -236,7 +236,7 @@ class Hierarchy:
     def get_members_in_units(self, parent_id: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
         filename = Path(f"all-members-{parent_id}.json")
 
-        cached_data = cache_hooks.get_cached_json(filename, expected_type=list)
+        cached_data = cache_hooks.file_get(filename, expected_type=list)
         # Attempt to see if the members dict has been fetched already and is on the local system
         if cached_data is not None:
             return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in cached_data]
@@ -252,7 +252,7 @@ class Hierarchy:
             return all_members
 
         # Try and write to a file for caching
-        cache_hooks.set_cached_json(filename, json.dumps(all_members, ensure_ascii=False, default=pydantic_encoder))
+        cache_hooks.file_set(filename, json.dumps(all_members, ensure_ascii=False, default=pydantic_encoder))
 
         return all_members
 

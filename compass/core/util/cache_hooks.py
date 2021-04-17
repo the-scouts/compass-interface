@@ -16,12 +16,12 @@ AnyCollection = TypeVar("AnyCollection", bound=Collection[Any])
 _cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
 
 
-def set_key(key: tuple[str, int], /, value: T) -> T:
+def mem_set(key: tuple[str, int], /, value: T) -> T:
     _cache[key] = time.gmtime(), value
     return value
 
 
-def get_key(key_type: str, key_id: int, /) -> T | None:
+def mem_get(key_type: str, key_id: int, /) -> T | None:
     pair = _cache.get((key_type, key_id))
     if pair is None:
         return None
@@ -35,7 +35,7 @@ def get_key(key_type: str, key_id: int, /) -> T | None:
 clear = _cache.clear
 
 
-def get_cached_json(filename: Path, /, *, expected_type: type[Collection[Any]] = Collection) -> Optional[Collection[Any]]:
+def file_get(filename: Path, /, *, expected_type: type[Collection[Any]] = Collection) -> Optional[Collection[Any]]:
     if Settings.cache_to_file is False:
         return None
     try:
@@ -49,7 +49,7 @@ def get_cached_json(filename: Path, /, *, expected_type: type[Collection[Any]] =
         return None
 
 
-def set_cached_json(filename: Path, json_string: str, /) -> None:
+def file_set(filename: Path, json_string: str, /) -> None:
     if Settings.cache_to_file is False:
         return
     with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
