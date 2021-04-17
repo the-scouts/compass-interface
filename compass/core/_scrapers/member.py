@@ -212,7 +212,7 @@ class PeopleScraper(InterfaceBase):
                 Access to the member is not given by the current authentication
 
         """
-        if (cached := cache_hooks.mem_get("personal", membership_number)) is not None:
+        if (cached := cache_hooks.get(key=("personal", membership_number))) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Personal")
@@ -277,7 +277,7 @@ class PeopleScraper(InterfaceBase):
                     details[additional] = {}
 
         with validation_errors_logging(membership_number):
-            return cache_hooks.mem_set(("personal", membership_number), schema.MemberDetails.parse_obj(details))
+            return cache_hooks.set(schema.MemberDetails.parse_obj(details), key=("personal", membership_number))
 
     def get_roles_tab(self, membership_number: int, only_volunteer_roles: bool = True) -> schema.MemberRolesCollection:
         """Returns data from Roles tab for a given member.
@@ -324,7 +324,7 @@ class PeopleScraper(InterfaceBase):
         """
         logger.debug(f"getting roles tab for member number: {membership_number}")
 
-        if (cached := cache_hooks.mem_get("roles", membership_number)) is not None:
+        if (cached := cache_hooks.get(key=("roles", membership_number))) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Roles")
@@ -379,13 +379,13 @@ class PeopleScraper(InterfaceBase):
 
         with validation_errors_logging(membership_number):
             # Calculate days of membership (inclusive), normalise to years.
-            return cache_hooks.mem_set(
-                ("roles", membership_number),
+            return cache_hooks.set(
                 schema.MemberRolesCollection(
                     roles=roles_data,
                     membership_duration=_membership_duration(roles_dates),
                     primary_role=primary_role,
                 ),
+                key=("roles", membership_number),
             )
 
     def get_permits_tab(self, membership_number: int) -> list[schema.MemberPermit]:
@@ -405,7 +405,7 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        if (cached := cache_hooks.mem_get("permits", membership_number)) is not None:
+        if (cached := cache_hooks.get(key=("permits", membership_number))) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Permits")
@@ -430,7 +430,7 @@ class PeopleScraper(InterfaceBase):
                         status=child_nodes[5].get("class"),
                     )
                 )
-        return cache_hooks.mem_set(("permits", membership_number), permits)
+        return cache_hooks.set(permits, key=("permits", membership_number))
 
     def get_training_tab(self, membership_number: int) -> schema.MemberTrainingTab:
         """Returns data from Training tab for a given member.
@@ -476,7 +476,7 @@ class PeopleScraper(InterfaceBase):
         """
         logger.debug(f"getting training tab for member number: {membership_number}")
 
-        if (cached := cache_hooks.mem_get("training", membership_number)) is not None:
+        if (cached := cache_hooks.get(key=("training", membership_number))) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Training")
@@ -501,7 +501,7 @@ class PeopleScraper(InterfaceBase):
 
         details = {"roles": training_roles, "plps": training_plps, "mandatory": _compile_ongoing_learning(training_plps, tree)}
         with validation_errors_logging(membership_number):
-            return cache_hooks.mem_set(("training", membership_number), schema.MemberTrainingTab.parse_obj(details))
+            return cache_hooks.set(schema.MemberTrainingTab.parse_obj(details), key=("training", membership_number))
 
     def get_awards_tab(self, membership_number: int) -> list[schema.MemberAward]:
         """Returns data from Awards tab for a given member.
@@ -525,7 +525,7 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        if (cached := cache_hooks.mem_get("awards", membership_number)) is not None:
+        if (cached := cache_hooks.get(key=("awards", membership_number))) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Awards")
@@ -546,7 +546,7 @@ class PeopleScraper(InterfaceBase):
                         date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
                     )
                 )
-        return cache_hooks.mem_set(("awards", membership_number), awards)
+        return cache_hooks.set(awards, key=("awards", membership_number))
 
     def get_disclosures_tab(self, membership_number: int) -> list[schema.MemberDisclosure]:
         """Returns data from Disclosures tab for a given member.
@@ -575,7 +575,7 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        if (cached := cache_hooks.mem_get("disclosures", membership_number)) is not None:
+        if (cached := cache_hooks.get(key=("disclosures", membership_number))) is not None:
             return cached
 
         response = self._get_member_profile_tab(membership_number, "Disclosures")
@@ -603,7 +603,7 @@ class PeopleScraper(InterfaceBase):
                         expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
                     )
                 )
-        return cache_hooks.mem_set(("disclosures", membership_number), disclosures)
+        return cache_hooks.set(disclosures, key=("disclosures", membership_number))
 
     # See getAppointment in PGS\Needle
     def get_roles_detail(self, role_number: int) -> schema.MemberRolePopup:
@@ -650,7 +650,7 @@ class PeopleScraper(InterfaceBase):
                 For errors while executing the HTTP call
 
         """
-        if (cached := cache_hooks.mem_get("role_detail", role_number)) is not None:
+        if (cached := cache_hooks.get(key=("role_detail", role_number))) is not None:
             return cached
 
         response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
@@ -705,7 +705,7 @@ class PeopleScraper(InterfaceBase):
         }
 
         with validation_errors_logging(role_number, name="Role Number"):
-            return cache_hooks.mem_set(("role_detail", role_number), schema.MemberRolePopup.parse_obj(full_details))
+            return cache_hooks.set(schema.MemberRolePopup.parse_obj(full_details), key=("role_detail", role_number))
 
 
 class _AddressData(TypedDict):

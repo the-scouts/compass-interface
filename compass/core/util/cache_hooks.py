@@ -18,45 +18,49 @@ _BACKEND_DISK: bool = False
 _EXPIRY_MINUTES: int = 60
 
 
-def mem_set(key: tuple[str, int], /, value: T) -> T:
+def set(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | None = None) -> T:
     if Settings.use_cache is True:
-        _cache[key] = time.gmtime(), value
+        if _BACKEND_DISK:
+            if filename is None:
+                raise ValueError("Filename is None!")
+            with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
+                filename.write_text(json.dumps(value, ensure_ascii=False, default=pydantic_encoder), encoding="utf-8")
+        else:
+            if key is None:
+                raise ValueError("Key is None!")
+            _cache[key] = time.gmtime(), value
     return value
 
 
-def mem_get(key_type: str, key_id: int, /) -> T | None:
+def get(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> T | None:
     if Settings.use_cache is False:
         return None
-    pair = _cache.get((key_type, key_id))
-    if pair is None:
+    if _BACKEND_DISK:
+        if filename is None:
+            raise ValueError("Filename is None!")
+        if not filename.is_file():  # catching errors is expensive, so check first
+            return None
+        try:
+            json_data: object = json.loads(filename.read_text(encoding="utf-8"))
+            if json_data:
+                return json_data  # type: ignore[return-value]
+            return None
+        except FileNotFoundError:
+            return None
+    else:
+        if key is None:
+            raise ValueError("Key is None!")
+        pair = _cache.get(key)
+        if pair is None:
+            return None
+        time_stored, value = pair
+        if time.time() - time.mktime(time_stored) < 60 * 60 * 1:
+            return value  # type: ignore[return-value]
+        del _cache[key]
         return None
-    time_stored, value = pair
-    if time.time() - time.mktime(time_stored) < 60 * 60 * 1:
-        return cast(T, value)  # cast here not ideal but oh well
-    del _cache[key_type, key_id]
-    return None
 
 
 clear = _cache.clear
-
-
-def file_get(filename: Path, /) -> object | None:
-    if Settings.use_cache is False:
-        return None
-    try:
-        json_data: object = json.loads(filename.read_text(encoding="utf-8"))
-        if json_data:
-            return json_data
-        return None
-    except FileNotFoundError:
-        return None
-
-
-def file_set(filename: Path, value: T, /) -> None:
-    if Settings.use_cache is False:
-        return
-    with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
-        filename.write_text(json.dumps(value, ensure_ascii=False, default=pydantic_encoder), encoding="utf-8")
 
 
 def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
