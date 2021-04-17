@@ -14,7 +14,6 @@ from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
 from compass.core.settings import Settings
 from compass.core.util import cache_hooks
-from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -149,8 +148,7 @@ class Hierarchy:
             return model
 
         # Try and write to a file for caching
-        with context_managers.filesystem_guard("Unable to write cache file"):
-            filename.write_text(model.json(ensure_ascii=False), encoding="utf-8")
+        cache_hooks.set_cached_json(filename, data=model.json(ensure_ascii=False))
 
         return model
 
@@ -254,8 +252,7 @@ class Hierarchy:
             return all_members
 
         # Try and write to a file for caching
-        with context_managers.filesystem_guard("Unable to write cache file"):
-            filename.write_text(json.dumps(all_members, ensure_ascii=False, indent=4, default=pydantic_encoder), encoding="utf-8")
+        cache_hooks.set_cached_json(filename, data=json.dumps(all_members, ensure_ascii=False, default=pydantic_encoder))
 
         return all_members
 
