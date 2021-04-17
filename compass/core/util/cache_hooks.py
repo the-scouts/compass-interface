@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import cast, Literal, TypeVar, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING, TypeVar
 
 from pydantic.json import pydantic_encoder
 
@@ -12,10 +12,12 @@ from compass.core.util import context_managers
 if TYPE_CHECKING:
     from pathlib import Path
 
-T = TypeVar("T", bound=object)
-_cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
+    T = TypeVar("T", bound=object)
+
 _BACKEND_DISK: bool = False
-_EXPIRY_MINUTES: int = 60
+_EXPIRY_SECONDS: int = 60
+_cache: dict[tuple[str, int], tuple[int, object]] = {}
+clear = _cache.clear  # clear cache function
 
 
 def set(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | None = None) -> T:
@@ -28,7 +30,7 @@ def set(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | Non
         else:
             if key is None:
                 raise ValueError("Key is None!")
-            _cache[key] = time.gmtime(), value
+            _cache[key] = time.monotonic_ns() // 10 ** 9, value
     return value
 
 
@@ -42,7 +44,7 @@ def get(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> 
             return None
         try:
             json_data: object = json.loads(filename.read_text(encoding="utf-8"))
-            if json_data:
+            if json_data and (_EXPIRY_SECONDS == 0 or time.time() - filename.stat().st_mtime < _EXPIRY_SECONDS):
                 return json_data  # type: ignore[return-value]
             return None
         except FileNotFoundError:
@@ -54,13 +56,10 @@ def get(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> 
         if pair is None:
             return None
         time_stored, value = pair
-        if time.time() - time.mktime(time_stored) < 60 * 60 * 1:
+        if _EXPIRY_SECONDS == 0 or time.monotonic() - time_stored < _EXPIRY_SECONDS:
             return value  # type: ignore[return-value]
         del _cache[key]
         return None
-
-
-clear = _cache.clear
 
 
 def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
@@ -71,7 +70,7 @@ def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
         expiry: Cache expiry in minutes. 0 to disable time-based expiry
 
     """
-    global _BACKEND_DISK, _EXPIRY_MINUTES
+    global _BACKEND_DISK, _EXPIRY_SECONDS
     Settings.use_cache = True
     _BACKEND_DISK = backend == "disk"
-    _EXPIRY_MINUTES = expiry
+    _EXPIRY_SECONDS = expiry * 60
