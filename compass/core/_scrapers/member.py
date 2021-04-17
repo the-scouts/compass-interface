@@ -655,18 +655,15 @@ class PeopleScraper(InterfaceBase):
 
         response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
         tree = html.fromstring(response.content)
-
-        form: html.FormElement = tree.forms[0]
-        if form.action == "./ScoutsPortal.aspx?Invalid=Access":
+        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=Access":
             raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
 
-        inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(form.inputs)
+        inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(tree.forms[0].inputs)
         fields: dict[str, Union[str]] = {k: v.value for k, v in inputs.items() if v.value is not None}
 
         line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
         ce_check = fields.get("ctl00$workarea$txt_p2_cecheck", "")  # CE (Confidential Enquiry) Check
         disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
-        ref_code = fields.get("ctl00$workarea$cbo_p2_referee_status", "")
 
         approval_values = {row[1][0].get("data-app_code"): row[1][0].get("data-db") for row in tree.xpath("//tr[@class='trProp']")}
         # row[1][0].get("title") gives title text, but this is not useful as it does not reflect latest changes,
@@ -689,7 +686,7 @@ class PeopleScraper(InterfaceBase):
             ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
             disclosure_check=disclosure_check,
             disclosure_date=disclosure_date,
-            references=references_codes.get(ref_code, ref_code),
+            references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status")),
             appointment_panel_approval=approval_values.get("ROLPRP|AACA"),
             commissioner_approval=approval_values.get("ROLPRP|CAPR"),
             committee_approval=approval_values.get("ROLPRP|CCA"),
