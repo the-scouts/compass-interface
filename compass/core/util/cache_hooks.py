@@ -6,11 +6,13 @@ import time
 from typing import Any, cast, Optional, TypeVar, TYPE_CHECKING
 
 from compass.core.settings import Settings
+from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from collections.abc import Collection
 
 T = TypeVar("T", bound=object)
+AnyCollection = TypeVar("AnyCollection", bound=Collection[Any])
 _cache: dict[tuple[str, int], tuple[time.struct_time, object]] = {}
 
 
@@ -45,3 +47,8 @@ def get_cached_json(filename: Path, /, *, expected_type: type[Collection[Any]] =
         return None
     except FileNotFoundError:
         return None
+
+
+def set_cached_json(filename: Path, /, *, data: AnyCollection) -> None:
+    with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
+        filename.write_text(data, encoding="utf-8")
