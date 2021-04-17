@@ -63,7 +63,7 @@ def get(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> 
 
 
 def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
-    """Turn on caching and set options
+    """Turn on caching and set options.
 
     Args:
         backend: Cache to disk or in-memory

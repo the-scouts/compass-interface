@@ -171,7 +171,7 @@ class People:
     # Convenience methods:
 
     def adult_service_length(self, membership_number: int) -> float:
-        """Returns length of service in qualifying roles in years
+        """Returns length of service in qualifying roles in years.
 
         Excludes non-volunteer roles (e.g. Occasional Helper, PVG, Network),
         and returns total membership duration in fractional years. Correctly
