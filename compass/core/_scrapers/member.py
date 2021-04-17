@@ -686,7 +686,7 @@ class PeopleScraper(InterfaceBase):
             ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
             disclosure_check=disclosure_check,
             disclosure_date=disclosure_date,
-            references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status")),
+            references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status", "")),
             appointment_panel_approval=approval_values.get("ROLPRP|AACA"),
             commissioner_approval=approval_values.get("ROLPRP|CAPR"),
             committee_approval=approval_values.get("ROLPRP|CCA"),
