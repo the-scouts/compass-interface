@@ -148,7 +148,7 @@ class Hierarchy:
             return model
 
         # Try and write to a file for caching
-        cache_hooks.file_set(filename, model.json(ensure_ascii=False))
+        cache_hooks.file_set(filename, model)
 
         return model
 
@@ -252,7 +252,7 @@ class Hierarchy:
             return all_members
 
         # Try and write to a file for caching
-        cache_hooks.file_set(filename, json.dumps(all_members, ensure_ascii=False, default=pydantic_encoder))
+        cache_hooks.file_set(filename, all_members)
 
         return all_members
 
