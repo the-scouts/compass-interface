@@ -46,9 +46,8 @@ def get_val(*, filename: Path | None = None, key: tuple[str, int] | None = None)
             json_data: object = json.loads(filename.read_text(encoding="utf-8"))
             if json_data and (_EXPIRY_SECONDS == 0 or time.time() - filename.stat().st_mtime < _EXPIRY_SECONDS):
                 return json_data  # type: ignore[return-value]
-            return None
         except FileNotFoundError:
-            return None
+            pass
     else:
         if key is None:
             raise ValueError("Key is None!")
@@ -59,7 +58,7 @@ def get_val(*, filename: Path | None = None, key: tuple[str, int] | None = None)
         if _EXPIRY_SECONDS == 0 or time.monotonic() - time_stored < _EXPIRY_SECONDS:
             return value  # type: ignore[return-value]
         del _cache[key]
-        return None
+    return None
 
 
 def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
