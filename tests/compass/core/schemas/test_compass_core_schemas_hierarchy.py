@@ -4,12 +4,8 @@ import pytest
 from compass.core.schemas import hierarchy
 
 base_data = {
-    "unit_id": 123,
+    "unit_id": 42,
     "name": "name",
-    "parent_id": 321,
-    "status": "ACT",
-    "address": "W1A 1AA",
-    "member_count": 42,
 }
 
 
@@ -45,16 +41,7 @@ class TestSchemaHierarchy:
 
     def test_hierarchy_unit_invalid_normal(self):
         # Given
-        data = base_data | dict(parent_id="parent_id")
-
-        # Then
-        with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyUnit"):
-            # When
-            hierarchy.HierarchyUnit(**data)
-
-    def test_hierarchy_unit_invalid_literal(self):
-        # Given
-        data = base_data | dict(status="Not ACT")
+        data = base_data | dict(name={"W1A 1AA", "SW1A 1AA"})  # type: ignore # testing
 
         # Then
         with pytest.raises(pydantic.ValidationError, match=r"validation errors? for HierarchyUnit"):
@@ -101,9 +88,8 @@ class TestSchemaHierarchy:
 
     def test_unit_data_round_trip(self):
         # Given
-        section_data = base_data | dict(unit_id=1, parent_id=3, address="W1A", section_type="Beavers")
-        data = dict(unit_id=123, level="Group", child=None, sections=[section_data])
-        # Note we don't validate that child parent_id == parent unit_id
+        section_data = base_data | dict(unit_id=1, section_type="Beavers")
+        data = dict(unit_id=42, level="Group", child=None, sections=[section_data])
 
         # When
         result = hierarchy.UnitData(**data)
@@ -122,7 +108,7 @@ class TestSchemaHierarchy:
 
     def test_descendant_data_round_trip(self):
         # Given
-        hierarchy_unit_data = dict(unit_id=123, name="name", parent_id=321, status="ACT", address="W1A 1AA", member_count=42)
+        hierarchy_unit_data = dict(unit_id=123, name="name")
         unit_data_data = dict(unit_id=123, level="Group", child=None, sections=[hierarchy_unit_data | dict(section_type="Beavers")])
         data = hierarchy_unit_data | unit_data_data
 
@@ -134,7 +120,7 @@ class TestSchemaHierarchy:
 
     def test_descendant_data_invalid_missing(self):
         # Given
-        hierarchy_unit_data = dict(id=123, name="name", parent_id=321, status="Not ACT", address="W1A 1AA", member_count=42)
+        hierarchy_unit_data = dict(id=123, name="name")
         data = hierarchy_unit_data | {}
 
         # Then

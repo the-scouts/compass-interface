@@ -9,7 +9,6 @@ from compass.core._scrapers import hierarchy as scraper
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.schemas import hierarchy as schema
-from compass.core.settings import Settings
 from compass.core.util import cache_hooks
 
 if TYPE_CHECKING:
