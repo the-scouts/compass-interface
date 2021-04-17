@@ -20,12 +20,14 @@ if TYPE_CHECKING:
     C = Callable[..., RT]
 
 _cache: dict[tuple[str, int], tuple[int, object]] = {}
-clear = _cache.clear  # clear cache function
 
 
 class _Opt:  # avoid global scope
     BACKEND_DISK: bool = False
     EXPIRY_SECONDS: int = 60
+    set_cache: Callable[[tuple[str, int], T], T] = lambda key, value: value
+    get_cache: Callable[[tuple[str, int]], T | None] = lambda key: None
+    clear_cache: Callable[[], None] = lambda: None
 
 
 def set_val(key: tuple[str, int], value: T, /) -> T:
@@ -64,17 +66,26 @@ def get_val(key: tuple[str, int]) -> T | None:
         return None
 
 
-def clear_cache() -> None:
+def clear() -> None:
     if _Opt.BACKEND_DISK:
-        pass
+        pass  # TODO clear cache/ directory
     else:
         _cache.clear()
 
 
-def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
+def setup_cache(
+    set_cache: Callable[[tuple[str, int], T], T],
+    get_cache: Callable[[tuple[str, int]], T | None],
+    clear_cache: Callable[[], None],
+    backend: Literal["memory", "disk"],
+    expiry: int = 0,
+) -> None:
     """Turn on caching and set options.
 
     Args:
+        set_cache: Function to set value to given key
+        get_cache: Function to retrieve value from a given key
+        clear_cache: Function to clear the cache
         backend: Cache to disk or in-memory
         expiry: Cache expiry in minutes. 0 to disable time-based expiry
 
@@ -82,6 +93,9 @@ def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
     Settings.use_cache = True
     _Opt.BACKEND_DISK = backend == "disk"
     _Opt.EXPIRY_SECONDS = expiry * 60
+    _Opt.set_cache = set_cache
+    _Opt.get_cache = get_cache
+    _Opt.clear_cache = clear_cache
 
 
 def cache_result(key) -> Callable[[C], C]:
@@ -97,11 +111,11 @@ def _cache_wrapper(user_function: C, key: tuple[str, int]) -> C:
             return user_function(*args, **kwargs)
     else:
         def wrapper(*args: Hashable, **kwargs: Hashable) -> T:
-            result = get_val(key)
+            result = _Opt.get_cache(key)
             if result is not None:
                 return result
             result = user_function(*args, **kwargs)
-            set_val(key, result)
+            _Opt.set_cache(key, result)
             return result
-    wrapper.clear_cache = clear_cache
+    wrapper.clear_cache = _Opt.clear_cache
     return wrapper
