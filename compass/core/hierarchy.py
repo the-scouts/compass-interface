@@ -7,6 +7,7 @@ from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
 
 from pydantic.json import pydantic_encoder
 
+import compass.core.util.cache_hooks
 from compass.core import errors
 from compass.core._scrapers import hierarchy as scraper
 from compass.core.logger import logger
@@ -137,7 +138,7 @@ class Hierarchy:
 
         filename = Path(f"hierarchy-{unit_level.unit_id}.json")
         # Attempt to see if the hierarchy has been fetched already and is on the local system
-        with context_managers.get_cached_json(filename, expected_type=dict) as cached_data:
+        with compass.core.util.cache_hooks.get_cached_json(filename, expected_type=dict) as cached_data:
             if cached_data is not None:
                 return schema.UnitData.parse_obj(cached_data)
 
@@ -237,7 +238,7 @@ class Hierarchy:
     def get_members_in_units(self, parent_id: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
         filename = Path(f"all-members-{parent_id}.json")
 
-        with context_managers.get_cached_json(filename, expected_type=list) as cached_data:
+        with compass.core.util.cache_hooks.get_cached_json(filename, expected_type=list) as cached_data:
             # Attempt to see if the members dict has been fetched already and is on the local system
             if cached_data is not None:
                 return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in cached_data]
