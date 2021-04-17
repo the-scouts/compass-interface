@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import pydantic
 
@@ -9,10 +9,7 @@ from compass.core.logger import logger
 from compass.core.settings import Settings
 
 if TYPE_CHECKING:
-    from collections.abc import Collection
     from collections.abc import Iterator
-
-    AnyCollection = Collection[Any]
 
 
 @contextlib.contextmanager
