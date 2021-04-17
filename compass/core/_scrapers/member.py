@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import cast, get_args, Literal, Optional, TYPE_CHECKING, TypedDict, Union
+from typing import get_args, Literal, Optional, TYPE_CHECKING, TypedDict, Union
 
 from lxml import html
 
@@ -24,8 +24,6 @@ if TYPE_CHECKING:
     TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
     TYPES_TRAINING_OGL_DATES = dict[Literal["completed_date", "renewal_date"], Optional[datetime.date]]
     TYPES_TRAINING_OGL = dict[str, TYPES_TRAINING_OGL_DATES]
-else:
-    TYPES_TRAINING_OGL_DATES = ...  # needed for runtime cast. grrr mypy etc
 
 # _get_member_profile_tab
 MEMBER_PROFILE_TAB_TYPES = Literal[
@@ -34,6 +32,7 @@ MEMBER_PROFILE_TAB_TYPES = Literal[
 TABS = {tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES)}
 
 # get_roles_tab
+ROLE_STATUSES = set(get_args(schema.TYPES_ROLE_STATUS))
 NON_VOLUNTEER_TITLES = {
     # occasional helper roles:
     "group occasional helper",
@@ -741,10 +740,12 @@ def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tu
 
 def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
     if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
-        role_status: schema.TYPES_ROLE_STATUS = "Full"
+        role_status: Literal["Full"] = "Full"
         review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
         return role_status, review_date
-    return cast(schema.TYPES_ROLE_STATUS, review_status), None
+    if review_status in ROLE_STATUSES:
+        return review_status, None  # type: ignore[return-value]  # str -> Literal type narrowing doesn't seem to work?
+    raise ValueError(f"Invalid value for review status '{review_status}'!")
 
 
 def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
@@ -832,7 +833,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
         )
 
     # Update training_ogl with missing mandatory ongoing learning types
-    blank_module = cast(TYPES_TRAINING_OGL_DATES, dict(completed_date=None, renewal_date=None))
+    blank_module: TYPES_TRAINING_OGL_DATES = dict(completed_date=None, renewal_date=None)
     return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules.values()}
 
 
