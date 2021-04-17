@@ -14,15 +14,18 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", bound=object)
 
-_BACKEND_DISK: bool = False
-_EXPIRY_SECONDS: int = 60
 _cache: dict[tuple[str, int], tuple[int, object]] = {}
 clear = _cache.clear  # clear cache function
 
 
+class _Opt:  # avoid global scope
+    BACKEND_DISK: bool = False
+    EXPIRY_SECONDS: int = 60
+
+
 def set_val(value: T, /, *, filename: Path | None = None, key: tuple[str, int] | None = None) -> T:
     if Settings.use_cache is True:
-        if _BACKEND_DISK:
+        if _Opt.BACKEND_DISK:
             if filename is None:
                 raise ValueError("Filename is None!")
             with context_managers.filesystem_guard(f"Unable to write cache file to {filename}"):
@@ -37,14 +40,14 @@ def set_val(value: T, /, *, filename: Path | None = None, key: tuple[str, int] |
 def get_val(*, filename: Path | None = None, key: tuple[str, int] | None = None) -> T | None:
     if Settings.use_cache is False:
         return None
-    if _BACKEND_DISK:
+    if _Opt.BACKEND_DISK:
         if filename is None:
             raise ValueError("Filename is None!")
         if not filename.is_file():  # catching errors is expensive, so check first
             return None
         try:
             json_data: object = json.loads(filename.read_text(encoding="utf-8"))
-            if json_data and (_EXPIRY_SECONDS == 0 or time.time() - filename.stat().st_mtime < _EXPIRY_SECONDS):
+            if json_data and (_Opt.EXPIRY_SECONDS == 0 or time.time() - filename.stat().st_mtime < _Opt.EXPIRY_SECONDS):
                 return json_data  # type: ignore[return-value]
         except FileNotFoundError:
             pass
@@ -55,7 +58,7 @@ def get_val(*, filename: Path | None = None, key: tuple[str, int] | None = None)
         if pair is None:
             return None
         time_stored, value = pair
-        if _EXPIRY_SECONDS == 0 or time.monotonic() - time_stored < _EXPIRY_SECONDS:
+        if _Opt.EXPIRY_SECONDS == 0 or time.monotonic() - time_stored < _Opt.EXPIRY_SECONDS:
             return value  # type: ignore[return-value]
         del _cache[key]
     return None
@@ -69,7 +72,6 @@ def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0) -> None:
         expiry: Cache expiry in minutes. 0 to disable time-based expiry
 
     """
-    global _BACKEND_DISK, _EXPIRY_SECONDS
     Settings.use_cache = True
-    _BACKEND_DISK = backend == "disk"
-    _EXPIRY_SECONDS = expiry * 60
+    _Opt.BACKEND_DISK = backend == "disk"
+    _Opt.EXPIRY_SECONDS = expiry * 60
