@@ -47,11 +47,14 @@ UnitData.update_forward_refs()  # NOTE: updating recursive/forward reference her
 DescendantData.update_forward_refs()  # NOTE: updating recursive/forward reference here!
 
 
-class HierarchyMember(pydantic.BaseModel):
+class HierarchyMemberID(pydantic.BaseModel):
     contact_number: int
+
+
+class HierarchyMember(HierarchyMemberID):
     name: Optional[str]
     role: Optional[str]
 
 
 class HierarchyUnitMembers(HierarchyBase):
-    member: list[HierarchyMember]
+    members: list[HierarchyMember]
