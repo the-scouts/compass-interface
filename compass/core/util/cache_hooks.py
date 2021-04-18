@@ -32,7 +32,7 @@ class _OptClass(TypedDict):  # avoid global scope
 _Opt = _OptClass(disable_cache=True, set_cache=default_set, get_cache=default_get)
 
 
-def setup_cache(
+def setup_cache_hooks(
     set_cache: Callable[[tuple[str, int | Hashable], T], T],
     get_cache: Callable[[tuple[str, int | Hashable]], T | None],
     disable_cache: bool = False,
