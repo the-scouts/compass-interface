@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 from typing import Literal, TYPE_CHECKING, TypeVar
 
+import pydantic
 from pydantic.json import pydantic_encoder
 
 from compass.core.settings import Settings
@@ -25,9 +26,9 @@ _cache: dict[tuple[str, int], tuple[int, object]] = {}
 class _Opt:  # avoid global scope
     BACKEND_DISK: bool = False
     EXPIRY_SECONDS: int = 60
-    set_cache: Callable[[tuple[str, int], T], T] = lambda key, value: value
-    get_cache: Callable[[tuple[str, int]], T | None] = lambda key: None
-    clear_cache: Callable[[], None] = lambda: None
+    set_cache: Callable[[tuple[str, int], T], T] = lambda key, value: value  # default no-op
+    get_cache: Callable[[tuple[str, int]], T | None] = lambda key: None  # default no-op
+    clear_cache: Callable[[], None] = lambda: None  # default no-op
 
 
 def set_val(key: tuple[str, int], value: T, /) -> T:
@@ -98,24 +99,26 @@ def setup_cache(
     _Opt.clear_cache = clear_cache
 
 
-def cache_result(key) -> Callable[[C], C]:
+def cache_result(*, key, model_type: type[RT] | None = None) -> Callable[[C], C]:
     def decorating_function(user_function: C) -> C:
-        wrapper = _cache_wrapper(user_function, key)
+        wrapper = _cache_wrapper(user_function, key, model_type)
         return functools.update_wrapper(wrapper, user_function)
     return decorating_function
 
 
-def _cache_wrapper(user_function: C, key: tuple[str, int]) -> C:
-    if Settings.use_cache is False or _Opt.EXPIRY_SECONDS == 0:  # No caching
-        def wrapper(*args: Hashable, **kwargs: Hashable) -> T:
-            return user_function(*args, **kwargs)
+def _cache_wrapper(user_function: C, key: tuple[str, int], model_type: type[RT] | None = None) -> C:
+    if False and Settings.use_cache is False or _Opt.EXPIRY_SECONDS == 0:  # No caching
+        return user_function
     else:
         def wrapper(*args: Hashable, **kwargs: Hashable) -> T:
-            result = _Opt.get_cache(key)
+            key_ = key[0], (*args, *kwargs)[key[1]]  # second arg is position of arg
+            result = _Opt.get_cache(key_)
             if result is not None:
+                if model_type is not None:
+                    return pydantic.parse_obj_as(model_type, result)
                 return result
             result = user_function(*args, **kwargs)
-            _Opt.set_cache(key, result)
+            _Opt.set_cache(key_, result)
             return result
     wrapper.clear_cache = _Opt.clear_cache
     return wrapper
