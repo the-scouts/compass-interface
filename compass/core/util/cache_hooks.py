@@ -29,7 +29,7 @@ class _OptClass(TypedDict):  # avoid global scope
     get_cache: Callable[[tuple[str, int | Hashable]], T | None]
 
 
-_Opt = _OptClass(disable_cache=True, set_cache=default_set, get_cache=default_get)
+_Opt: _OptClass = {"disable_cache": True, "set_cache": default_set, "get_cache": default_get}
 
 
 def setup_cache_hooks(
@@ -61,17 +61,16 @@ def cache_result(*, key: tuple[str, int], model_type: type | None = None) -> Cal
 def _cache_wrapper(user_function: C[T], key: tuple[str, int], model_type: type | None = None) -> C[T]:
     if Settings.use_cache is False or _Opt["disable_cache"] == 0:  # No caching
         return user_function
-    else:
 
-        def wrapper(*args: Hashable, **kwargs: Hashable) -> T:
-            key_ = key[0], (*args, *kwargs)[key[1]]  # second tuple item is position of key_id in function args
-            result = _Opt["get_cache"](key_)
-            if result is not None:
-                if model_type is not None:
-                    return pydantic.parse_obj_as(model_type, result)
-                return result
-            result = user_function(*args, **kwargs)
-            _Opt["set_cache"](key_, result)
+    def wrapper(*args: Hashable, **kwargs: Hashable) -> T:
+        key_ = key[0], (*args, *kwargs)[key[1]]  # second tuple item is position of key_id in function args
+        result = _Opt["get_cache"](key_)  # pylint: disable=assignment-from-none  # default returns None, backends can override
+        if result is not None:
+            if model_type is not None:
+                return pydantic.parse_obj_as(model_type, result)
             return result
+        result = user_function(*args, **kwargs)
+        _Opt["set_cache"](key_, result)
+        return result
 
-        return functools.update_wrapper(wrapper, user_function)
+    return functools.update_wrapper(wrapper, user_function)
