@@ -239,7 +239,7 @@ class Hierarchy:
         all_members = []
         for unit_id in set(compass_ids):
             logger.debug(f"Getting members for {unit_id}")
-            data = schema.HierarchyUnitMembers(unit_id=unit_id, member=self._scraper.get_members_with_roles_in_unit(unit_id))
+            data = schema.HierarchyUnitMembers(unit_id=unit_id, members=self._scraper.get_members_with_roles_in_unit(unit_id))
             all_members.append(data)
 
         # Try and write to a file for caching
