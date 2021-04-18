@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-from pathlib import Path
 from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
 
 from compass.core import errors
@@ -106,9 +105,9 @@ class Hierarchy:
         return data
 
     # See recurseRetrieve in PGS\Needle
+    @cache_hooks.cache_result(key=("hierarchy", 1), model_type=schema.UnitData)
     def get_hierarchy(
         self,
-        unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
         level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
@@ -129,22 +128,9 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        unit_level = self.get_unit_data(unit_level, unit_id, level, use_default)
-
-        filename = Path(f"hierarchy-{unit_level.unit_id}.json")
-        # Attempt to see if the hierarchy has been fetched already and is on the local system
-        cached_data = cache_hooks.get_val(filename=filename)
-        if cached_data is not None and isinstance(cached_data, dict):
-            return schema.UnitData.parse_obj(cached_data)
-
         # Fetch the hierarchy
-        out = self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level)
-        model = schema.UnitData.parse_obj(out)
-
-        # Try and write to a file for caching
-        cache_hooks.set_val(model, filename=filename)
-
-        return model
+        unit_level = self.get_unit_data(None, unit_id, level, use_default)
+        return schema.UnitData.parse_obj(self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level))
 
     # See recurseRetrieve in PGS\Needle
     def _get_descendants_recursive(
@@ -186,7 +172,6 @@ class Hierarchy:
 
     def get_unique_members(
         self,
-        unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
         level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
@@ -210,10 +195,10 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        unit_level = self.get_unit_data(unit_level, unit_id, level, use_default)
+        unit_level = self.get_unit_data(None, unit_id, level, use_default)
 
         # get tree of all units
-        hierarchy_dict = self.get_hierarchy(unit_level)
+        hierarchy_dict = self.get_hierarchy(unit_level.unit_id, unit_level.level)
 
         # flatten tree
         flat_hierarchy = flatten_hierarchy(hierarchy_dict)
@@ -225,26 +210,16 @@ class Hierarchy:
         units_members = self.get_members_in_units(unit_level.unit_id, compass_ids)
 
         # return a set of membership numbers
-        return {members.contact_number for unit_members in units_members for members in unit_members.member}
+        return {members.contact_number for unit_members in units_members for members in unit_members.members}
 
-    def get_members_in_units(self, parent_id: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
-        filename = Path(f"all-members-{parent_id}.json")
-
-        cached_data = cache_hooks.get_val(filename=filename)
-        # Attempt to see if the members dict has been fetched already and is on the local system
-        if cached_data is not None and isinstance(cached_data, list):
-            return [schema.HierarchyUnitMembers.parse_obj(unit_members) for unit_members in cached_data]
-
+    @cache_hooks.cache_result(key=("all-members", 1), model_type=list[schema.UnitData])
+    def get_members_in_units(self, _cache_key: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
         # Fetch all members
         all_members = []
         for unit_id in set(compass_ids):
             logger.debug(f"Getting members for {unit_id}")
             data = schema.HierarchyUnitMembers(unit_id=unit_id, members=self._scraper.get_members_with_roles_in_unit(unit_id))
             all_members.append(data)
-
-        # Try and write to a file for caching
-        cache_hooks.set_val(all_members, filename=filename)
-
         return all_members
 
 
