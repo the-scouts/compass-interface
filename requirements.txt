@@ -1,5 +1,5 @@
 # Compass-Interface Core
-compass-interface-core>=0.8.0
+compass-interface-core>=0.13.0
 
 # Transforming
 pandas>=1.2.0
