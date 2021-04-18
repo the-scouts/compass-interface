@@ -142,7 +142,7 @@ class HierarchyScraper(InterfaceBase):
                 If Compass reports that the search was invalid
 
         """
-        keys_to_keep: tuple[str, ...] = tuple(filter(None, ("contact_number", "name"*include_name, "role"*include_primary_role)))
+        keys_to_keep = tuple(filter(None, ("contact_number", "name" * include_name, "role" * include_primary_role)))
         # Construct request data
 
         # It seems like the time UID value can be constant -- keeping old code in case something breaks

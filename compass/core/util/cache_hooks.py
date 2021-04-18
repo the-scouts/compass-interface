@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, TypeVar, TypedDict
+from typing import TYPE_CHECKING, TypedDict, TypeVar
 
 import pydantic
 
@@ -54,6 +54,7 @@ def setup_cache_hooks(
 def cache_result(*, key: tuple[str, int], model_type: type | None = None) -> Callable[[C[T]], C[T]]:
     def decorating_function(user_function: C[T]) -> C[T]:
         return _cache_wrapper(user_function, key, model_type)
+
     return decorating_function
 
 
@@ -61,6 +62,7 @@ def _cache_wrapper(user_function: C[T], key: tuple[str, int], model_type: type |
     if Settings.use_cache is False or _Opt["disable_cache"] == 0:  # No caching
         return user_function
     else:
+
         def wrapper(*args: Hashable, **kwargs: Hashable) -> T:
             key_ = key[0], (*args, *kwargs)[key[1]]  # second tuple item is position of key_id in function args
             result = _Opt["get_cache"](key_)
@@ -71,4 +73,5 @@ def _cache_wrapper(user_function: C[T], key: tuple[str, int], model_type: type |
             result = user_function(*args, **kwargs)
             _Opt["set_cache"](key_, result)
             return result
+
         return functools.update_wrapper(wrapper, user_function)
