@@ -19,7 +19,7 @@ class _SettingsModel(pydantic.BaseSettings):
     # Environment
     debug: bool = False
     log_file: Optional[Path] = None
-    use_cache: bool = True
+    use_cache: bool = False
     validation_errors: bool = True
 
     class Config:
