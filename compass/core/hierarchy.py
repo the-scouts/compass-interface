@@ -63,7 +63,7 @@ class Hierarchy:
         self._scraper: scraper.HierarchyScraper = scraper.HierarchyScraper(session._session)
         self.session: Logon = session
 
-    def get_unit_data(
+    def get_unit_level(
         self,
         unit_level: Optional[schema.HierarchyLevel] = None,
         unit_id: Optional[int] = None,
@@ -129,7 +129,7 @@ class Hierarchy:
 
         """
         # Fetch the hierarchy
-        unit_level = self.get_unit_data(None, unit_id, level, use_default)
+        unit_level = self.get_unit_level(None, unit_id, level, use_default)
         return schema.UnitData.parse_obj(self._get_descendants_recursive(unit_level.unit_id, hier_level=unit_level.level))
 
     # See recurseRetrieve in PGS\Needle
@@ -195,7 +195,7 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
-        unit_level = self.get_unit_data(None, unit_id, level, use_default)
+        unit_level = self.get_unit_level(None, unit_id, level, use_default)
 
         # get tree of all units
         hierarchy_dict = self.get_hierarchy(unit_level.unit_id, unit_level.level)
