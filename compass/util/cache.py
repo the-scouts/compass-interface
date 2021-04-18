@@ -21,7 +21,7 @@ class _BackendOpt:
     EXPIRY_SECONDS: int
 
 
-def set_val(key: tuple[str, int], value: T, /) -> T:
+def _set_val(key: tuple[str, int], value: T, /) -> T:
     if _BackendOpt.BACKEND_DISK:
         key_type, key_id = key
         filename = Path(f"cache/{key_type}-{key_id}.json")
@@ -32,7 +32,7 @@ def set_val(key: tuple[str, int], value: T, /) -> T:
     return value
 
 
-def get_val(key: tuple[str, int]) -> T | None:
+def _get_val(key: tuple[str, int]) -> T | None:
     if _BackendOpt.BACKEND_DISK:
         key_type, key_id = key
         filename = Path(f"cache/{key_type}-{key_id}.json")
@@ -65,6 +65,13 @@ def setup_cache(backend: Literal["memory", "disk"], expiry: int = 0):
         expiry: Cache expiry in minutes. 0 to disable time-based expiry
 
     """
-    setup_cache_hooks(set_val, get_val, expiry == 0)
+    setup_cache_hooks(_set_val, _get_val, expiry == 0)
     _BackendOpt.BACKEND_DISK = backend == "disk"
     _BackendOpt.EXPIRY_SECONDS = expiry * 60
+
+
+def clear() -> None:
+    if _BackendOpt.BACKEND_DISK:
+        pass  # TODO clear cache/ directory
+    else:
+        _cache.clear()
