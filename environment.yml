@@ -1,21 +1,20 @@
 name: compass-interface
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python>=3.9
 
   # Compass-Interface Core
-  - compass-interface-core>=0.9.3
+  - compass-interface-core>=0.13.0
 
   # Transforming
-#  - numba>0.52  # Numba==0.52 does not support python 3.9!
+  - numba>0.52
   - pandas
   - pyarrow
 
   # API
-  - fastapi
-  - conda-forge::python-jose  # JSON Web Tokens (Must use CF build for resolver to succeed)
+  - fastapi  # API framework
+  - python-jose  # JSON Web Tokens
   - aioredis  # (Async) Redis
   - python-multipart  # Form Data (OAuth2)
 
