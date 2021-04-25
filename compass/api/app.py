@@ -5,7 +5,6 @@ from compass.api.plugins import redis
 from compass.api.routes import authentication
 from compass.api.routes import members
 
-
 open_api_tag_metadata = [
     {
         "name": "Members",

@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import Literal, Optional, TYPE_CHECKING
 
 from aioredis import create_redis_pool
-import pydantic
 from aioredis import Redis
+import pydantic
 from starlette.requests import Request
+
 from compass.core.logger import logger
 
 if TYPE_CHECKING:
