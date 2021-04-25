@@ -27,8 +27,8 @@ def get_current_member(people: ci.People = Depends(people_accessor)) -> member.M
 #     return people.get_roles(people._scraper.cn, keep_non_volunteer_roles=not volunteer_only)  # NoQA
 
 
-@router.get("/me/permits", response_model=member.MemberPermitsList)
-def get_current_member_permits(people: ci.People = Depends(people_accessor)) -> member.MemberPermitsList:
+@router.get("/me/permits", response_model=list[member.MemberPermit])
+def get_current_member_permits(people: ci.People = Depends(people_accessor)) -> list[member.MemberPermit]:
     permits = people.permits(people._scraper.cn)  # NoQA
 
     if not permits:
@@ -45,8 +45,8 @@ def get_current_member_permits(people: ci.People = Depends(people_accessor)) -> 
 #     return training
 
 
-@router.get("/me/ongoing-learning", response_model=member.MemberMOGLList)
-def get_current_member_ongoing_learning(people: ci.People = Depends(people_accessor)) -> member.MemberMOGLList:
+@router.get("/me/ongoing-learning", response_model=member.MemberMandatoryTraining)
+def get_current_member_ongoing_learning(people: ci.People = Depends(people_accessor)) -> member.MemberMandatoryTraining:
     ongoing = people.ongoing_learning(people._scraper.cn)  # NoQA
 
     if not ongoing:
@@ -113,8 +113,8 @@ def get_member(compass_id: int, people: ci.People = Depends(people_accessor)) ->
 #     return roles_list
 
 
-@router.get("/{compass_id}/permits", response_model=member.MemberPermitsList)
-def get_member_permits(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberPermitsList:
+@router.get("/{compass_id}/permits", response_model=list[member.MemberPermit])
+def get_member_permits(compass_id: int, people: ci.People = Depends(people_accessor)) -> list[member.MemberPermit]:
     permits = people.permits(compass_id)
 
     if not permits:
@@ -131,8 +131,8 @@ def get_member_permits(compass_id: int, people: ci.People = Depends(people_acces
 #     return training
 
 
-@router.get("/{compass_id}/ongoing-learning", response_model=member.MemberMOGLList)
-def get_ongoing_learning(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberMOGLList:
+@router.get("/{compass_id}/ongoing-learning", response_model=member.MemberMandatoryTraining)
+def get_ongoing_learning(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberMandatoryTraining:
     try:
         ongoing = people.ongoing_learning(compass_id)
     except Exception as err:
