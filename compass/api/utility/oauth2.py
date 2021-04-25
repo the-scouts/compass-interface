@@ -15,8 +15,9 @@ from starlette import status
 
 from compass.api.plugins.redis import depends_redis
 from compass.api.schemas.auth import User
-from compass.core.logon import Logon
 import compass.core as ci
+from compass.core.logger import logger
+from compass.core.logon import Logon
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 aes_gcm = AESGCM(bytes.fromhex(SECRET_KEY))
@@ -43,15 +44,20 @@ async def login_token_store_session(user: str, pw: str, role: Optional[str], loc
 
     nonce = os.urandom(12)  # GCM mode needs 12 fresh bytes every time
     data = base64.b85encode(nonce + aes_gcm.encrypt(nonce, user.json().encode(), None))
+    logger.debug(f"Created JWT for user {user}. Redis key={access_token}, data={data}")
+
     # expire param is integer number of seconds for key to live
+    logger.debug(f"Writing {user}'s session key to redis!")
     await store.set(f"session:{access_token}", data, expire=access_token_expire_minutes * 60)
 
     return access_token
 
 
 def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> User:
+    logger.info(f"Logging in to Compass -- {username}")
     user = ci.login(username, password, role=role, location=location)
 
+    logger.info(f"Successfully authenticated  -- {username}")
     return User(
         selected_role=user.current_role,
         logon_info=(username, password, role, location),
@@ -65,13 +71,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
-        raise custom_bearer_auth_exception("Could not validate credentials")
+        raise custom_bearer_auth_exception("Could not validate credentials") from None
 
+    logger.debug(f"Getting data from token:{token}")
     session_encoded = await store.get(f"session:{token}")
     try:
         session_decoded = base64.b85decode(session_encoded)  # Maybe raises ValueError
         session_decrypted = aes_gcm.decrypt(session_decoded[:12], session_decoded[12:], None)  # Maybe raises InvalidTag
         user = User.parse_raw(session_decrypted)  # Maybe raises KeyError
+        logger.debug(f"Created parsed user object {user.__dict__}")
         if datetime.datetime.utcnow() < user.expires:
             logon = Logon.from_session(user.asp_net_id, user.props.__dict__, user.selected_role)
         else:
@@ -83,5 +91,5 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
 
 
 async def people_accessor(token: str = Depends(oauth2_scheme), store: Redis = Depends(depends_redis)) -> ci.People:
-    logon = await get_current_user(token, store)
-    return ci.People(logon)
+    session = await get_current_user(token, store)
+    return ci.People(session)
