@@ -7,6 +7,7 @@ from starlette import status
 
 from compass.api.utility.oauth2 import people_accessor
 import compass.core as ci
+from compass.core.logger import logger
 from compass.core.schemas import member
 
 router = APIRouter()
@@ -19,6 +20,7 @@ router = APIRouter()
 
 @router.get("/me", response_model=member.MemberDetails)
 def get_current_member(people: ci.People = Depends(people_accessor)) -> member.MemberDetails:
+    logger.debug(f"Getting /me for {people.membership_number}")
     return people.personal(people.membership_number)  # NoQA
 
 
@@ -29,6 +31,7 @@ def get_current_member(people: ci.People = Depends(people_accessor)) -> member.M
 
 @router.get("/me/permits", response_model=list[member.MemberPermit])
 def get_current_member_permits(people: ci.People = Depends(people_accessor)) -> list[member.MemberPermit]:
+    logger.debug(f"Getting /me/permits for {people.membership_number}")
     permits = people.permits(people.membership_number)  # NoQA
 
     if not permits:
@@ -47,6 +50,7 @@ def get_current_member_permits(people: ci.People = Depends(people_accessor)) -> 
 
 @router.get("/me/ongoing-learning", response_model=member.MemberMandatoryTraining)
 def get_current_member_ongoing_learning(people: ci.People = Depends(people_accessor)) -> member.MemberMandatoryTraining:
+    logger.debug(f"Getting /me/ongoing for {people.membership_number}")
     ongoing = people.ongoing_learning(people.membership_number)  # NoQA
 
     if not ongoing:
@@ -56,6 +60,7 @@ def get_current_member_ongoing_learning(people: ci.People = Depends(people_acces
 
 @router.get("/me/awards", response_model=list[member.MemberAward])
 def get_current_member_awards(people: ci.People = Depends(people_accessor)) -> list[member.MemberAward]:
+    logger.debug(f"Getting /me/awards for {people.membership_number}")
     awards = people.awards(people.membership_number)  # NoQA
 
     if not awards:
@@ -65,6 +70,7 @@ def get_current_member_awards(people: ci.People = Depends(people_accessor)) -> l
 
 @router.get("/me/disclosures", response_model=list[member.MemberDisclosure])
 def get_current_member_disclosures(people: ci.People = Depends(people_accessor)) -> list[member.MemberDisclosure]:
+    logger.debug(f"Getting /me/disclosures for {people.membership_number}")
     disclosures = people.disclosures(people.membership_number)  # NoQA
 
     if not disclosures:
@@ -74,6 +80,7 @@ def get_current_member_disclosures(people: ci.People = Depends(people_accessor))
 
 @router.get("/me/latest-disclosure", response_model=Optional[member.MemberDisclosure])
 def get_current_member_latest_disclosure(people: ci.People = Depends(people_accessor)) -> Optional[member.MemberDisclosure]:
+    logger.debug(f"Getting /me/latest-disclosure for {people.membership_number}")
     disclosure = people.latest_disclosure(people.membership_number)  # NoQA
 
     if not disclosure:
@@ -89,6 +96,7 @@ def get_member(compass_id: int, people: ci.People = Depends(people_accessor)) ->
         compass_id: Member to retrieve information for
         people: People object
     """
+    logger.debug(f"Getting /{{compass_id}} for {people.membership_number}")
     try:
         user = people.personal(compass_id)
     except (Exception,) as err:
@@ -115,6 +123,7 @@ def get_member(compass_id: int, people: ci.People = Depends(people_accessor)) ->
 
 @router.get("/{compass_id}/permits", response_model=list[member.MemberPermit])
 def get_member_permits(compass_id: int, people: ci.People = Depends(people_accessor)) -> list[member.MemberPermit]:
+    logger.debug(f"Getting /{{compass_id}}/permits for {people.membership_number}")
     permits = people.permits(compass_id)
 
     if not permits:
@@ -133,6 +142,7 @@ def get_member_permits(compass_id: int, people: ci.People = Depends(people_acces
 
 @router.get("/{compass_id}/ongoing-learning", response_model=member.MemberMandatoryTraining)
 def get_ongoing_learning(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberMandatoryTraining:
+    logger.debug(f"Getting /{{compass_id}}/ongoing-learning for {people.membership_number}")
     try:
         ongoing = people.ongoing_learning(compass_id)
     except Exception as err:
@@ -146,6 +156,7 @@ def get_ongoing_learning(compass_id: int, people: ci.People = Depends(people_acc
 
 @router.get("/{compass_id}/awards", response_model=list[member.MemberAward])
 def get_current_member_awards(compass_id: int, people: ci.People = Depends(people_accessor)) -> list[member.MemberAward]:
+    logger.debug(f"Getting /{{compass_id}}/awards for {people.membership_number}")
     awards = people.awards(compass_id)
 
     if not awards:
@@ -155,6 +166,7 @@ def get_current_member_awards(compass_id: int, people: ci.People = Depends(peopl
 
 @router.get("/{compass_id}/disclosures", response_model=list[member.MemberDisclosure])
 def get_current_member_disclosures(compass_id: int, people: ci.People = Depends(people_accessor)) -> list[member.MemberDisclosure]:
+    logger.debug(f"Getting /{{compass_id}}/disclosures for {people.membership_number}")
     disclosures = people.disclosures(compass_id)
 
     if not disclosures:
@@ -164,6 +176,7 @@ def get_current_member_disclosures(compass_id: int, people: ci.People = Depends(
 
 @router.get("/{compass_id}/latest-disclosure", response_model=Optional[member.MemberDisclosure])
 def get_current_member_latest_disclosure(compass_id: int, people: ci.People = Depends(people_accessor)) -> member.MemberDisclosure:
+    logger.debug(f"Getting /{{compass_id}}/latest-disclosure for {people.membership_number}")
     disclosure = people.latest_disclosure(compass_id)
 
     if not disclosure:
