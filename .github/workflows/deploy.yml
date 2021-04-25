@@ -17,8 +17,8 @@ jobs:
 
       - name: Create requirements.txt
         # use CheeseShop version
-        run: echo compass-interface[deploy] >  requirements.txt
-       # run: printf '%s\n' 'compass-interface' 'cryptography' 'uvicorn' 'uvloop' 'httptools' >  requirements.txt
+#        run: echo compass-interface[deploy] > requirements.txt
+        run: printf '%s\n' 'compass-interface' 'cryptography' 'uvicorn' 'uvloop' 'httptools' >  requirements.txt
 
       - name: Deploy to Azure
         uses: azure/webapps-deploy@v2
