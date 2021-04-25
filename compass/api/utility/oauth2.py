@@ -31,9 +31,9 @@ def custom_bearer_auth_exception(detail: str, code: int = status.HTTP_401_UNAUTH
     return HTTPException(status_code=code, detail=detail, headers={"WWW-Authenticate": "Bearer"})
 
 
-async def login_token_store_session(user: str, pw: str, role: Optional[str], location: Optional[str], store: Redis) -> str:
+async def login_token_store_session(username: str, pw: str, role: Optional[str], location: Optional[str], store: Redis) -> str:
     try:
-        user = authenticate_user(user, pw, role, location)
+        user = authenticate_user(username, pw, role, location)
     except ci.errors.CompassError:
         raise custom_bearer_auth_exception("Incorrect username or password") from None
     access_token_expire_minutes = 30
@@ -44,10 +44,10 @@ async def login_token_store_session(user: str, pw: str, role: Optional[str], loc
 
     nonce = os.urandom(12)  # GCM mode needs 12 fresh bytes every time
     data = base64.b85encode(nonce + aes_gcm.encrypt(nonce, user.json().encode(), None))
-    logger.debug(f"Created JWT for user {user}. Redis key={access_token}, data={data}")
+    logger.debug(f"Created JWT for user {username}. Redis key={access_token}, data={data}")
 
     # expire param is integer number of seconds for key to live
-    logger.debug(f"Writing {user}'s session key to redis!")
+    logger.debug(f"Writing {username}'s session key to redis!")
     await store.set(f"session:{access_token}", data, expire=access_token_expire_minutes * 60)
 
     return access_token
