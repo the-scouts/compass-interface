@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from compass import Hierarchy
+import compass.core as ci
+from compass.core import hierarchy
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -12,9 +13,9 @@ if TYPE_CHECKING:
     from compass.core.schemas.hierarchy import UnitData
 
 
-class HierarchyUtility(Hierarchy):
+class HierarchyUtility(ci.Hierarchy):
     def hierarchy_to_dataframe(self, hierarchy_dict: UnitData) -> pd.DataFrame:
-        flat_hierarchy = self.flatten_hierarchy(hierarchy_dict)
+        flat_hierarchy = hierarchy.flatten_hierarchy(hierarchy_dict)
         dataframe = pd.DataFrame(flat_hierarchy)
         for field, dtype in dataframe.dtypes.items():
             if dtype.name == "float64":

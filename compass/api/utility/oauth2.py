@@ -76,7 +76,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), store: Redis = D
             logon = Logon.from_session(user.asp_net_id, user.props.__dict__, user.selected_role)
         else:
             logon = Logon.from_logon(user.logon_info[:2], *user.logon_info[2:])
-        if int(payload.get("sub", -1)) == int(logon.cn):  # Maybe raises ValueError
+        if int(payload.get("sub", -1)) == int(logon.membership_number):  # Maybe raises ValueError
             return logon
     except (InvalidTag, KeyError, ValueError):
         raise custom_bearer_auth_exception("Could not validate credentials") from None

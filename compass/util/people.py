@@ -3,12 +3,12 @@ import re
 
 import pandas as pd
 
-from compass import People
+import compass.core as ci
 
 normalise_cols = re.compile(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))|_([^_])")
 
 
-class PeopleUtility(People):
+class PeopleUtility(ci.People):
     def get_member_data(self, membership_num: int) -> pd.DataFrame:
         """Gets Compliance Report data for a specified member.
 
@@ -27,21 +27,19 @@ class PeopleUtility(People):
         ]
         # fmt: on
 
-        roles_data = pd.DataFrame(self._roles_tab(membership_num)).T  # coerce to dataframe
+        roles_data = pd.DataFrame(self.roles(membership_num)).T  # coerce to dataframe
         if roles_data.empty:
             return pd.DataFrame(columns=compliance_columns)
 
         full_roles_mask = (roles_data["role_status"] != "Closed") & (roles_data["location_id"] > 0)
         open_roles = roles_data.index[full_roles_mask].to_list()
         roles_detail_array = [self.role_detail(role_number) for role_number in open_roles]
-        training_data = self._training_tab(membership_num)  # TODO rename completion date to WoodBadgeReceived
-        if training_data["roles"]:
-            training_frame = pd.DataFrame(training_data["roles"]).T
-            training_ogl = training_data["mandatory"]
-            empty_ogl = {"renewal_date": None}
-            training_frame["SafetyTraining"] = training_ogl.get("SA", empty_ogl)["renewal_date"]
-            training_frame["SafeguardingTraining"] = training_ogl.get("SG", empty_ogl)["renewal_date"]
-            training_frame["FirstAidTraining"] = training_ogl.get("FA", empty_ogl)["renewal_date"]
+        training_data = self.training(membership_num)  # TODO rename completion date to WoodBadgeReceived
+        if training_data.roles:
+            training_frame = pd.DataFrame(training_data.roles).T
+            training_frame["SafetyTraining"] = training_data.mandatory.safety.renewal_date
+            training_frame["SafeguardingTraining"] = training_data.mandatory.safeguarding.renewal_date
+            training_frame["FirstAidTraining"] = training_data.mandatory.first_aid.renewal_date
 
             training_data = training_frame
         else:
@@ -59,7 +57,7 @@ class PeopleUtility(People):
 
         compliance_data["membership_number"] = membership_num
 
-        for key, value in self.personal(membership_num).items():
+        for key, value in self.personal(membership_num):
             compliance_data[key] = value
 
         # # Fill all rows with Mandatory Ongoing Learning data
@@ -95,7 +93,7 @@ class PeopleUtility(People):
         roles_list = []
         for member_number in member_numbers:
             try:
-                roles_data = pd.DataFrame(self._roles_tab(member_number)).T  # coerce to dataframe
+                roles_data = pd.DataFrame(self.roles(member_number).__dict__).T  # coerce to dataframe
                 roles_list.append(roles_data)
             except Exception as e:
                 with open("error_roles.txt", "a") as f:
