@@ -21,19 +21,16 @@ class RedisError(Exception):
 class RedisSettings(pydantic.BaseSettings):
     type: Literal["redis"] = "redis"
 
-    url: str = None
     host: str = "localhost"
-    port: int = 6379
-    password: Optional[str] = pydantic.Field(None, env="PASS")
+    port: int = 6380
     db: int = 0
-    connection_timeout: int = 2
+    url: pydantic.RedisDsn = f"{type}://{host}:{port}/{db}"  # REDIS_URL takes priority if set
 
+    password: Optional[str] = pydantic.Field(None, env={"REDIS_PASS", "REDIS_PASSWORD"})
+    ssl: bool = True
+    connection_timeout: int = 2
     pool_min_size: int = 1
     pool_max_size: int = 10
-
-    @property
-    def address(self) -> str:
-        return pydantic.RedisDsn.build(scheme="redis", host=self.host, port=f"{self.port}", path=f"/{self.db}")
 
     class Config:
         case_sensitive = False  # this is the default, but mark for clarity.
@@ -51,14 +48,15 @@ class RedisPlugin:
         if self.config.type != "redis":
             raise NotImplementedError(f"Invalid Redis type '{self.config.type}' selected!")
 
-        logger.debug(f"Creating connection to Redis at {self.config.address}")
+        logger.debug(f"Creating connection to Redis at {self.config.url}")
         self.redis = await create_redis_pool(
-            self.config.address,
+            self.config.url.lower(),
             db=self.config.db,
             password=self.config.password,
             minsize=self.config.pool_min_size,
             maxsize=self.config.pool_max_size,
             timeout=self.config.connection_timeout,
+            ssl=self.config.ssl,
         )
 
         logger.debug("Storing redis object in FastAPI app state")
