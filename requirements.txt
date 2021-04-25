@@ -1,14 +1,19 @@
 # Compass-Interface Core
 compass-interface-core>=0.13.0
 
-# Transforming
+# Compass-Interface Utilities
+pydantic
+numba>0.52
 pandas>=1.2.0
 pyarrow>=1.0.0
 
 # API
 fastapi
-python-jose>=3.1.0
 aioredis
+
+# API - auth
+python-jose>=3.1.0
+crypyography
 python-multipart>=0.0.5
 
 # Deployment

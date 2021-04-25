@@ -5,7 +5,7 @@ def compass_read(username: str, password: str, /):
     logon = ci.login(username, password)
     people = ci.People(logon)
 
-    member_number = logon.cn
+    member_number = logon.membership_number
     training_data = people.training(member_number)
     permits_data = people.permits(member_number)
     roles_detail = {role: people.role_detail(role) for role in training_data.roles}

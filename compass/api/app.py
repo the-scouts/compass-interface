@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
-import uvicorn
 
 from compass.api.plugins import redis
 from compass.api.routes import authentication
@@ -101,6 +100,8 @@ app.include_router(
 
 
 if __name__ == "__main__":
+    import uvicorn
+
     from compass.core.logger import enable_debug_logging
 
     enable_debug_logging()

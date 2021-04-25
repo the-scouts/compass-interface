@@ -4,7 +4,7 @@ from pathlib import Path
 # import numba
 import pandas as pd
 
-import compass.core as ci
+# import compass.core as ci
 
 PROJECT_ROOT = Path(__file__).absolute().parent.parent.parent.parent
 
