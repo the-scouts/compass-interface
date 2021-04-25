@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-import compass.core as ci
 from compass.core import hierarchy
+import compass.core as ci
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
