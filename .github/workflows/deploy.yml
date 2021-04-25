@@ -1,0 +1,21 @@
+name: 🚀 Deploy to Azure
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create requirements.txt
+        # use CheeseShop version
+        run: printf '%s\n' 'compass-interface[deploy]' > requirements.txt
+
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: compass-interface
+          publish-profile: ${{ secrets.AZURE_APP_SERVICE_PUBLISH_2021_04 }}
