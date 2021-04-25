@@ -3,19 +3,23 @@ channels:
   - conda-forge
 dependencies:
   - python>=3.9
+  - pip
 
   # Compass-Interface Core
   - compass-interface-core>=0.13.0
 
-  # Transforming
-  - numba>0.52
-  - pandas
-  - pyarrow
+  # Compass-Interface Utilities
+  - pydantic  # cache
+  - numba>0.52  # JIT compilation
+  - pandas  # data transformation
+  - pyarrow   # .feather format
 
   # API
   - fastapi  # API framework
-  - python-jose  # JSON Web Tokens
   - aioredis  # (Async) Redis
+
+  # API - Auth
+  - python-jose  # JSON Web Tokens
   - python-multipart  # Form Data (OAuth2)
 
   # Deployment
@@ -33,3 +37,6 @@ dependencies:
   - isort
   - ipython
 #  - dtale
+
+  - pip:
+    - crypyography  # Encryption
