@@ -254,9 +254,9 @@ class PeopleScraper(InterfaceBase):
         # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
         details["birth_date"] = parse(personal_details.get("Date of Birth:", ""))
         details["nationality"] = personal_details.get("Nationality:", "").strip()
-        details["ethnicity"] = personal_details.get("Ethnicity:", "").strip()
-        details["religion"] = personal_details.get("Religion/Faith:", "").strip()
-        details["occupation"] = personal_details.get("Occupation:", "").strip()
+        details["ethnicity"] = _process_extra(personal_details.get("Ethnicity:", ""))[0]  # discard ethnicity detail, could keep?
+        details["religion"], details["religion_detail"] = _process_extra(personal_details.get("Religion/Faith:", ""))
+        details["occupation"], details["occupation_detail"] = _process_extra(personal_details.get("Occupation:", ""))
 
         # ## Other Sections (note double looping but hopefully not large impact)
         if len(div_profile_tbl) >= 17:  # As far as I know, the `other' sections are all-or-nothing, so we can skip to check hobbies
@@ -698,7 +698,7 @@ class _AddressData(TypedDict):
 
 
 def _process_address(address: str) -> _AddressData:
-    if address:
+    if "UK" in address:
         addr_main, addr_code = address.rsplit(". ", 1)
         postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
         try:
@@ -707,7 +707,14 @@ def _process_address(address: str) -> _AddressData:
         except ValueError:
             street, town = addr_main.rsplit(", ", 1)
             return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
-    return dict(unparsed_address=None, country=None, postcode=None, county=None, town=None, street=None)
+    return dict(unparsed_address=address, country=None, postcode=None, county=None, town=None, street=None)
+
+
+def _process_extra(field: str) -> tuple[str, Optional[str]]:
+    if " - " in field:
+        field, _, extra = field.strip().partition(" - ")
+        return field, extra
+    return field.strip(), None
 
 
 def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tuple[str, Union[int, Literal[True], None]]:
