@@ -48,8 +48,8 @@ from compass.core.util.type_coercion import parse
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Iterator
-    
-    from compass.core.util import counting_session
+
+    from compass.core.util import client
 
     TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
     TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
@@ -147,7 +147,7 @@ references_codes = {
 }
 
 
-def _get_member_profile_tab(session: counting_session.CountingSession, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
+def _get_member_profile_tab(client: client.Client, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
     """Returns data from a given tab in MemberProfile for a given member.
 
     Args:
@@ -170,11 +170,11 @@ def _get_member_profile_tab(session: counting_session.CountingSession, membershi
     elif tab_upper != "PERSONAL":  # Personal tab has no key so is a special case
         raise errors.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {TABS}")
 
-    return session.get(url).content
+    return client.get(url).content
 
 
 @cache_hooks.cache_result(key=("personal", 1))
-def get_personal_tab(session: counting_session.CountingSession, membership_number: int, /) -> schema.MemberDetails:
+def get_personal_tab(client: client.Client, membership_number: int, /) -> schema.MemberDetails:
     """Returns data from Personal Details tab for a given member.
 
     Args:
@@ -213,7 +213,7 @@ def get_personal_tab(session: counting_session.CountingSession, membership_numbe
             Access to the member is not given by the current authentication
 
     """
-    response = _get_member_profile_tab(session, membership_number, "Personal")
+    response = _get_member_profile_tab(client, membership_number, "Personal")
     tree = html.fromstring(response)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
         raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
@@ -279,7 +279,12 @@ def get_personal_tab(session: counting_session.CountingSession, membership_numbe
 
 
 @cache_hooks.cache_result(key=("roles", 1))
-def get_roles_tab(session: counting_session.CountingSession, membership_number: int, /, only_volunteer_roles: bool = True) -> schema.MemberRolesCollection:
+def get_roles_tab(
+    client: client.Client,
+    membership_number: int,
+    /,
+    only_volunteer_roles: bool = True,
+) -> schema.MemberRolesCollection:
     """Returns data from Roles tab for a given member.
 
     Parses the data to a common format, and removes Occasional Helper, PVG,
@@ -324,7 +329,7 @@ def get_roles_tab(session: counting_session.CountingSession, membership_number: 
     """
     logger.debug(f"getting roles tab for member number: {membership_number}")
 
-    response = _get_member_profile_tab(session, membership_number, "Roles")
+    response = _get_member_profile_tab(client, membership_number, "Roles")
     tree = html.fromstring(response)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
         raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
@@ -384,7 +389,7 @@ def get_roles_tab(session: counting_session.CountingSession, membership_number: 
 
 
 @cache_hooks.cache_result(key=("permits", 1))
-def get_permits_tab(session: counting_session.CountingSession, membership_number: int, /) -> list[schema.MemberPermit]:
+def get_permits_tab(client: client.Client, membership_number: int, /) -> list[schema.MemberPermit]:
     """Returns data from Permits tab for a given member.
 
     If a permit has been revoked, the expires value is None and the status is PERM_REV
@@ -401,7 +406,7 @@ def get_permits_tab(session: counting_session.CountingSession, membership_number
             For errors while executing the HTTP call
 
     """
-    response = _get_member_profile_tab(session, membership_number, "Permits")
+    response = _get_member_profile_tab(client, membership_number, "Permits")
     tree = html.fromstring(response)
 
     # Get rows with permit content
@@ -427,7 +432,7 @@ def get_permits_tab(session: counting_session.CountingSession, membership_number
 
 
 @cache_hooks.cache_result(key=("training", 1))
-def get_training_tab(session: counting_session.CountingSession, membership_number: int, /) -> schema.MemberTrainingTab:
+def get_training_tab(client: client.Client, membership_number: int, /) -> schema.MemberTrainingTab:
     """Returns data from Training tab for a given member.
 
     Args:
@@ -471,7 +476,7 @@ def get_training_tab(session: counting_session.CountingSession, membership_numbe
     """
     logger.debug(f"getting training tab for member number: {membership_number}")
 
-    response = _get_member_profile_tab(session, membership_number, "Training")
+    response = _get_member_profile_tab(client, membership_number, "Training")
     tree = html.fromstring(response)
 
     rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
@@ -497,7 +502,7 @@ def get_training_tab(session: counting_session.CountingSession, membership_numbe
 
 
 @cache_hooks.cache_result(key=("awards", 1))
-def get_awards_tab(session: counting_session.CountingSession, membership_number: int, /) -> list[schema.MemberAward]:
+def get_awards_tab(client: client.Client, membership_number: int, /) -> list[schema.MemberAward]:
     """Returns data from Awards tab for a given member.
 
     Args:
@@ -519,7 +524,7 @@ def get_awards_tab(session: counting_session.CountingSession, membership_number:
             For errors while executing the HTTP call
 
     """
-    response = _get_member_profile_tab(session, membership_number, "Awards")
+    response = _get_member_profile_tab(client, membership_number, "Awards")
     tree = html.fromstring(response)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
         raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
@@ -541,7 +546,7 @@ def get_awards_tab(session: counting_session.CountingSession, membership_number:
 
 
 @cache_hooks.cache_result(key=("disclosures", 1))
-def get_disclosures_tab(session: counting_session.CountingSession, membership_number: int, /) -> list[schema.MemberDisclosure]:
+def get_disclosures_tab(client: client.Client, membership_number: int, /) -> list[schema.MemberDisclosure]:
     """Returns data from Disclosures tab for a given member.
 
     Args:
@@ -568,7 +573,7 @@ def get_disclosures_tab(session: counting_session.CountingSession, membership_nu
             For errors while executing the HTTP call
 
     """
-    response = _get_member_profile_tab(session, membership_number, "Disclosures")
+    response = _get_member_profile_tab(client, membership_number, "Disclosures")
     tree = html.fromstring(response)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
         raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
@@ -598,7 +603,7 @@ def get_disclosures_tab(session: counting_session.CountingSession, membership_nu
 
 # See getAppointment in PGS\Needle
 @cache_hooks.cache_result(key=("role_detail", 1))
-def get_roles_detail(session: counting_session.CountingSession, role_number: int, /) -> schema.MemberRolePopup:
+def get_roles_detail(client: client.Client, role_number: int, /) -> schema.MemberRolePopup:
     """Returns detailed data from a given role number.
 
     Args:
@@ -642,7 +647,7 @@ def get_roles_detail(session: counting_session.CountingSession, role_number: int
             For errors while executing the HTTP call
 
     """
-    response = session.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
+    response = client.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
     tree = html.fromstring(response.content)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=Access":
         raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")

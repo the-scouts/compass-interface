@@ -13,7 +13,7 @@ from compass.core.util import cache_hooks
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from compass.core.util import counting_session
+    from compass.core.util import client
 
 
 class HierarchyState(TypedDict, total=False):
@@ -62,7 +62,7 @@ class UnitSections(enum.IntEnum):
 class Hierarchy:
     def __init__(self, session: Logon):
         """Constructor for Hierarchy."""
-        self.client: counting_session.CountingSession = session._session
+        self.client: client.Client = session._session
         self.session: Logon = session
 
     def get_unit_level(
@@ -220,7 +220,9 @@ class Hierarchy:
         all_members = []
         for unit_id in set(compass_ids):
             logger.debug(f"Getting members for {unit_id}")
-            data = schema.HierarchyUnitMembers(unit_id=unit_id, members=scraper.get_members_with_roles_in_unit(self.client, unit_id))
+            data = schema.HierarchyUnitMembers(
+                unit_id=unit_id, members=scraper.get_members_with_roles_in_unit(self.client, unit_id)
+            )
             all_members.append(data)
         return all_members
 

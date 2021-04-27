@@ -13,7 +13,7 @@ from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
 from compass.core.util import auth_header
-from compass.core.util import counting_session
+from compass.core.util.client import Client
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -76,7 +76,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
-        client: counting_session.CountingSession,
+        client: Client,
         compass_props: schema.CompassProps,
         roles_dict: Optional[TYPES_ROLES_DICT] = None,
         current_role: TYPES_ROLE,
@@ -93,7 +93,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
 
         # For session timeout logic
-        self._session: counting_session.CountingSession = client
+        self._session: Client = client
 
         # Set these last, treat as immutable after we leave init. Role can
         # theoretically change, but this is not supported behaviour.
@@ -167,7 +167,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             Initialised Logon object
 
         """
-        client = counting_session.CountingSession()
+        client = Client()
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
 
         logon = cls(
@@ -207,7 +207,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             params={"pExtend": sto},
         )
 
-    def _change_role(self, client: counting_session.CountingSession, new_role: str, location: Optional[str] = None) -> Logon:
+    def _change_role(self, client: Client, new_role: str, location: Optional[str] = None) -> Logon:
         """Returns new Logon object with new role.
 
         If the user has multiple roles with the same role title, the first is used,
@@ -241,9 +241,9 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         return self
 
 
-def create_session() -> counting_session.CountingSession:
+def create_session() -> Client:
     """Create a session and get ASP.Net Session ID cookie from the compass server."""
-    client = counting_session.CountingSession()
+    client = Client()
 
     client.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
     Settings.total_requests += 1
@@ -257,7 +257,7 @@ def create_session() -> counting_session.CountingSession:
     return client
 
 
-def logon_remote(client: counting_session.CountingSession, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
+def logon_remote(client: Client, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
     """Log in to Compass and confirm success."""
     # Referer is genuinely needed otherwise login doesn't work
     headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
@@ -279,7 +279,7 @@ def logon_remote(client: counting_session.CountingSession, auth: tuple[str, str]
     return response, props, roles
 
 
-def check_login(client: counting_session.CountingSession, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
+def check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
     """Confirms success and updates authorisation."""
     # Test 'get' for an exemplar page that needs authorisation.
     portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
@@ -353,7 +353,7 @@ def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, TYPES_RO
 
 
 def _update_auth_headers(
-    client: counting_session.CountingSession,
+    client: Client,
     membership_number: int,
     role_number: int,
     session_id: str,

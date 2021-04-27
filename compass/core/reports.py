@@ -118,6 +118,11 @@ class Reports:
         #     raise
         # logger.debug(f"Exporting took {time.time() -start}s")
 
-        csv_export = scraper.download_report_normal(self.client, f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
+        csv_export = scraper.download_report_normal(
+            self.client,
+            f"{Settings.base_url}/{export_url_path}",
+            export_url_params,
+            filename,
+        )
 
         return csv_export
