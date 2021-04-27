@@ -8,7 +8,7 @@ from compass.core.errors import CompassError
 from compass.core.logon import LogonCore
 from compass.core.logon import Settings
 import compass.core.schemas.logon as schema
-from compass.core.util import counting_session
+from compass.core.util import client
 
 from tests.util.fake_compass import asp_net_id
 
@@ -26,7 +26,7 @@ class TestLogon:
 
         # Then
         assert isinstance(worker.s, requests.Session)
-        assert isinstance(worker.s, counting_session.CountingSession)
+        assert isinstance(worker.s, client.Client)
         assert worker.s.cookies["ASP.NET_SessionId"] == asp_net_id
 
     def test_login_no_cookie(self, server):
@@ -41,7 +41,7 @@ class TestLogon:
     def test_login_post_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
         Settings.base_url = base_url
-        session = counting_session.CountingSession()
+        session = client.Client()
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
         worker = LogonCore(session=session)
 
@@ -57,7 +57,7 @@ class TestLogon:
     def test_login_post_incorrect_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
         Settings.base_url = base_url
-        session = counting_session.CountingSession()
+        session = client.Client()
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
         worker = LogonCore(session=session)
 
@@ -73,7 +73,7 @@ class TestLogon:
     def test_login_check_login(self, server):
         # Given
         Settings.base_url = base_url
-        session = counting_session.CountingSession()
+        session = client.Client()
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
         worker = LogonCore(session=session)
 

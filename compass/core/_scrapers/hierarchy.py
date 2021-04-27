@@ -11,7 +11,7 @@ from compass.core.settings import Settings
 from compass.core.util.compass_helpers import compass_restify
 
 if TYPE_CHECKING:
-    from compass.core.util import counting_session
+    from compass.core.util import client
 
 # TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
 TYPES_ENDPOINT_LEVELS = Literal[
@@ -43,7 +43,7 @@ section_type_map = {
 
 
 # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
-def get_units_from_hierarchy(client: counting_session.CountingSession, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[schema.HierarchyUnit]:
+def get_units_from_hierarchy(client: client.Client, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[schema.HierarchyUnit]:
     """Get all children of a given unit.
 
     If LiveData=Y is passed, the resulting JSON additionally contains:
@@ -112,7 +112,7 @@ def get_units_from_hierarchy(client: counting_session.CountingSession, parent_un
 
 
 def get_members_with_roles_in_unit(
-    client: counting_session.CountingSession, unit_number: int, include_name: bool = False, include_primary_role: bool = False
+    client: client.Client, unit_number: int, include_name: bool = False, include_primary_role: bool = False
 ) -> list[schema.HierarchyMember]:
     """Get details of members with roles in a given unit.
 

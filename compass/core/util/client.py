@@ -6,7 +6,7 @@ from compass.core import errors
 from compass.core.settings import Settings
 
 
-class CountingSession(requests.Session):
+class Client(requests.Session):
     """Counts the number of requests sent."""
 
     def request(self, *args: Any, **kwargs: Any) -> requests.Response:

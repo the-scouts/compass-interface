@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
     import requests
 
-    from compass.core.util import counting_session
+    from compass.core.util import client
 
 
-def jk_hash(session: counting_session.CountingSession, membership_number: int, role_number: int, jk: str) -> str:
+def jk_hash(session: client.Client, membership_number: int, role_number: int, jk: str) -> str:
     """Generate JK Hash needed by Compass."""
     # hash_code(f"{time.time() * 1000:.0f}")
     key_hash = f"{time.time() * 1000:.0f}{jk}{role_number}{membership_number}"  # JK, MRN & CN are all required.
@@ -31,7 +31,7 @@ def auth_header_get(
     membership_number: int,
     role_number: int,
     jk: str,
-    session: counting_session.CountingSession,
+    session: client.Client,
     url: str,
     *,
     params: Optional[Mapping[str, Optional[str]]] = None,
