@@ -1,6 +1,6 @@
 import datetime
 
-from compass.core._scrapers.member import _reduce_date_list
+from compass.core._scrapers.member_profile import _reduce_date_list
 
 
 class TestScrapersMemberReduceDateList:
