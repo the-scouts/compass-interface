@@ -45,7 +45,7 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        monkeypatch.setattr(client, "check_login", lambda: (schema.CompassProps(), {}))
+        monkeypatch.setattr(logon, "check_login", lambda _client: (schema.CompassProps(), {}))
         response, _props, _roles = logon.logon_remote(client, ("username", "password"))
 
         # Then
@@ -60,7 +60,7 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        monkeypatch.setattr(client, "check_login", lambda: (schema.CompassProps(), {}))
+        monkeypatch.setattr(logon, "check_login", lambda _client: (schema.CompassProps(), {}))
         response, _props, _roles = logon.logon_remote(client, ("wrong", "credentials"))
 
         # Then
