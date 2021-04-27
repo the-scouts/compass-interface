@@ -3,7 +3,7 @@ import enum
 from typing import Literal
 
 from compass.core import errors
-from compass.core._scrapers.reports import ReportsScraper
+from compass.core._scrapers import reports as scraper
 from compass.core.logger import logger
 from compass.core.logon import Logon
 from compass.core.settings import Settings
@@ -30,11 +30,11 @@ class ReportTypes(enum.IntEnum):
 class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
-        self._scraper = ReportsScraper(session._session, session.membership_number, session.role_number, session._jk)
+        self.session = session
+        self.client = session._session
         self.current_role: tuple[str, str] = session.current_role
 
         self.membership_number = session.membership_number
-        self.role_number = session.role_number
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
         """Exports report as CSV from Compass.
@@ -83,21 +83,21 @@ class Reports:
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
             rt_key = report_type.lower().replace(" ", "_")
-            run_report_url = self._scraper.get_report_token(ReportTypes[rt_key].value, self.role_number)
+            run_report_url = scraper.get_report_token(self.session, ReportTypes[rt_key].value)
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
             types = [rt.name.title().replace("_", " ") for rt in ReportTypes]
             raise errors.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
 
         # Get initial reports page, for export URL and config:
-        report_page = self._scraper.get_report_page(run_report_url)
+        report_page = scraper.get_report_page(self.client, run_report_url)
 
         # Update form data & set location selection:
-        self._scraper.update_form_data(report_page, f"{Settings.base_url}/{run_report_url}")
+        scraper.update_form_data(self.client, report_page, f"{Settings.base_url}/{run_report_url}")
 
         # Export the report:
         logger.info("Exporting report")
-        export_url_path, export_url_params = self._scraper.get_report_export_url(report_page.decode("UTF-8"))
+        export_url_path, export_url_params = scraper.get_report_export_url(report_page.decode("UTF-8"))
 
         time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
         filename = f"{time_string} - {self.membership_number} ({' - '.join(self.current_role)}).csv"
@@ -118,6 +118,6 @@ class Reports:
         #     raise
         # logger.debug(f"Exporting took {time.time() -start}s")
 
-        csv_export = self._scraper.download_report_normal(f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
+        csv_export = scraper.download_report_normal(self.client, f"{Settings.base_url}/{export_url_path}", export_url_params, filename)
 
         return csv_export
