@@ -275,20 +275,19 @@ class MemberDetails(MemberBase):
     @pydantic.validator("main_phone")
     def check_phone_number(cls, v: Optional[str], values: dict[str, object]) -> Optional[str]:
         if v is None or not v or v == "0" or len(v) < 2:
-            return None
+            return None  # checks for v in (None, "", "0", .{1,2})
 
         try:
             n = phonenumbers.parse(v, "GB")
-        except phonenumbers.NumberParseException as err:
-            membership_number = values["membership_number"]
-            raise ValueError(f"Member No {membership_number}: phone number {v} is not valid!") from err  # must be a ValueError
+            if phonenumbers.is_valid_number(n):
+                if n.country_code == 44:
+                    return str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.NATIONAL))
+                str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.INTERNATIONAL))
+        except phonenumbers.NumberParseException:
+            pass
 
-        if not phonenumbers.is_valid_number(n):
-            membership_number = values["membership_number"]
-            warnings.warn(f"Member No {membership_number}: phone number {v} is not valid!", RuntimeWarning)
-
-        fmt = phonenumbers.PhoneNumberFormat.NATIONAL if n.country_code == 44 else phonenumbers.PhoneNumberFormat.INTERNATIONAL
-        return str(phonenumbers.format_number(n, fmt))
+        membership_number = values["membership_number"]
+        warnings.warn(f"Member No {membership_number}: phone number {v} is not valid!", RuntimeWarning)
 
 
 # Roles Tab (Main List - item)
@@ -312,7 +311,7 @@ class MemberRoleCore(MemberBase, MemberRoleBase):
 class MemberRolesCollection(pydantic.BaseModel):
     roles: dict[int, MemberRoleCore]
     membership_duration: float  # Membership duration in qualifying roles, in years
-    primary_role: Union[int, None]  # Primary role number. None if no primary role found
+    primary_role: Optional[int]  # Primary role number. None if no primary role found
 
 
 # Roles Tab (Role Detail Popup - Main)
