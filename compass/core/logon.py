@@ -5,7 +5,6 @@ from typing import Any, cast, Literal, Optional, TYPE_CHECKING, Union
 import urllib.parse
 
 from lxml import html
-import requests
 
 from compass.core import errors
 from compass.core import schemas
@@ -19,6 +18,8 @@ from compass.core.util import counting_session
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+    import requests
 
 TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
@@ -76,7 +77,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
-        session: requests.Session,
+        session: counting_session.CountingSession,
         compass_props: schema.CompassProps,
         roles_dict: Optional[TYPES_ROLES_DICT] = None,
         current_role: TYPES_ROLE,
@@ -93,7 +94,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
 
         # For session timeout logic
-        self._session: requests.Session = session
+        self._session: counting_session.CountingSession = session
 
         # Set these last, treat as immutable after we leave init. Role can
         # theoretically change, but this is not supported behaviour.
@@ -168,7 +169,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             Initialised Logon object
 
         """
-        session: requests.Session = counting_session.CountingSession()
+        session = counting_session.CountingSession()
         session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
 
         logon = cls(
@@ -208,7 +209,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             params={"pExtend": sto},
         )
 
-    def _change_role(self, session: requests.Session, new_role: str, location: Optional[str] = None) -> Logon:
+    def _change_role(self, session: counting_session.CountingSession, new_role: str, location: Optional[str] = None) -> Logon:
         """Returns new Logon object with new role.
 
         If the user has multiple roles with the same role title, the first is used,
@@ -248,7 +249,7 @@ class LogonCore(InterfaceBase):
     @classmethod
     def create_session(cls: type[LogonCore]) -> LogonCore:
         """Create a session and get ASP.Net Session ID cookie from the compass server."""
-        session: requests.Session = counting_session.CountingSession()
+        session = counting_session.CountingSession()
 
         session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
         Settings.total_requests += 1
@@ -355,7 +356,12 @@ class LogonCore(InterfaceBase):
                 yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
 
 
-def _update_auth_headers(session: requests.Session, membership_number: int, role_number: int, session_id: str) -> None:
+def _update_auth_headers(
+    session: counting_session.CountingSession,
+    membership_number: int,
+    role_number: int,
+    session_id: str,
+) -> None:
     session.headers.update(
         Authorization=f"{membership_number}~{role_number}",
         SID=session_id,  # Session ID

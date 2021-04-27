@@ -2,8 +2,8 @@ from typing import Any
 
 import requests
 
-from compass.core.settings import Settings
 from compass.core import errors
+from compass.core.settings import Settings
 
 
 class CountingSession(requests.Session):
