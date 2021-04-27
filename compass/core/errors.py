@@ -6,6 +6,10 @@ class CompassAuthenticationError(CompassError):
     pass
 
 
+class CompassNetworkError(CompassError):
+    pass
+
+
 class CompassPermissionError(CompassError):
     pass
 

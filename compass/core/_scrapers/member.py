@@ -159,7 +159,7 @@ class PeopleScraper(InterfaceBase):
             Response from the remote server as bytes serialised blob
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
             CompassError: The given profile_tab value is illegal
 
@@ -207,9 +207,9 @@ class PeopleScraper(InterfaceBase):
             parsed from Compass.
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
-            PermissionError:
+            CompassPermissionError:
                 Access to the member is not given by the current authentication
 
         """
@@ -315,9 +315,9 @@ class PeopleScraper(InterfaceBase):
             )
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
-            PermissionError:
+            CompassPermissionError:
                 Access to the member is not given by the current authentication
 
         """
@@ -395,7 +395,7 @@ class PeopleScraper(InterfaceBase):
             permits tab (keys will always be present).
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
 
         """
@@ -462,7 +462,7 @@ class PeopleScraper(InterfaceBase):
               ...}}
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
 
         """
@@ -511,7 +511,7 @@ class PeopleScraper(InterfaceBase):
             )
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
 
         """
@@ -559,7 +559,7 @@ class PeopleScraper(InterfaceBase):
             )
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
 
         """
@@ -632,7 +632,7 @@ class PeopleScraper(InterfaceBase):
               }}
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
 
         """

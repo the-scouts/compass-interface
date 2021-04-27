@@ -123,7 +123,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             Initialised Logon object
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
             CompassError:
                 If initial connection to Compass fails
@@ -155,7 +155,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
     def from_session(cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
         """Initialise a Logon object with stored data.
 
-        This method  is used to avoid logging in many times, by enabling reuse
+        This method is used to avoid logging in many times, by enabling reuse
         of an existing sever-side session in Compass. It is used by the main
         compass-interface web API.
 
@@ -166,10 +166,6 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         Returns:
             Initialised Logon object
-
-        Raises:
-            requests.exceptions.RequestException:
-                For errors while executing the HTTP call
 
         """
         session: requests.Session = counting_session.CountingSession()

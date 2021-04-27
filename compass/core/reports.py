@@ -74,7 +74,7 @@ class Reports:
                 - If there is an error updating the form data
             CompassReportPermissionError:
                 If the user does not have permission to run the report
-            requests.HTTPError:
+            CompassNetworkError:
                 If there is an error in the transport layer, or if Compass
                 reports a HTTP 5XX status code
 
