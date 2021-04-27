@@ -49,7 +49,15 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Iterator
 
-    from compass.core.util import client
+    from compass.core.util.client import Client
+
+    class _AddressData(TypedDict):
+        unparsed_address: Optional[str]
+        country: Optional[str]
+        postcode: Optional[str]
+        county: Optional[str]
+        town: Optional[str]
+        street: Optional[str]
 
     TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
     TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
@@ -147,10 +155,11 @@ references_codes = {
 }
 
 
-def _get_member_profile_tab(client: client.Client, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
+def _get_member_profile_tab(client: Client, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
     """Returns data from a given tab in MemberProfile for a given member.
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
         profile_tab: Tab requested from Compass
 
@@ -174,10 +183,11 @@ def _get_member_profile_tab(client: client.Client, membership_number: int, profi
 
 
 @cache_hooks.cache_result(key=("personal", 1))
-def get_personal_tab(client: client.Client, membership_number: int, /) -> schema.MemberDetails:
+def get_personal_tab(client: Client, membership_number: int, /) -> schema.MemberDetails:
     """Returns data from Personal Details tab for a given member.
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
 
     Returns:
@@ -278,9 +288,29 @@ def get_personal_tab(client: client.Client, membership_number: int, /) -> schema
         return schema.MemberDetails.parse_obj(details)
 
 
+def _process_address(address: str) -> _AddressData:
+    if "UK" in address:
+        addr_main, addr_code = address.rsplit(". ", 1)
+        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
+        try:
+            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
+            return dict(unparsed_address=address, country=country, postcode=postcode, county=county, town=town, street=street)
+        except ValueError:
+            street, town = addr_main.rsplit(", ", 1)
+            return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
+    return dict(unparsed_address=address, country=None, postcode=None, county=None, town=None, street=None)
+
+
+def _process_extra(field: str) -> tuple[str, Optional[str]]:
+    if " - " in field:
+        field, _, extra = field.strip().partition(" - ")
+        return field, extra
+    return field.strip(), None
+
+
 @cache_hooks.cache_result(key=("roles", 1))
 def get_roles_tab(
-    client: client.Client,
+    client: Client,
     membership_number: int,
     /,
     only_volunteer_roles: bool = True,
@@ -291,6 +321,7 @@ def get_roles_tab(
     Network, Council and Staff roles by default.
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
         only_volunteer_roles: If True, drop non-volunteer roles
 
@@ -388,13 +419,82 @@ def get_roles_tab(
         )
 
 
+def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tuple[str, Union[int, Literal[True], None]]:
+    if primary_role is not None:
+        return role_title, primary_role
+    if role_title.endswith(" [Primary]"):
+        return role_title.removesuffix(" [Primary]"), True
+    return role_title, primary_role
+
+
+def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
+    if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
+        role_status: Literal["Full"] = "Full"
+        review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
+        return role_status, review_date
+    if review_status in ROLE_STATUSES:
+        return review_status, None  # type: ignore[return-value]  # str -> Literal type narrowing doesn't seem to work?
+    raise ValueError(f"Invalid value for review status '{review_status}'!")
+
+
+def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
+    """Calculate days of membership (inclusive), normalise to years."""
+    if not dates:  # handle empty iterable
+        return 0
+    membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(dates))
+    return round(membership_duration_days / 365.2425, 3)  # Leap year except thrice per 400 years.
+
+
+def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
+    """Reduce list of start and end dates to disjoint ranges.
+
+    Iterate through date pairs and get longest consecutive date ranges. For
+    disjoint ranges, call function recursively. Returns all found date pairs.
+
+    Args:
+        dl: list of start, end date pairs
+
+    Returns:
+        list of start, end date pairs
+
+    """
+    unused_values = set()  # We init the date values with the first
+    sdl = sorted(dl)
+    start_, end_ = sdl[0]
+    for i, (start, end) in enumerate(sdl):
+        # If date range completely outwith, set both start and end
+        if start < start_ and end > end_:
+            start_, end_ = start, end
+        # If start and latest end overlap, and end is later than latest end, update latest end
+        elif start <= end_ < end:
+            end_ = end
+        # If end and earliest start overlap, and start is earlier than earliest start, update earliest start
+        elif end >= start_ > start:
+            start_ = start
+        # If date range completely within, do nothing
+        elif start >= start_ and end <= end_:
+            pass
+        # If adjacent
+        elif abs(end_ - start).days == 1 or abs(start_ - end).days == 1:
+            end_ = max(end, end_)
+            start_ = min(start, start_)
+        # If none of these (date forms a disjoint set) note as unused
+        else:
+            unused_values.add(i)
+    yield start_, end_
+    # If there are remaining items not used, pass recursively
+    if len(unused_values) != 0:
+        yield from _reduce_date_list((pair for i, pair in enumerate(sdl) if i in unused_values))
+
+
 @cache_hooks.cache_result(key=("permits", 1))
-def get_permits_tab(client: client.Client, membership_number: int, /) -> list[schema.MemberPermit]:
+def get_permits_tab(client: Client, membership_number: int, /) -> list[schema.MemberPermit]:
     """Returns data from Permits tab for a given member.
 
     If a permit has been revoked, the expires value is None and the status is PERM_REV
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
 
     Returns:
@@ -432,10 +532,11 @@ def get_permits_tab(client: client.Client, membership_number: int, /) -> list[sc
 
 
 @cache_hooks.cache_result(key=("training", 1))
-def get_training_tab(client: client.Client, membership_number: int, /) -> schema.MemberTrainingTab:
+def get_training_tab(client: Client, membership_number: int, /) -> schema.MemberTrainingTab:
     """Returns data from Training tab for a given member.
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
 
     Returns:
@@ -501,11 +602,124 @@ def get_training_tab(client: client.Client, membership_number: int, /) -> schema
         return schema.MemberTrainingTab.parse_obj(details)
 
 
+def _process_personal_learning_plan(plp: html.HtmlElement) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
+    """Parses a personal learning plan from a LXML row element containing data."""
+    plp_data = []
+    plp_table = plp.getchildren()[0].getchildren()[0]
+    for module_row in plp_table:
+        if module_row.get("class") != "msTR trMTMN":
+            continue
+
+        module_data: TYPES_TRAINING_MODULE = {}
+        child_nodes = list(module_row)
+        module_data["pk"] = int(module_row.get("data-pk"))
+        module_data["module_id"] = int(child_nodes[0].get("id")[4:])
+        matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()  # type: ignore[union-attr]
+        if matches:
+            module_data["code"] = str(matches[0])
+            module_data["name"] = matches[1]
+
+        learning_required = child_nodes[1].text_content().lower()
+        module_data["learning_required"] = "yes" in learning_required if learning_required else None
+        module_data["learning_method"] = child_nodes[2].text_content() or None
+        module_data["learning_completed"] = parse(child_nodes[3].text_content())
+        module_data["learning_date"] = parse(child_nodes[3].text_content())
+
+        validated_by_string = child_nodes[4].text_content()
+        if validated_by_string:
+            # Add empty item to prevent IndexError
+            validated_by_data = validated_by_string.split(" ", 1) + [""]
+            module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
+            module_data["validated_name"] = validated_by_data[1]
+        module_data["validated_date"] = parse(child_nodes[5].text_content())
+
+        plp_data.append(module_data)
+
+    return int(plp_table.get("data-pk")), plp_data
+
+
+def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[None, str, int, datetime.date]]]:
+    """Parses a personal learning plan from a LXML row element containing data."""
+    child_nodes = list(role)
+
+    role_data: dict[str, Union[None, str, int, datetime.date]] = dict()
+    role_number = int(role.get("data-ng_mrn"))
+    role_data["role_number"] = role_number
+    role_data["role_title"] = child_nodes[0].text_content()
+    role_data["role_start"] = parse(child_nodes[1].text_content())
+    status_with_review = child_nodes[2].text_content()
+    # TODO for `Ending: blah` roles, should we store the ending date?
+    if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
+        role_data["role_status"] = "Full"
+        date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
+        role_data["review_date"] = parse(date_str)
+    else:
+        role_data["role_status"] = status_with_review
+        role_data["review_date"] = None
+    role_data["location"] = child_nodes[3].text_content()
+    training_advisor_string = child_nodes[4].text_content()
+    if training_advisor_string:
+        role_data["ta_data"] = training_advisor_string
+        # Add empty item to prevent IndexError
+        training_advisor_data = training_advisor_string.split(" ", 1) + [""]
+        role_data["ta_number"] = maybe_int(training_advisor_data[0])
+        role_data["ta_name"] = training_advisor_data[1]
+    completion_string = child_nodes[5].text_content()
+    if completion_string:
+        role_data["completion"] = completion_string
+        parts = completion_string.split(":")
+        role_data["completion_type"] = parts[0].strip()
+        role_data["completion_date"] = parse(parts[1].strip())
+    role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
+
+    return role_number, role_data
+
+
+def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.HtmlElement) -> TYPES_TRAINING_OGL:
+    """Compiles ongoing learning data.
+
+    Uses PLP records for GDPR, and main OGL section for Safety, Safeguarding,
+    and First Aid.
+
+    Args:
+        training_plps: Parsed PLP data.
+        tree: LXML tree representing training tab
+
+    Returns:
+        A map of ogl type -> dates. Data returned here as native types (dicts),
+        see schema.MemberMandatoryTraining for full model.
+
+    """
+    # Handle GDPR (Get latest GDPR date)
+    training_ogl: TYPES_TRAINING_OGL = dict()
+    gdpr_generator: Iterator[datetime.date] = (
+        module["validated_date"]
+        for plp in training_plps.values()
+        for module in plp
+        if module["code"] == "GDPR" and isinstance(module["validated_date"], datetime.date)
+    )
+    training_ogl["gdpr"] = dict(completed_date=next(reversed(sorted(gdpr_generator)), None))
+
+    # Get main OGL - safety, safeguarding, first aid
+    for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
+        cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
+        # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
+        training_ogl[mogl_modules[ongoing_learning.get("data-ng_code")]] = dict(
+            completed_date=parse(cell_text.get("tdLastComplete", "")),
+            renewal_date=parse(cell_text.get("tdRenewal", "")),
+        )
+
+    # Update training_ogl with missing mandatory ongoing learning types
+    blank_module: TYPES_TRAINING_OGL_DATES = dict(completed_date=None, renewal_date=None)
+    return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules.values()}
+
+
 @cache_hooks.cache_result(key=("awards", 1))
-def get_awards_tab(client: client.Client, membership_number: int, /) -> list[schema.MemberAward]:
+def get_awards_tab(client: Client, membership_number: int, /) -> list[schema.MemberAward]:
     """Returns data from Awards tab for a given member.
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
 
     Returns:
@@ -546,10 +760,11 @@ def get_awards_tab(client: client.Client, membership_number: int, /) -> list[sch
 
 
 @cache_hooks.cache_result(key=("disclosures", 1))
-def get_disclosures_tab(client: client.Client, membership_number: int, /) -> list[schema.MemberDisclosure]:
+def get_disclosures_tab(client: Client, membership_number: int, /) -> list[schema.MemberDisclosure]:
     """Returns data from Disclosures tab for a given member.
 
     Args:
+        client: HTTP client
         membership_number: Membership Number to use
 
     Returns:
@@ -603,10 +818,11 @@ def get_disclosures_tab(client: client.Client, membership_number: int, /) -> lis
 
 # See getAppointment in PGS\Needle
 @cache_hooks.cache_result(key=("role_detail", 1))
-def get_roles_detail(client: client.Client, role_number: int, /) -> schema.MemberRolePopup:
+def get_roles_detail(client: Client, role_number: int, /) -> schema.MemberRolePopup:
     """Returns detailed data from a given role number.
 
     Args:
+        client: HTTP client
         role_number: Role Number to use
 
     Returns:
@@ -697,215 +913,6 @@ def get_roles_detail(client: client.Client, role_number: int, /) -> schema.Membe
 
     with validation_errors_logging(role_number, name="Role Number"):
         return schema.MemberRolePopup.parse_obj(full_details)
-
-
-class _AddressData(TypedDict):
-    unparsed_address: Optional[str]
-    country: Optional[str]
-    postcode: Optional[str]
-    county: Optional[str]
-    town: Optional[str]
-    street: Optional[str]
-
-
-def _process_address(address: str) -> _AddressData:
-    if "UK" in address:
-        addr_main, addr_code = address.rsplit(". ", 1)
-        postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
-        try:
-            street, town, county = addr_main.rsplit(", ", 2)  # Split address lines
-            return dict(unparsed_address=address, country=country, postcode=postcode, county=county, town=town, street=street)
-        except ValueError:
-            street, town = addr_main.rsplit(", ", 1)
-            return dict(unparsed_address=address, country=country, postcode=postcode, county=None, town=town, street=street)
-    return dict(unparsed_address=address, country=None, postcode=None, county=None, town=None, street=None)
-
-
-def _process_extra(field: str) -> tuple[str, Optional[str]]:
-    if " - " in field:
-        field, _, extra = field.strip().partition(" - ")
-        return field, extra
-    return field.strip(), None
-
-
-def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tuple[str, Union[int, Literal[True], None]]:
-    if primary_role is not None:
-        return role_title, primary_role
-    if role_title.endswith(" [Primary]"):
-        return role_title.removesuffix(" [Primary]"), True
-    return role_title, primary_role
-
-
-def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
-    if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
-        role_status: Literal["Full"] = "Full"
-        review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
-        return role_status, review_date
-    if review_status in ROLE_STATUSES:
-        return review_status, None  # type: ignore[return-value]  # str -> Literal type narrowing doesn't seem to work?
-    raise ValueError(f"Invalid value for review status '{review_status}'!")
-
-
-def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
-    """Reduce list of start and end dates to disjoint ranges.
-
-    Iterate through date pairs and get longest consecutive date ranges. For
-    disjoint ranges, call function recursively. Returns all found date pairs.
-
-    Args:
-        dl: list of start, end date pairs
-
-    Returns:
-        list of start, end date pairs
-
-    """
-    unused_values = set()  # We init the date values with the first
-    sdl = sorted(dl)
-    start_, end_ = sdl[0]
-    for i, (start, end) in enumerate(sdl):
-        # If date range completely outwith, set both start and end
-        if start < start_ and end > end_:
-            start_, end_ = start, end
-        # If start and latest end overlap, and end is later than latest end, update latest end
-        elif start <= end_ < end:
-            end_ = end
-        # If end and earliest start overlap, and start is earlier than earliest start, update earliest start
-        elif end >= start_ > start:
-            start_ = start
-        # If date range completely within, do nothing
-        elif start >= start_ and end <= end_:
-            pass
-        # If adjacent
-        elif abs(end_ - start).days == 1 or abs(start_ - end).days == 1:
-            end_ = max(end, end_)
-            start_ = min(start, start_)
-        # If none of these (date forms a disjoint set) note as unused
-        else:
-            unused_values.add(i)
-    yield start_, end_
-    # If there are remaining items not used, pass recursively
-    if len(unused_values) != 0:
-        yield from _reduce_date_list((pair for i, pair in enumerate(sdl) if i in unused_values))
-
-
-def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
-    """Calculate days of membership (inclusive), normalise to years."""
-    if not dates:  # handle empty iterable
-        return 0
-    membership_duration_days = sum((end - start).days + 1 for start, end in _reduce_date_list(dates))
-    return round(membership_duration_days / 365.2425, 3)  # Leap year except thrice per 400 years.
-
-
-def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.HtmlElement) -> TYPES_TRAINING_OGL:
-    """Compiles ongoing learning data.
-
-    Uses PLP records for GDPR, and main OGL section for Safety, Safeguarding,
-    and First Aid.
-
-    Args:
-        training_plps: Parsed PLP data.
-        tree: LXML tree representing training tab
-
-    Returns:
-        A map of ogl type -> dates. Data returned here as native types (dicts),
-        see schema.MemberMandatoryTraining for full model.
-
-    """
-    # Handle GDPR (Get latest GDPR date)
-    training_ogl: TYPES_TRAINING_OGL = dict()
-    gdpr_generator: Iterator[datetime.date] = (
-        module["validated_date"]
-        for plp in training_plps.values()
-        for module in plp
-        if module["code"] == "GDPR" and isinstance(module["validated_date"], datetime.date)
-    )
-    training_ogl["gdpr"] = dict(completed_date=next(reversed(sorted(gdpr_generator)), None))
-
-    # Get main OGL - safety, safeguarding, first aid
-    for ongoing_learning in tree.xpath("//tr[@data-ng_code]"):
-        cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
-        # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
-        training_ogl[mogl_modules[ongoing_learning.get("data-ng_code")]] = dict(
-            completed_date=parse(cell_text.get("tdLastComplete", "")),
-            renewal_date=parse(cell_text.get("tdRenewal", "")),
-        )
-
-    # Update training_ogl with missing mandatory ongoing learning types
-    blank_module: TYPES_TRAINING_OGL_DATES = dict(completed_date=None, renewal_date=None)
-    return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules.values()}
-
-
-def _process_personal_learning_plan(plp: html.HtmlElement) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
-    """Parses a personal learning plan from a LXML row element containing data."""
-    plp_data = []
-    plp_table = plp.getchildren()[0].getchildren()[0]
-    for module_row in plp_table:
-        if module_row.get("class") != "msTR trMTMN":
-            continue
-
-        module_data: TYPES_TRAINING_MODULE = {}
-        child_nodes = list(module_row)
-        module_data["pk"] = int(module_row.get("data-pk"))
-        module_data["module_id"] = int(child_nodes[0].get("id")[4:])
-        matches = re.match(r"^([A-Z0-9]+) - (.+)$", child_nodes[0].text_content()).groups()  # type: ignore[union-attr]
-        if matches:
-            module_data["code"] = str(matches[0])
-            module_data["name"] = matches[1]
-
-        learning_required = child_nodes[1].text_content().lower()
-        module_data["learning_required"] = "yes" in learning_required if learning_required else None
-        module_data["learning_method"] = child_nodes[2].text_content() or None
-        module_data["learning_completed"] = parse(child_nodes[3].text_content())
-        module_data["learning_date"] = parse(child_nodes[3].text_content())
-
-        validated_by_string = child_nodes[4].text_content()
-        if validated_by_string:
-            # Add empty item to prevent IndexError
-            validated_by_data = validated_by_string.split(" ", 1) + [""]
-            module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
-            module_data["validated_name"] = validated_by_data[1]
-        module_data["validated_date"] = parse(child_nodes[5].text_content())
-
-        plp_data.append(module_data)
-
-    return int(plp_table.get("data-pk")), plp_data
-
-
-def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[None, str, int, datetime.date]]]:
-    """Parses a personal learning plan from a LXML row element containing data."""
-    child_nodes = list(role)
-
-    role_data: dict[str, Union[None, str, int, datetime.date]] = dict()
-    role_number = int(role.get("data-ng_mrn"))
-    role_data["role_number"] = role_number
-    role_data["role_title"] = child_nodes[0].text_content()
-    role_data["role_start"] = parse(child_nodes[1].text_content())
-    status_with_review = child_nodes[2].text_content()
-    # TODO for `Ending: blah` roles, should we store the ending date?
-    if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
-        role_data["role_status"] = "Full"
-        date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
-        role_data["review_date"] = parse(date_str)
-    else:
-        role_data["role_status"] = status_with_review
-        role_data["review_date"] = None
-    role_data["location"] = child_nodes[3].text_content()
-    training_advisor_string = child_nodes[4].text_content()
-    if training_advisor_string:
-        role_data["ta_data"] = training_advisor_string
-        # Add empty item to prevent IndexError
-        training_advisor_data = training_advisor_string.split(" ", 1) + [""]
-        role_data["ta_number"] = maybe_int(training_advisor_data[0])
-        role_data["ta_name"] = training_advisor_data[1]
-    completion_string = child_nodes[5].text_content()
-    if completion_string:
-        role_data["completion"] = completion_string
-        parts = completion_string.split(":")
-        role_data["completion_type"] = parts[0].strip()
-        role_data["completion_date"] = parse(parts[1].strip())
-    role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
-
-    return role_number, role_data
 
 
 def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Optional[int], Optional[str]]:
