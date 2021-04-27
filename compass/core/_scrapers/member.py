@@ -1,3 +1,33 @@
+"""Functions to directly interface with Compass operations to extract member data.
+
+Compass's MemberProfile.aspx has 13 tabs:
+ 1. Personal Details (No Key)
+ 2. Your Children (Page=CHILD)
+ 3. Roles (Page=ROLES)
+ 4. Permits (Page=PERMITS)
+ 5. Training (Page=TRAINING)
+ 6. Awards (Page=AWARDS)
+ 7. Youth Badges/Awards (Page=BADGES)
+ 8. Event Invitations (Page=EVENTS)
+ 9. Emergency Details (Page=EMERGENCY)
+ 10. Communications (Page=COMMS)
+ 11. Visibility (Page=VISIBILITY)
+ 12. Disclosures (Page=DISCLOSURES)
+ 13. Parents/Guardians (Page=PARENT)
+
+Of these, tabs 2, 7, 8, 13 are disabled functionality.
+Tab 11 (Visibility) is only shown on the members' own profile.
+
+For member-adjacent operations there are additional endpoints:
+ - /Popups/Profile/AssignNewRole.aspx
+ - /Popups/Maint/NewPermit.aspx
+ - /Popups/Profile/EditProfile.aspx
+
+Currently we only use one of these endpoints (AssignNewRole), as all
+other data we need can be found from the MemberProfile tabs.
+
+"""
+
 from __future__ import annotations
 
 import datetime
@@ -7,7 +37,6 @@ from typing import get_args, Literal, Optional, TYPE_CHECKING, TypedDict, Union
 from lxml import html
 
 from compass.core import errors
-from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
@@ -19,6 +48,8 @@ from compass.core.util.type_coercion import parse
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Iterator
+    
+    from compass.core.util import counting_session
 
     TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
     TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
@@ -116,576 +147,551 @@ references_codes = {
 }
 
 
-class PeopleScraper(InterfaceBase):
-    """Class directly interfaces with Compass operations to extract member data.
+def _get_member_profile_tab(session: counting_session.CountingSession, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
+    """Returns data from a given tab in MemberProfile for a given member.
 
-    Compass's MemberProfile.aspx has 13 tabs:
-     1. Personal Details (No Key)
-     2. Your Children (Page=CHILD)
-     3. Roles (Page=ROLES)
-     4. Permits (Page=PERMITS)
-     5. Training (Page=TRAINING)
-     6. Awards (Page=AWARDS)
-     7. Youth Badges/Awards (Page=BADGES)
-     8. Event Invitations (Page=EVENTS)
-     9. Emergency Details (Page=EMERGENCY)
-     10. Communications (Page=COMMS)
-     11. Visibility (Page=VISIBILITY)
-     12. Disclosures (Page=DISCLOSURES)
-     13. Parents/Guardians (Page=PARENT)
+    Args:
+        membership_number: Membership Number to use
+        profile_tab: Tab requested from Compass
 
-    Of these, tabs 2, 7, 8, 13 are disabled functionality.
-    Tab 11 (Visibility) is only shown on the members' own profile.
+    Returns:
+        Response from the remote server as bytes serialised blob
 
-    For member-adjacent operations there are additional endpoints:
-     - /Popups/Profile/AssignNewRole.aspx
-     - /Popups/Maint/NewPermit.aspx
-     - /Popups/Profile/EditProfile.aspx
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+        CompassError: The given profile_tab value is illegal
 
-    Currently we only use one of these endpoints (AssignNewRole), as all
-    other data we need can be found from the MemberProfile tabs.
-
-    All functions in the class output native types.
     """
-
-    def _get_member_profile_tab(self, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
-        """Returns data from a given tab in MemberProfile for a given member.
-
-        Args:
-            membership_number: Membership Number to use
-            profile_tab: Tab requested from Compass
-
-        Returns:
-            Response from the remote server as bytes serialised blob
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-            CompassError: The given profile_tab value is illegal
-
-        """
-        tab_upper: str = profile_tab.upper()  # No longer type MEMBER_PROFILE_TAB_TYPES as upper case
-        url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_number}"
-        if tab_upper in TABS:
-            url += f"&Page={tab_upper}&TAB"
-        elif tab_upper != "PERSONAL":  # Personal tab has no key so is a special case
-            raise errors.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {TABS}")
-
-        return self.s.get(url).content
-
-    @cache_hooks.cache_result(key=("personal", 1))
-    def get_personal_tab(self, membership_number: int, /) -> schema.MemberDetails:
-        """Returns data from Personal Details tab for a given member.
-
-        Args:
-            membership_number: Membership Number to use
-
-        Returns:
-            A MemberDetails object keys to the corresponding data from the personal
-            data tab:
-
-            MemberDetails(
-                membership_number=...,
-                name="...",
-                known_as="...",
-                forenames="...",
-                surname="...",
-                birth_date=datetime.date(...),
-                sex="...",
-                nationality="...",
-                ethnicity="...",
-                religion="...",
-                occupation="...",
-                join_date=datetime.date(...),
-                postcode="...",
-                main_phone="...",
-                main_email="..."
-                address=MemberDetailsAddress(...)
-            )
-
-            Keys will be present only if valid data could be extracted and
-            parsed from Compass.
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-            CompassPermissionError:
-                Access to the member is not given by the current authentication
-
-        """
-        response = self._get_member_profile_tab(membership_number, "Personal")
-        tree = html.fromstring(response)
-        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
-
-        details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
-
-        # ### Extractors
-        # ## Core:
-        details["membership_number"] = membership_number
-        names = next(tree.iter("title")).text.strip().split(" ")[3:]  # ("Scout", "-", membership_number, *names)
-        details["forenames"] = names[0]
-        details["surname"] = " ".join(names[1:])
-
-        # Full path is:
-        # XP:   /html/body/form/div[5]/div[1]/div[2]/div[2]/div/div
-        # CSS:  html body form div div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
-        div_profile_tbl = tree[1][0][5][0][1][2][0][0]
-        personal_details: dict[str, str] = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
-        if len(div_profile_tbl) >= 5:
-            contact_details: dict[str, str] = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
-        else:
-            contact_details = {}
-
-        # ## Core - Positional:
-        details["name"] = personal_details["Name:"]  # Full Name
-        details["known_as"] = personal_details["Known As:"]
-        join_date = personal_details["Date of Joining:"]  # TODO Unknown - take date from earliest role?
-        details["join_date"] = parse(join_date) if join_date != "Unknown" else None
-
-        # ## Core - Position Varies:
-        details["sex"] = personal_details["Gender:"]
-
-        # ## Additional - Position Varies, visible for most roles:
-        details["address"] = _process_address(contact_details.get("Address", ""))
-        details["main_phone"] = contact_details.get("Phone")
-        details["main_email"] = contact_details.get("Email")
-
-        # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
-        details["birth_date"] = parse(personal_details.get("Date of Birth:", ""))
-        details["nationality"] = personal_details.get("Nationality:", "").strip()
-        details["ethnicity"] = _process_extra(personal_details.get("Ethnicity:", ""))[0]  # discard ethnicity detail, could keep?
-        details["religion"], details["religion_detail"] = _process_extra(personal_details.get("Religion/Faith:", ""))
-        details["occupation"], details["occupation_detail"] = _process_extra(personal_details.get("Occupation:", ""))
-
-        # ## Other Sections (note double looping but hopefully not large impact)
-        if len(div_profile_tbl) >= 17:  # As far as I know, the `other' sections are all-or-nothing, so we can skip to check hobbies
-            details["disabilities"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[9][2])}
-            details["qualifications"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[13][2])}
-            details["hobbies"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[17][2])}
-
-        # Filter out keys with no value.
-        details = {k: v for k, v in details.items() if v}
-
-        # Filter out no-info sections. After the filter as empty here means we found the section, but it was empty
-        for additional in ("disabilities", "qualifications", "hobbies"):
-            if additional in details:
-                add_sect: dict[str, str] = details[additional]  # type: ignore[assignment]
-                if f"No {additional.title()} Entered" in add_sect:
-                    details[additional] = {}
-
-        with validation_errors_logging(membership_number):
-            return schema.MemberDetails.parse_obj(details)
-
-    @cache_hooks.cache_result(key=("roles", 1))
-    def get_roles_tab(self, membership_number: int, /, only_volunteer_roles: bool = True) -> schema.MemberRolesCollection:
-        """Returns data from Roles tab for a given member.
-
-        Parses the data to a common format, and removes Occasional Helper, PVG,
-        Network, Council and Staff roles by default.
-
-        Args:
-            membership_number: Membership Number to use
-            only_volunteer_roles: If True, drop non-volunteer roles
-
-        Returns:
-            A MemberRolesCollection object with the data from the roles tab
-            (keys will always be present):
-
-            MemberRolesCollection(
-                roles={
-                    1234578: MemberRoleCore(
-                        role_number=...,
-                        membership_number=...,
-                        role_title='...',
-                        role_class='...',
-                        role_type='...',
-                        location_id=...,
-                        location_name='...',
-                        role_start=datetime.date(...),
-                        role_end=datetime.date(...),
-                        role_status='...',
-                        review_date=datetime.date(...),
-                        can_view_details=True|False
-                    ),
-                    ...
-                },
-                membership_duration=...,
-                primary_role=...,
-            )
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-            CompassPermissionError:
-                Access to the member is not given by the current authentication
-
-        """
-        logger.debug(f"getting roles tab for member number: {membership_number}")
-
-        response = self._get_member_profile_tab(membership_number, "Roles")
-        tree = html.fromstring(response)
-        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
-
-        primary_role = None
-        roles_dates = []
-        roles_data = {}
-        for row in tree.xpath("//tbody/tr"):
-            # Get children (cells in row)
-            cells = list(row)
-            # If current role allows selection of role for editing, remove tickbox
-            # If any role allows for selection, an additional column will be added
-            # with empty table-cells where there is no tickbox. Also remove these.
-            if any(el.tag == "input" for el in cells[0]) or cells[0].getchildren() == []:
-                cells.pop(0)
-
-            role_title, primary_role = _extract_primary_role(cells[0].text_content().strip(), primary_role)
-            role_status, review_date = _extract_review_date(cells[5].text_content().strip())
-
-            role_details = schema.MemberRoleCore(
-                role_number=int(row.get("data-pk")),
-                membership_number=membership_number,
-                role_title=role_title,
-                role_class=cells[1].text_content().strip(),
-                # role_type only visible if access to System Admin tab
-                role_type=cells[0][0].get("title", None),
-                # location_id only visible if role is in hierarchy AND location still exists
-                location_id=cells[2][0].get("data-ng_id"),
-                location_name=cells[2].text_content().strip(),
-                role_start=parse(cells[3].text_content().strip()),  # type: ignore[arg-type]
-                role_end=parse(cells[4].text_content().strip()),
-                role_status=role_status,
-                review_date=review_date,
-                can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
-            )
-            # Save role number if role is primary
-            if primary_role is True:
-                primary_role = role_details.role_number
-            # Remove OHs etc from list
-            if "helper" in role_details.role_class.lower() or role_details.role_title.lower() in NON_VOLUNTEER_TITLES:
-                if only_volunteer_roles is True:
-                    continue
-            # If role is a full volunteer role, potentially add to date list
-            elif role_status != "Cancelled":
-                # If role_end is a falsy value (None), replace with today's date
-                roles_dates.append((role_details.role_start, role_details.role_end or datetime.date.today()))
-
-            roles_data[role_details.role_number] = role_details
-
-        with validation_errors_logging(membership_number):
-            # Calculate days of membership (inclusive), normalise to years.
-            return schema.MemberRolesCollection(
-                roles=roles_data,
-                membership_duration=_membership_duration(roles_dates),
-                primary_role=primary_role,
-            )
-
-    @cache_hooks.cache_result(key=("permits", 1))
-    def get_permits_tab(self, membership_number: int, /) -> list[schema.MemberPermit]:
-        """Returns data from Permits tab for a given member.
-
-        If a permit has been revoked, the expires value is None and the status is PERM_REV
-
-        Args:
-            membership_number: Membership Number to use
-
-        Returns:
-            A list of dicts mapping keys to the corresponding data from the
-            permits tab (keys will always be present).
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-
-        """
-        response = self._get_member_profile_tab(membership_number, "Permits")
-        tree = html.fromstring(response)
-
-        # Get rows with permit content
-        rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
-
-        permits = []
-        with validation_errors_logging(membership_number):
-            for row in rows:
-                child_nodes = list(row)
-                expires = child_nodes[5].text_content()
-                permits.append(
-                    schema.MemberPermit(
-                        membership_number=membership_number,
-                        permit_type=child_nodes[1].text_content(),
-                        category=child_nodes[2].text_content(),
-                        type=child_nodes[3].text_content(),
-                        restrictions=child_nodes[4].text_content(),
-                        expires=parse(expires) if expires != "Revoked" else None,
-                        status=child_nodes[5].get("class"),
-                    )
-                )
-        return permits
-
-    @cache_hooks.cache_result(key=("training", 1))
-    def get_training_tab(self, membership_number: int, /) -> schema.MemberTrainingTab:
-        """Returns data from Training tab for a given member.
-
-        Args:
-            membership_number: Membership Number to use
-
-        Returns:
-            A model with the data from the training tab (keys will always be
-            present):
-
-            {'roles': {1234567: {'role_number': 1234567,
-               'role_title': '...',
-               'role_start': datetime.datetime(...),
-               'role_status': '...',
-               'location': '...',
-               'ta_data': '...',
-               'ta_number': '...',
-               'ta_name': '...',
-               'completion': '...',
-               'wood_badge_number': '...'},
-              ...},
-             'plps': {1234567: [{'pk': 6142511,
-                'module_id': ...,
-                'code': '...',
-                'name': '...',
-                'learning_required': False,
-                'learning_method': '...',
-                'learning_completed': '...',
-                'validated_membership_number': '...',
-                'validated_name': '...'},
-               ...],
-              ...},
-             'mandatory': {'GDPR':
-              {'name': 'GDPR',
-              'completed_date': datetime.datetime(...)},
-              ...}}
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-
-        """
-        logger.debug(f"getting training tab for member number: {membership_number}")
-
-        response = self._get_member_profile_tab(membership_number, "Training")
-        tree = html.fromstring(response)
-
-        rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
-
-        training_plps: TYPES_TRAINING_PLPS = {}
-        training_roles = {}
-        for row in rows:
-            classes = set(row.classes)
-
-            # Personal Learning Plan (PLP) data
-            if "trPLP" in classes:
-                plp_number, plp_data = _process_personal_learning_plan(row)
-                training_plps[plp_number] = plp_data
-
-            # Role data
-            if "msTR" in classes:
-                role_number, role_data = _process_role_data(row)
-                training_roles[role_number] = role_data
-
-        details = {"roles": training_roles, "plps": training_plps, "mandatory": _compile_ongoing_learning(training_plps, tree)}
-        with validation_errors_logging(membership_number):
-            return schema.MemberTrainingTab.parse_obj(details)
-
-    @cache_hooks.cache_result(key=("awards", 1))
-    def get_awards_tab(self, membership_number: int, /) -> list[schema.MemberAward]:
-        """Returns data from Awards tab for a given member.
-
-        Args:
-            membership_number: Membership Number to use
-
-        Returns:
-            A MemberAward object with corresponding data from the awards tab
-            (keys will always be present):
-
-            MemberAward(
-                membership_number=...,
-                type="...",
-                location="...",
-                date=datetime.date(...),
-            )
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-
-        """
-        response = self._get_member_profile_tab(membership_number, "Awards")
-        tree = html.fromstring(response)
-        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
-
-        awards = []
-        rows = tree.xpath("//table[@class='msAward']/tr")
-        with validation_errors_logging(membership_number):
-            for row in rows:
-                award_props = row[1][0]  # Properties are stored as yet another sub-table
-                awards.append(
-                    schema.MemberAward(
-                        membership_number=membership_number,
-                        type=award_props[0][1].text_content(),
-                        location=award_props[1][1].text_content() or None,
-                        date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
-                    )
-                )
-        return awards
-
-    @cache_hooks.cache_result(key=("disclosures", 1))
-    def get_disclosures_tab(self, membership_number: int, /) -> list[schema.MemberDisclosure]:
-        """Returns data from Disclosures tab for a given member.
-
-        Args:
-            membership_number: Membership Number to use
-
-        Returns:
-            A MemberDisclosure object with corresponding data from the
-            disclosures tab (keys will always be present):
-
-            MemberDisclosure(
-                membership_number=...,
-                country="...",
-                provider="...",
-                type="...",
-                number=...,
-                issuer="...",
-                issue_date=datetime.date(...),
-                status="...",
-                expiry_date=datetime.date(...),
-            )
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-
-        """
-        response = self._get_member_profile_tab(membership_number, "Disclosures")
-        tree = html.fromstring(response)
-        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-            raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
-
-        disclosures = []
-        rows = tree.xpath("//tbody/tr")
-        with validation_errors_logging(membership_number):
-            for row in rows:
-                # Get children (cells in row)
-                cells = list(row)
-
-                disclosures.append(
-                    schema.MemberDisclosure(
-                        membership_number=membership_number,
-                        country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
-                        provider=cells[1].text_content(),
-                        type=cells[2].text_content(),
-                        number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
-                        issuer=cells[4].text_content() or None,
-                        issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
-                        status=cells[6].text_content(),
-                        expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
-                    )
-                )
-        return disclosures
-
-    # See getAppointment in PGS\Needle
-    @cache_hooks.cache_result(key=("role_detail", 1))
-    def get_roles_detail(self, role_number: int, /) -> schema.MemberRolePopup:
-        """Returns detailed data from a given role number.
-
-        Args:
-            role_number: Role Number to use
-
-        Returns:
-            A MemberRolePopup model with the data from the role detail popup
-            (keys will always be present):
-
-            {'hierarchy': {'organisation': 'The Scout Association',
-              'country': '...',
-              'region': '...',
-              'county': '...',
-              'district': '...',
-              'group': '...',
-              'section': '...'},
-             'details': {'role_number': ...,
-              'organisation_level': '...',
-              'birth_date': datetime.datetime(...),
-              'membership_number': ...,
-              'name': '...',
-              'role_title': '...',
-              'role_start': datetime.datetime(...),
-              'role_status': '...',
-              'line_manager_number': ...,
-              'line_manager': '...',
-              'ce_check': datetime.datetime(...),
-              'disclosure_check': '...',
-              'references': '...',
-              'appointment_panel_approval': '...',
-              'commissioner_approval': '...',
-              'committee_approval': '...'},
-             'getting_started': {...: {'name': '...',
-               'validated': datetime.datetime(...),
-               'validated_by': '...'},
-               ...
-              }}
-
-        Raises:
-            CompassNetworkError:
-                For errors while executing the HTTP call
-
-        """
-        response = self.s.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
-        tree = html.fromstring(response.content)
-        if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=Access":
-            raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
-
-        inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(tree.forms[0].inputs)
-        fields: dict[str, Union[str]] = {k: v.value for k, v in inputs.items() if v.value is not None}
-
-        line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
-        ce_check = fields.get("ctl00$workarea$txt_p2_cecheck", "")  # CE (Confidential Enquiry) Check
-        disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
-
-        approval_values = {row[1][0].get("data-app_code"): row[1][0].get("data-db") for row in tree.xpath("//tr[@class='trProp']")}
-        # row[1][0].get("title") gives title text, but this is not useful as it does not reflect latest changes,
-        # but only who added the role to Compass.
-
-        role_details: dict[str, Union[None, int, str, datetime.date]] = dict(
-            role_number=role_number,
-            # `organisation_level` is ignored, no corresponding field in MemberTrainingRole:
-            organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),
-            birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
-            membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno", 0)),
-            # `name` is ignored, no corresponding field in MemberTrainingRole:
-            name=fields.get("ctl00$workarea$txt_p1_membername", " ").split(" ", 1)[1],
-            role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
-            role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate", "")),
-            role_status=fields.get("ctl00$workarea$txt_p2_status"),
-            line_manager_number=line_manager_number,
-            line_manager=line_manager_name,
-            review_date=parse(fields.get("ctl00$workarea$txt_p2_review", "")),
-            ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
-            disclosure_check=disclosure_check,
-            disclosure_date=disclosure_date,
-            references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status", "")),
-            appointment_panel_approval=approval_values.get("ROLPRP|AACA"),
-            commissioner_approval=approval_values.get("ROLPRP|CAPR"),
-            committee_approval=approval_values.get("ROLPRP|CCA"),
+    tab_upper: str = profile_tab.upper()  # No longer type MEMBER_PROFILE_TAB_TYPES as upper case
+    url = f"{Settings.base_url}/MemberProfile.aspx?CN={membership_number}"
+    if tab_upper in TABS:
+        url += f"&Page={tab_upper}&TAB"
+    elif tab_upper != "PERSONAL":  # Personal tab has no key so is a special case
+        raise errors.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {TABS}")
+
+    return session.get(url).content
+
+
+@cache_hooks.cache_result(key=("personal", 1))
+def get_personal_tab(session: counting_session.CountingSession, membership_number: int, /) -> schema.MemberDetails:
+    """Returns data from Personal Details tab for a given member.
+
+    Args:
+        membership_number: Membership Number to use
+
+    Returns:
+        A MemberDetails object keys to the corresponding data from the personal
+        data tab:
+
+        MemberDetails(
+            membership_number=...,
+            name="...",
+            known_as="...",
+            forenames="...",
+            surname="...",
+            birth_date=datetime.date(...),
+            sex="...",
+            nationality="...",
+            ethnicity="...",
+            religion="...",
+            occupation="...",
+            join_date=datetime.date(...),
+            postcode="...",
+            main_phone="...",
+            main_email="..."
+            address=MemberDetailsAddress(...)
         )
 
-        logger.debug(f"Processed details for role number: {role_number}.")
-        # TODO data-ng_id?, data-rtrn_id?
+        Keys will be present only if valid data could be extracted and
+        parsed from Compass.
 
-        full_details = {
-            "hierarchy": dict(_process_hierarchy(inputs)),
-            "details": {k: v for k, v in role_details.items() if v is not None},  # Filter null values
-            "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
-        }
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+        CompassPermissionError:
+            Access to the member is not given by the current authentication
 
-        with validation_errors_logging(role_number, name="Role Number"):
-            return schema.MemberRolePopup.parse_obj(full_details)
+    """
+    response = _get_member_profile_tab(session, membership_number, "Personal")
+    tree = html.fromstring(response)
+    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
+        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+
+    details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
+
+    # ### Extractors
+    # ## Core:
+    details["membership_number"] = membership_number
+    names = next(tree.iter("title")).text.strip().split(" ")[3:]  # ("Scout", "-", membership_number, *names)
+    details["forenames"] = names[0]
+    details["surname"] = " ".join(names[1:])
+
+    # Full path is:
+    # XP:   /html/body/form/div[5]/div[1]/div[2]/div[2]/div/div
+    # CSS:  html body form div div#mstr_container div#mstr_panel div#mstr_scroll div#mstr_work div#mpage1.mpage
+    div_profile_tbl = tree[1][0][5][0][1][2][0][0]
+    personal_details: dict[str, str] = {row[0][0].text: row[1][0].text for row in div_profile_tbl[1][2][1][1][0]}
+    if len(div_profile_tbl) >= 5:
+        contact_details: dict[str, str] = {row[0][0][0].text: row[2][0].text for row in div_profile_tbl[5][2] if row[0]}
+    else:
+        contact_details = {}
+
+    # ## Core - Positional:
+    details["name"] = personal_details["Name:"]  # Full Name
+    details["known_as"] = personal_details["Known As:"]
+    join_date = personal_details["Date of Joining:"]  # TODO Unknown - take date from earliest role?
+    details["join_date"] = parse(join_date) if join_date != "Unknown" else None
+
+    # ## Core - Position Varies:
+    details["sex"] = personal_details["Gender:"]
+
+    # ## Additional - Position Varies, visible for most roles:
+    details["address"] = _process_address(contact_details.get("Address", ""))
+    details["main_phone"] = contact_details.get("Phone")
+    details["main_email"] = contact_details.get("Email")
+
+    # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
+    details["birth_date"] = parse(personal_details.get("Date of Birth:", ""))
+    details["nationality"] = personal_details.get("Nationality:", "").strip()
+    details["ethnicity"] = _process_extra(personal_details.get("Ethnicity:", ""))[0]  # discard ethnicity detail, could keep?
+    details["religion"], details["religion_detail"] = _process_extra(personal_details.get("Religion/Faith:", ""))
+    details["occupation"], details["occupation_detail"] = _process_extra(personal_details.get("Occupation:", ""))
+
+    # ## Other Sections (note double looping but hopefully not large impact)
+    if len(div_profile_tbl) >= 17:  # As far as I know, the `other' sections are all-or-nothing, so we can skip to check hobbies
+        details["disabilities"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[9][2])}
+        details["qualifications"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[13][2])}
+        details["hobbies"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[17][2])}
+
+    # Filter out keys with no value.
+    details = {k: v for k, v in details.items() if v}
+
+    # Filter out no-info sections. After the filter as empty here means we found the section, but it was empty
+    for additional in ("disabilities", "qualifications", "hobbies"):
+        if additional in details:
+            add_sect: dict[str, str] = details[additional]  # type: ignore[assignment]
+            if f"No {additional.title()} Entered" in add_sect:
+                details[additional] = {}
+
+    with validation_errors_logging(membership_number):
+        return schema.MemberDetails.parse_obj(details)
+
+
+@cache_hooks.cache_result(key=("roles", 1))
+def get_roles_tab(session: counting_session.CountingSession, membership_number: int, /, only_volunteer_roles: bool = True) -> schema.MemberRolesCollection:
+    """Returns data from Roles tab for a given member.
+
+    Parses the data to a common format, and removes Occasional Helper, PVG,
+    Network, Council and Staff roles by default.
+
+    Args:
+        membership_number: Membership Number to use
+        only_volunteer_roles: If True, drop non-volunteer roles
+
+    Returns:
+        A MemberRolesCollection object with the data from the roles tab
+        (keys will always be present):
+
+        MemberRolesCollection(
+            roles={
+                1234578: MemberRoleCore(
+                    role_number=...,
+                    membership_number=...,
+                    role_title='...',
+                    role_class='...',
+                    role_type='...',
+                    location_id=...,
+                    location_name='...',
+                    role_start=datetime.date(...),
+                    role_end=datetime.date(...),
+                    role_status='...',
+                    review_date=datetime.date(...),
+                    can_view_details=True|False
+                ),
+                ...
+            },
+            membership_duration=...,
+            primary_role=...,
+        )
+
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+        CompassPermissionError:
+            Access to the member is not given by the current authentication
+
+    """
+    logger.debug(f"getting roles tab for member number: {membership_number}")
+
+    response = _get_member_profile_tab(session, membership_number, "Roles")
+    tree = html.fromstring(response)
+    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
+        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+
+    primary_role = None
+    roles_dates = []
+    roles_data = {}
+    for row in tree.xpath("//tbody/tr"):
+        # Get children (cells in row)
+        cells = list(row)
+        # If current role allows selection of role for editing, remove tickbox
+        # If any role allows for selection, an additional column will be added
+        # with empty table-cells where there is no tickbox. Also remove these.
+        if any(el.tag == "input" for el in cells[0]) or cells[0].getchildren() == []:
+            cells.pop(0)
+
+        role_title, primary_role = _extract_primary_role(cells[0].text_content().strip(), primary_role)
+        role_status, review_date = _extract_review_date(cells[5].text_content().strip())
+
+        role_details = schema.MemberRoleCore(
+            role_number=int(row.get("data-pk")),
+            membership_number=membership_number,
+            role_title=role_title,
+            role_class=cells[1].text_content().strip(),
+            # role_type only visible if access to System Admin tab
+            role_type=cells[0][0].get("title", None),
+            # location_id only visible if role is in hierarchy AND location still exists
+            location_id=cells[2][0].get("data-ng_id"),
+            location_name=cells[2].text_content().strip(),
+            role_start=parse(cells[3].text_content().strip()),  # type: ignore[arg-type]
+            role_end=parse(cells[4].text_content().strip()),
+            role_status=role_status,
+            review_date=review_date,
+            can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
+        )
+        # Save role number if role is primary
+        if primary_role is True:
+            primary_role = role_details.role_number
+        # Remove OHs etc from list
+        if "helper" in role_details.role_class.lower() or role_details.role_title.lower() in NON_VOLUNTEER_TITLES:
+            if only_volunteer_roles is True:
+                continue
+        # If role is a full volunteer role, potentially add to date list
+        elif role_status != "Cancelled":
+            # If role_end is a falsy value (None), replace with today's date
+            roles_dates.append((role_details.role_start, role_details.role_end or datetime.date.today()))
+
+        roles_data[role_details.role_number] = role_details
+
+    with validation_errors_logging(membership_number):
+        # Calculate days of membership (inclusive), normalise to years.
+        return schema.MemberRolesCollection(
+            roles=roles_data,
+            membership_duration=_membership_duration(roles_dates),
+            primary_role=primary_role,
+        )
+
+
+@cache_hooks.cache_result(key=("permits", 1))
+def get_permits_tab(session: counting_session.CountingSession, membership_number: int, /) -> list[schema.MemberPermit]:
+    """Returns data from Permits tab for a given member.
+
+    If a permit has been revoked, the expires value is None and the status is PERM_REV
+
+    Args:
+        membership_number: Membership Number to use
+
+    Returns:
+        A list of dicts mapping keys to the corresponding data from the
+        permits tab (keys will always be present).
+
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+
+    """
+    response = _get_member_profile_tab(session, membership_number, "Permits")
+    tree = html.fromstring(response)
+
+    # Get rows with permit content
+    rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
+
+    permits = []
+    with validation_errors_logging(membership_number):
+        for row in rows:
+            child_nodes = list(row)
+            expires = child_nodes[5].text_content()
+            permits.append(
+                schema.MemberPermit(
+                    membership_number=membership_number,
+                    permit_type=child_nodes[1].text_content(),
+                    category=child_nodes[2].text_content(),
+                    type=child_nodes[3].text_content(),
+                    restrictions=child_nodes[4].text_content(),
+                    expires=parse(expires) if expires != "Revoked" else None,
+                    status=child_nodes[5].get("class"),
+                )
+            )
+    return permits
+
+
+@cache_hooks.cache_result(key=("training", 1))
+def get_training_tab(session: counting_session.CountingSession, membership_number: int, /) -> schema.MemberTrainingTab:
+    """Returns data from Training tab for a given member.
+
+    Args:
+        membership_number: Membership Number to use
+
+    Returns:
+        A model with the data from the training tab (keys will always be
+        present):
+
+        {'roles': {1234567: {'role_number': 1234567,
+           'role_title': '...',
+           'role_start': datetime.datetime(...),
+           'role_status': '...',
+           'location': '...',
+           'ta_data': '...',
+           'ta_number': '...',
+           'ta_name': '...',
+           'completion': '...',
+           'wood_badge_number': '...'},
+          ...},
+         'plps': {1234567: [{'pk': 6142511,
+            'module_id': ...,
+            'code': '...',
+            'name': '...',
+            'learning_required': False,
+            'learning_method': '...',
+            'learning_completed': '...',
+            'validated_membership_number': '...',
+            'validated_name': '...'},
+           ...],
+          ...},
+         'mandatory': {'GDPR':
+          {'name': 'GDPR',
+          'completed_date': datetime.datetime(...)},
+          ...}}
+
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+
+    """
+    logger.debug(f"getting training tab for member number: {membership_number}")
+
+    response = _get_member_profile_tab(session, membership_number, "Training")
+    tree = html.fromstring(response)
+
+    rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
+
+    training_plps: TYPES_TRAINING_PLPS = {}
+    training_roles = {}
+    for row in rows:
+        classes = set(row.classes)
+
+        # Personal Learning Plan (PLP) data
+        if "trPLP" in classes:
+            plp_number, plp_data = _process_personal_learning_plan(row)
+            training_plps[plp_number] = plp_data
+
+        # Role data
+        if "msTR" in classes:
+            role_number, role_data = _process_role_data(row)
+            training_roles[role_number] = role_data
+
+    details = {"roles": training_roles, "plps": training_plps, "mandatory": _compile_ongoing_learning(training_plps, tree)}
+    with validation_errors_logging(membership_number):
+        return schema.MemberTrainingTab.parse_obj(details)
+
+
+@cache_hooks.cache_result(key=("awards", 1))
+def get_awards_tab(session: counting_session.CountingSession, membership_number: int, /) -> list[schema.MemberAward]:
+    """Returns data from Awards tab for a given member.
+
+    Args:
+        membership_number: Membership Number to use
+
+    Returns:
+        A MemberAward object with corresponding data from the awards tab
+        (keys will always be present):
+
+        MemberAward(
+            membership_number=...,
+            type="...",
+            location="...",
+            date=datetime.date(...),
+        )
+
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+
+    """
+    response = _get_member_profile_tab(session, membership_number, "Awards")
+    tree = html.fromstring(response)
+    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
+        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+
+    awards = []
+    rows = tree.xpath("//table[@class='msAward']/tr")
+    with validation_errors_logging(membership_number):
+        for row in rows:
+            award_props = row[1][0]  # Properties are stored as yet another sub-table
+            awards.append(
+                schema.MemberAward(
+                    membership_number=membership_number,
+                    type=award_props[0][1].text_content(),
+                    location=award_props[1][1].text_content() or None,
+                    date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
+                )
+            )
+    return awards
+
+
+@cache_hooks.cache_result(key=("disclosures", 1))
+def get_disclosures_tab(session: counting_session.CountingSession, membership_number: int, /) -> list[schema.MemberDisclosure]:
+    """Returns data from Disclosures tab for a given member.
+
+    Args:
+        membership_number: Membership Number to use
+
+    Returns:
+        A MemberDisclosure object with corresponding data from the
+        disclosures tab (keys will always be present):
+
+        MemberDisclosure(
+            membership_number=...,
+            country="...",
+            provider="...",
+            type="...",
+            number=...,
+            issuer="...",
+            issue_date=datetime.date(...),
+            status="...",
+            expiry_date=datetime.date(...),
+        )
+
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+
+    """
+    response = _get_member_profile_tab(session, membership_number, "Disclosures")
+    tree = html.fromstring(response)
+    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
+        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+
+    disclosures = []
+    rows = tree.xpath("//tbody/tr")
+    with validation_errors_logging(membership_number):
+        for row in rows:
+            # Get children (cells in row)
+            cells = list(row)
+
+            disclosures.append(
+                schema.MemberDisclosure(
+                    membership_number=membership_number,
+                    country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
+                    provider=cells[1].text_content(),
+                    type=cells[2].text_content(),
+                    number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
+                    issuer=cells[4].text_content() or None,
+                    issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
+                    status=cells[6].text_content(),
+                    expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
+                )
+            )
+    return disclosures
+
+
+# See getAppointment in PGS\Needle
+@cache_hooks.cache_result(key=("role_detail", 1))
+def get_roles_detail(session: counting_session.CountingSession, role_number: int, /) -> schema.MemberRolePopup:
+    """Returns detailed data from a given role number.
+
+    Args:
+        role_number: Role Number to use
+
+    Returns:
+        A MemberRolePopup model with the data from the role detail popup
+        (keys will always be present):
+
+        {'hierarchy': {'organisation': 'The Scout Association',
+          'country': '...',
+          'region': '...',
+          'county': '...',
+          'district': '...',
+          'group': '...',
+          'section': '...'},
+         'details': {'role_number': ...,
+          'organisation_level': '...',
+          'birth_date': datetime.datetime(...),
+          'membership_number': ...,
+          'name': '...',
+          'role_title': '...',
+          'role_start': datetime.datetime(...),
+          'role_status': '...',
+          'line_manager_number': ...,
+          'line_manager': '...',
+          'ce_check': datetime.datetime(...),
+          'disclosure_check': '...',
+          'references': '...',
+          'appointment_panel_approval': '...',
+          'commissioner_approval': '...',
+          'committee_approval': '...'},
+         'getting_started': {...: {'name': '...',
+           'validated': datetime.datetime(...),
+           'validated_by': '...'},
+           ...
+          }}
+
+    Raises:
+        CompassNetworkError:
+            For errors while executing the HTTP call
+
+    """
+    response = session.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
+    tree = html.fromstring(response.content)
+    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=Access":
+        raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
+
+    inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(tree.forms[0].inputs)
+    fields: dict[str, Union[str]] = {k: v.value for k, v in inputs.items() if v.value is not None}
+
+    line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
+    ce_check = fields.get("ctl00$workarea$txt_p2_cecheck", "")  # CE (Confidential Enquiry) Check
+    disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
+
+    approval_values = {row[1][0].get("data-app_code"): row[1][0].get("data-db") for row in tree.xpath("//tr[@class='trProp']")}
+    # row[1][0].get("title") gives title text, but this is not useful as it does not reflect latest changes,
+    # but only who added the role to Compass.
+
+    role_details: dict[str, Union[None, int, str, datetime.date]] = dict(
+        role_number=role_number,
+        # `organisation_level` is ignored, no corresponding field in MemberTrainingRole:
+        organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),
+        birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
+        membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno", 0)),
+        # `name` is ignored, no corresponding field in MemberTrainingRole:
+        name=fields.get("ctl00$workarea$txt_p1_membername", " ").split(" ", 1)[1],
+        role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
+        role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate", "")),
+        role_status=fields.get("ctl00$workarea$txt_p2_status"),
+        line_manager_number=line_manager_number,
+        line_manager=line_manager_name,
+        review_date=parse(fields.get("ctl00$workarea$txt_p2_review", "")),
+        ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
+        disclosure_check=disclosure_check,
+        disclosure_date=disclosure_date,
+        references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status", "")),
+        appointment_panel_approval=approval_values.get("ROLPRP|AACA"),
+        commissioner_approval=approval_values.get("ROLPRP|CAPR"),
+        committee_approval=approval_values.get("ROLPRP|CCA"),
+    )
+
+    logger.debug(f"Processed details for role number: {role_number}.")
+    # TODO data-ng_id?, data-rtrn_id?
+
+    full_details = {
+        "hierarchy": dict(_process_hierarchy(inputs)),
+        "details": {k: v for k, v in role_details.items() if v is not None},  # Filter null values
+        "getting_started": _process_getting_started(tree.xpath("//tr[@class='trTrain trTrainData']")),
+    }
+
+    with validation_errors_logging(role_number, name="Role Number"):
+        return schema.MemberRolePopup.parse_obj(full_details)
 
 
 class _AddressData(TypedDict):
