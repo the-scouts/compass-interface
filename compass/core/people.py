@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class People:
     def __init__(self, session: Logon):
         """Constructor for People."""
-        self._scraper = scraper.PeopleScraper(session._session)
+        self.client = session._session
         self.membership_number = session.membership_number
 
     def personal(self, membership_number: int) -> schema.MemberDetails:
@@ -35,7 +35,7 @@ class People:
                 data for the requested member.
 
         """
-        return self._scraper.get_personal_tab(membership_number)
+        return scraper.get_personal_tab(self.client, membership_number)
 
     # See getRole in PGS\Needle
     def roles(
@@ -68,7 +68,7 @@ class People:
                 data for the requested member.
 
         """
-        roles_data = self._scraper.get_roles_tab(membership_number, only_volunteer_roles)
+        roles_data = scraper.get_roles_tab(self.client, membership_number, only_volunteer_roles)
         if only_active is False:
             return roles_data
         # Role status filter
@@ -100,7 +100,7 @@ class People:
                 If the current user does not have permission to view role data
 
         """
-        return self._scraper.get_roles_detail(role_number)
+        return scraper.get_roles_detail(self.client, role_number)
 
     def permits(self, membership_number: int) -> list[schema.MemberPermit]:
         """Gets permits tab data for a given member.
@@ -114,7 +114,7 @@ class People:
             A MemberPermitsList object containing all data.
 
         """
-        return self._scraper.get_permits_tab(membership_number)
+        return scraper.get_permits_tab(self.client, membership_number)
 
     def training(self, membership_number: int) -> schema.MemberTrainingTab:
         """Gets training tab data for a given member.
@@ -128,7 +128,7 @@ class People:
             A MemberTrainingTab object containing all data.
 
         """
-        return self._scraper.get_training_tab(membership_number)
+        return scraper.get_training_tab(self.client, membership_number)
 
     def awards(self, membership_number: int) -> list[schema.MemberAward]:
         """Gets awards tab data for a given member.
@@ -147,7 +147,7 @@ class People:
                 data for the requested member.
 
         """
-        return self._scraper.get_awards_tab(membership_number)
+        return scraper.get_awards_tab(self.client, membership_number)
 
     def disclosures(self, membership_number: int) -> list[schema.MemberDisclosure]:
         """Gets disclosures tab data for a given member.
@@ -166,7 +166,7 @@ class People:
                 disclosure data for the requested member.
 
         """
-        return self._scraper.get_disclosures_tab(membership_number)
+        return scraper.get_disclosures_tab(self.client, membership_number)
 
     # Convenience methods:
 
@@ -191,7 +191,7 @@ class People:
                 data for the requested member.
 
         """
-        return self._scraper.get_roles_tab(membership_number).membership_duration
+        return scraper.get_roles_tab(self.client, membership_number).membership_duration
 
     def ongoing_learning(self, membership_number: int) -> schema.MemberMandatoryTraining:
         """Gets ongoing learning data for a given member.
@@ -205,7 +205,7 @@ class People:
             A MemberMOGLList object containing all data.
 
         """
-        return self._scraper.get_training_tab(membership_number).mandatory
+        return scraper.get_training_tab(self.client, membership_number).mandatory
 
     def latest_disclosure(self, membership_number: int) -> Optional[schema.MemberDisclosure]:
         """Gets latest disclosure for a given member.
