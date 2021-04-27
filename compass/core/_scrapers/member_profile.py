@@ -124,7 +124,7 @@ mogl_modules = {
 }
 
 
-def _get_member_profile_tab(client: Client, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> bytes:
+def _get_member_profile_tab(client: Client, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> html.HtmlElement:
     """Returns data from a given tab in MemberProfile for a given member.
 
     Args:
@@ -148,7 +148,11 @@ def _get_member_profile_tab(client: Client, membership_number: int, profile_tab:
     elif tab_upper != "PERSONAL":  # Personal tab has no key so is a special case
         raise errors.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {TABS}")
 
-    return client.get(url).content
+    response = client.get(url).content
+    tree = html.fromstring(response)
+    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
+        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+    return tree
 
 
 @cache_hooks.cache_result(key=("personal", 1))
@@ -192,11 +196,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
             Access to the member is not given by the current authentication
 
     """
-    response = _get_member_profile_tab(client, membership_number, "Personal")
-    tree = html.fromstring(response)
-    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
-
+    tree = _get_member_profile_tab(client, membership_number, "Personal")
     details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
 
     # ### Extractors
@@ -334,15 +334,13 @@ def get_roles_tab(
     """
     logger.debug(f"getting roles tab for member number: {membership_number}")
 
-    response = _get_member_profile_tab(client, membership_number, "Roles")
-    tree = html.fromstring(response)
-    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+    tree = _get_member_profile_tab(client, membership_number, "Roles")
+    rows = tree.xpath("//tbody/tr")
 
     primary_role = None
     roles_dates = []
     roles_data = {}
-    for row in tree.xpath("//tbody/tr"):
+    for row in rows:
         # Get children (cells in row)
         cells = list(row)
         # If current role allows selection of role for editing, remove tickbox
@@ -480,9 +478,7 @@ def get_permits_tab(client: Client, membership_number: int, /) -> list[schema.Me
             For errors while executing the HTTP call
 
     """
-    response = _get_member_profile_tab(client, membership_number, "Permits")
-    tree = html.fromstring(response)
-
+    tree = _get_member_profile_tab(client, membership_number, "Permits")
     # Get rows with permit content
     rows = tree.xpath('//table[@id="tbl_p4_permits"]//tr[@class="msTR msTRPERM"]')
 
@@ -551,9 +547,7 @@ def get_training_tab(client: Client, membership_number: int, /) -> schema.Member
     """
     logger.debug(f"getting training tab for member number: {membership_number}")
 
-    response = _get_member_profile_tab(client, membership_number, "Training")
-    tree = html.fromstring(response)
-
+    tree = _get_member_profile_tab(client, membership_number, "Training")
     rows = tree.xpath("//table[@id='tbl_p5_TrainModules']/tr")
 
     training_plps: TYPES_TRAINING_PLPS = {}
@@ -712,13 +706,10 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[schema.Mem
             For errors while executing the HTTP call
 
     """
-    response = _get_member_profile_tab(client, membership_number, "Awards")
-    tree = html.fromstring(response)
-    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+    tree = _get_member_profile_tab(client, membership_number, "Awards")
+    rows = tree.xpath("//table[@class='msAward']/tr")
 
     awards = []
-    rows = tree.xpath("//table[@class='msAward']/tr")
     with validation_errors_logging(membership_number):
         for row in rows:
             award_props = row[1][0]  # Properties are stored as yet another sub-table
@@ -762,13 +753,10 @@ def get_disclosures_tab(client: Client, membership_number: int, /) -> list[schem
             For errors while executing the HTTP call
 
     """
-    response = _get_member_profile_tab(client, membership_number, "Disclosures")
-    tree = html.fromstring(response)
-    if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+    tree = _get_member_profile_tab(client, membership_number, "Disclosures")
+    rows = tree.xpath("//tbody/tr")
 
     disclosures = []
-    rows = tree.xpath("//tbody/tr")
     with validation_errors_logging(membership_number):
         for row in rows:
             # Get children (cells in row)
