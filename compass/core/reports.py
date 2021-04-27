@@ -31,7 +31,7 @@ class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
         self.session = session
-        self.client = session._session
+        self.client = session._client
         self.current_role: tuple[str, str] = session.current_role
 
         self.membership_number = session.membership_number

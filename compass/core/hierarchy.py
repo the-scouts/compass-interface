@@ -62,7 +62,7 @@ class UnitSections(enum.IntEnum):
 class Hierarchy:
     def __init__(self, session: Logon):
         """Constructor for Hierarchy."""
-        self.client: client.Client = session._session
+        self.client: client.Client = session._client
         self.session: Logon = session
 
     def get_unit_level(
