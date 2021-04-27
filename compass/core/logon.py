@@ -8,7 +8,6 @@ from lxml import html
 
 from compass.core import errors
 from compass.core import schemas
-from compass.core.interface_base import InterfaceBase
 from compass.core.logger import logger
 from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
 import compass.core.schemas.logon as schema
@@ -77,7 +76,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         *,
-        session: counting_session.CountingSession,
+        client: counting_session.CountingSession,
         compass_props: schema.CompassProps,
         roles_dict: Optional[TYPES_ROLES_DICT] = None,
         current_role: TYPES_ROLE,
@@ -90,11 +89,11 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         # self._sto_thread = timeout.PeriodicTimer(150, self._extend_session_timeout)
         # self._sto_thread.start()
 
-        self._asp_net_id: str = session.cookies["ASP.NET_SessionId"]
+        self._asp_net_id: str = client.cookies["ASP.NET_SessionId"]
         self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
 
         # For session timeout logic
-        self._session: counting_session.CountingSession = session
+        self._session: counting_session.CountingSession = client
 
         # Set these last, treat as immutable after we leave init. Role can
         # theoretically change, but this is not supported behaviour.
@@ -132,14 +131,13 @@ class Logon:  # pylint: disable=too-many-instance-attributes
                 If authentication with Compass fails
 
         """
-        worker = LogonCore.create_session()
-        session = worker.s
+        client = create_session()
 
         # Log in and try to confirm success
-        _response, props, roles = worker.logon_remote(credentials)
+        _response, props, roles = logon_remote(client, credentials)
 
         logon = cls(
-            session=session,
+            client=client,
             compass_props=props,
             roles_dict=roles,
             # Set current_role explicitly as work done in worker
@@ -148,7 +146,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
-            logon._change_role(session, role_to_use, role_location)  # pylint: disable=protected-access
+            logon._change_role(client, role_to_use, role_location)  # pylint: disable=protected-access
 
         return logon
 
@@ -169,17 +167,17 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             Initialised Logon object
 
         """
-        session = counting_session.CountingSession()
-        session.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
+        client = counting_session.CountingSession()
+        client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
 
         logon = cls(
-            session=session,
+            client=client,
             compass_props=schema.CompassProps.parse_obj({"master": {"user": dict(user_props)}}),
             current_role=current_role,
         )
 
         _update_auth_headers(
-            session, logon.membership_number, logon.role_number, logon._session_id  # pylint: disable=protected-access
+            client, logon.membership_number, logon.role_number, logon._session_id  # pylint: disable=protected-access
         )
 
         return logon
@@ -209,7 +207,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             params={"pExtend": sto},
         )
 
-    def _change_role(self, session: counting_session.CountingSession, new_role: str, location: Optional[str] = None) -> Logon:
+    def _change_role(self, client: counting_session.CountingSession, new_role: str, location: Optional[str] = None) -> Logon:
         """Returns new Logon object with new role.
 
         If the user has multiple roles with the same role title, the first is used,
@@ -219,11 +217,9 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         new_role = new_role.strip()
 
-        worker = LogonCore(session=session)
-
         # If we don't have the roles dict, generate it.
         if not self.roles_dict:
-            _props, self.roles_dict = worker.check_login()
+            _props, self.roles_dict = check_login(client)
 
         # Change role to the specified role number
         if location is not None:
@@ -232,12 +228,12 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         else:
             member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
 
-        response = session.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+        response = client.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
         Settings.total_requests += 1
         logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
         # Confirm Compass is reporting the changed role number, update auth headers
-        self.compass_props, self.roles_dict = worker.check_login(check_role_number=member_role_number)
+        self.compass_props, self.roles_dict = check_login(client, check_role_number=member_role_number)
         self.current_role = self.roles_dict[member_role_number]  # Set explicitly as work done in worker
 
         logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
@@ -245,124 +241,124 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         return self
 
 
-class LogonCore(InterfaceBase):
-    @classmethod
-    def create_session(cls: type[LogonCore]) -> LogonCore:
-        """Create a session and get ASP.Net Session ID cookie from the compass server."""
-        session = counting_session.CountingSession()
+def create_session() -> counting_session.CountingSession:
+    """Create a session and get ASP.Net Session ID cookie from the compass server."""
+    client = counting_session.CountingSession()
 
-        session.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
-        Settings.total_requests += 1
+    client.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
+    Settings.total_requests += 1
 
-        if not session.cookies:
-            raise errors.CompassError(
-                "Could not create a session with Compass. Please check that this programme can "
-                "access Compass (including firewalls etc.) and that Compass is currently online. "
-            )
+    if not client.cookies:
+        raise errors.CompassError(
+            "Could not create a session with Compass. Please check that this programme can "
+            "access Compass (including firewalls etc.) and that Compass is currently online. "
+        )
 
-        return cls(session)
+    return client
 
-    def logon_remote(self, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
-        """Log in to Compass and confirm success."""
-        # Referer is genuinely needed otherwise login doesn't work
-        headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
 
-        username, password = auth
-        credentials = {
-            "EM": f"{username}",  # assume email?
-            "PW": f"{password}",  # password
-            "ON": f"{Settings.org_number}",  # organisation number
-        }
+def logon_remote(client: counting_session.CountingSession, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
+    """Log in to Compass and confirm success."""
+    # Referer is genuinely needed otherwise login doesn't work
+    headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
 
-        # log in
-        logger.info("Logging in")
-        response = self.s.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
+    username, password = auth
+    credentials = {
+        "EM": f"{username}",  # assume email?
+        "PW": f"{password}",  # password
+        "ON": f"{Settings.org_number}",  # organisation number
+    }
 
-        # verify log in was successful
-        props, roles = self.check_login()
+    # log in
+    logger.info("Logging in")
+    response = client.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
 
-        return response, props, roles
+    # verify log in was successful
+    props, roles = check_login(client)
 
-    def check_login(self, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
-        """Confirms success and updates authorisation."""
-        # Test 'get' for an exemplar page that needs authorisation.
-        portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
-        response = self.s.get(portal_url)
+    return response, props, roles
 
-        # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
-        # if int(post_response.headers.get("content-length", 901)) > 900:
-        #     raise CompassAuthenticationError("Login has failed")
-        # Naive check for error, Compass redirects to an error page when something goes wrong
-        # TODO what is the error page URL - what do we expect? From memory Error.aspx
-        if response.url != portal_url:
-            raise errors.CompassAuthenticationError("Login has failed")
 
-        # Create lxml html.FormElement
-        form = html.fromstring(response.content).forms[0]
+def check_login(client: counting_session.CountingSession, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
+    """Confirms success and updates authorisation."""
+    # Test 'get' for an exemplar page that needs authorisation.
+    portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
+    response = client.get(portal_url)
 
-        # Update session dicts with new role
-        compass_props = self._create_compass_props(form)  # Updates MRN property etc.
-        roles_dict = dict(self._roles_iterator(form))
+    # # Response body is login page for failure (~8Kb), but success is a 300 byte page.
+    # if int(post_response.headers.get("content-length", 901)) > 900:
+    #     raise CompassAuthenticationError("Login has failed")
+    # Naive check for error, Compass redirects to an error page when something goes wrong
+    # TODO what is the error page URL - what do we expect? From memory Error.aspx
+    if response.url != portal_url:
+        raise errors.CompassAuthenticationError("Login has failed")
 
-        membership_number: int = compass_props.master.user.cn  # type: ignore[assignment]
-        role_number: int = compass_props.master.user.mrn  # type: ignore[assignment]
-        session_id: str = compass_props.master.sys.session_id  # type: ignore[assignment]
+    # Create lxml html.FormElement
+    form = html.fromstring(response.content).forms[0]
 
-        # Set auth headers for new role
-        _update_auth_headers(self.s, membership_number, role_number, session_id)
+    # Update session dicts with new role
+    compass_props = _create_compass_props(form)  # Updates MRN property etc.
+    roles_dict = dict(_roles_iterator(form))
 
-        # Update current role properties
-        current_role_title, current_role_location = roles_dict[role_number]
-        logger.debug(f"Using Role: {current_role_title} ({current_role_location})")
+    membership_number: int = compass_props.master.user.cn  # type: ignore[assignment]
+    role_number: int = compass_props.master.user.mrn  # type: ignore[assignment]
+    session_id: str = compass_props.master.sys.session_id  # type: ignore[assignment]
 
-        # Verify role number against test value
-        if check_role_number is not None:
-            logger.debug("Confirming role has been changed")
-            # Check that the role has been changed to the desired role. If not, raise exception.
-            if check_role_number != role_number:
-                raise errors.CompassAuthenticationError("Role failed to update in Compass")
+    # Set auth headers for new role
+    _update_auth_headers(client, membership_number, role_number, session_id)
 
-        return compass_props, roles_dict
+    # Update current role properties
+    current_role_title, current_role_location = roles_dict[role_number]
+    logger.debug(f"Using Role: {current_role_title} ({current_role_location})")
 
-    @staticmethod
-    def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
-        """Create Compass info dict from FormElement."""
-        compass_props: dict[str, Any] = {}
-        compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
-        for pair in compass_vars.split("~"):
-            key, value = pair.split("#", 1)
-            cd_tmp = compass_props
-            levels = key.split(".")
-            for level in levels[:-1]:
-                cd_tmp = cd_tmp.setdefault(level, {})
-            cd_tmp[levels[-1]] = value  # int or str
+    # Verify role number against test value
+    if check_role_number is not None:
+        logger.debug("Confirming role has been changed")
+        # Check that the role has been changed to the desired role. If not, raise exception.
+        if check_role_number != role_number:
+            raise errors.CompassAuthenticationError("Role failed to update in Compass")
 
-        if "Sys" in compass_props.get("Master", {}):
-            compass_props_master_sys = compass_props["Master"]["Sys"]
-            if "WebPath" in compass_props_master_sys:
-                compass_props_master_sys["WebPath"] = urllib.parse.unquote(compass_props_master_sys["WebPath"])
-            if "HardTime" in compass_props_master_sys:
-                hard_time_isoformat = compass_props_master_sys["HardTime"].replace(".", ":")
-                compass_props_master_sys["HardTime"] = datetime.time.fromisoformat(hard_time_isoformat)
+    return compass_props, roles_dict
 
-        return schema.CompassProps(**compass_props)
 
-    @staticmethod
-    def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, TYPES_ROLE]]:
-        """Generate role number to role name mapping."""
-        roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
-        for row in roles_rows:
-            if "Full" in row[5].text_content():  # from looking at the compass support group, only `Full` roles can be selected
-                yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
+def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
+    """Create Compass info dict from FormElement."""
+    compass_props: dict[str, Any] = {}
+    compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
+    for pair in compass_vars.split("~"):
+        key, value = pair.split("#", 1)
+        cd_tmp = compass_props
+        levels = key.split(".")
+        for level in levels[:-1]:
+            cd_tmp = cd_tmp.setdefault(level, {})
+        cd_tmp[levels[-1]] = value  # int or str
+
+    if "Sys" in compass_props.get("Master", {}):
+        compass_props_master_sys = compass_props["Master"]["Sys"]
+        if "WebPath" in compass_props_master_sys:
+            compass_props_master_sys["WebPath"] = urllib.parse.unquote(compass_props_master_sys["WebPath"])
+        if "HardTime" in compass_props_master_sys:
+            hard_time_isoformat = compass_props_master_sys["HardTime"].replace(".", ":")
+            compass_props_master_sys["HardTime"] = datetime.time.fromisoformat(hard_time_isoformat)
+
+    return schema.CompassProps(**compass_props)
+
+
+def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, TYPES_ROLE]]:
+    """Generate role number to role name mapping."""
+    roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
+    for row in roles_rows:
+        if "Full" in row[5].text_content():  # from looking at the compass support group, only `Full` roles can be selected
+            yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
 
 
 def _update_auth_headers(
-    session: counting_session.CountingSession,
+    client: counting_session.CountingSession,
     membership_number: int,
     role_number: int,
     session_id: str,
 ) -> None:
-    session.headers.update(
+    client.headers.update(
         Authorization=f"{membership_number}~{role_number}",
         SID=session_id,  # Session ID
     )
