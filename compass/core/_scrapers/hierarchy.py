@@ -76,7 +76,7 @@ class HierarchyScraper(InterfaceBase):
             ]
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
 
         """
@@ -136,7 +136,7 @@ class HierarchyScraper(InterfaceBase):
             ]
 
         Raises:
-            requests.exceptions.RequestException:
+            CompassNetworkError:
                 For errors while executing the HTTP call
             CompassError:
                 If Compass reports that the search was invalid

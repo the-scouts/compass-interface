@@ -87,7 +87,7 @@ class Hierarchy:
                 HierarchyLevel(id=..., level="...")
 
         Raises:
-            ValueError:
+            CompassError:
                 When no unit data information has been provided
 
         """
@@ -124,7 +124,7 @@ class Hierarchy:
             3. default data
 
         Raises:
-            ValueError:
+            CompassError:
                 When no unit data information has been provided
 
         """
@@ -191,7 +191,7 @@ class Hierarchy:
             A set of unique member numbers within the given unit.
 
         Raises:
-            ValueError:
+            CompassError:
                 When no unit data information has been provided
 
         """

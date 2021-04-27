@@ -72,7 +72,7 @@ def auth_header_get(
         requests.Response object from executing the request
 
     Raises:
-        requests.exceptions.RequestException
+        CompassNetworkError
 
     """
     # pylint: disable=too-many-arguments

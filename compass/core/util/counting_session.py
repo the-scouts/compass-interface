@@ -3,6 +3,7 @@ from typing import Any
 import requests
 
 from compass.core.settings import Settings
+from compass.core import errors
 
 
 class CountingSession(requests.Session):
@@ -10,4 +11,7 @@ class CountingSession(requests.Session):
 
     def request(self, *args: Any, **kwargs: Any) -> requests.Response:
         Settings.total_requests += 1
-        return super().request(*args, **kwargs)
+        try:
+            return super().request(*args, **kwargs)
+        except requests.RequestException as err:
+            raise errors.CompassNetworkError("Network Error!") from err
