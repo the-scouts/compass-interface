@@ -82,18 +82,17 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         current_role: TYPES_ROLE,
     ):
         """Constructor for Logon."""
+        self._client: Client = client
         self.compass_props: schema.CompassProps = compass_props
         self.roles_dict: TYPES_ROLES_DICT = roles_dict or {}
         self.current_role: TYPES_ROLE = current_role or ("", "")
 
+        # For session timeout logic
         # self._sto_thread = timeout.PeriodicTimer(150, self._extend_session_timeout)
         # self._sto_thread.start()
 
         self._asp_net_id: str = client.cookies["ASP.NET_SessionId"]
         self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
-
-        # For session timeout logic
-        self._session: Client = client
 
         # Set these last, treat as immutable after we leave init. Role can
         # theoretically change, but this is not supported behaviour.
@@ -202,7 +201,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             self.membership_number,
             self.role_number,
             self._jk,
-            self._session,
+            self._client,
             f"{Settings.web_service_path}/STO_CHK",
             params={"pExtend": sto},
         )

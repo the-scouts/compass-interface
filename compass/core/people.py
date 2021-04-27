@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class People:
     def __init__(self, session: Logon):
         """Constructor for People."""
-        self.client = session._session
+        self.client = session._client
         self.membership_number = session.membership_number
 
     def personal(self, membership_number: int) -> schema.MemberDetails:

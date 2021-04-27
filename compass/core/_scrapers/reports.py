@@ -17,7 +17,7 @@ from compass.core.util import auth_header
 from compass.core.util import context_managers
 
 if TYPE_CHECKING:
-    from compass.core.util import client
+    from compass.core.util.client import Client
 
 
 def get_report_token(session: logon.Logon, report_number: int) -> str:
@@ -30,7 +30,7 @@ def get_report_token(session: logon.Logon, report_number: int) -> str:
         session.membership_number,
         session.role_number,
         session._jk,
-        session._session,
+        session._client,
         f"{Settings.web_service_path}/ReportToken",
         params=params,
     )
@@ -58,7 +58,7 @@ def get_report_export_url(report_page: str, filename: Optional[str] = None) -> t
     return export_url_path, report_export_url_data
 
 
-def get_report_page(client: client.Client, run_report_url: str) -> bytes:
+def get_report_page(client: Client, run_report_url: str) -> bytes:
     # TODO what breaks if we don't update user-agent?
     # Compass does user-agent sniffing in reports!!!
     client.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
@@ -70,7 +70,7 @@ def get_report_page(client: client.Client, run_report_url: str) -> bytes:
     return report_page.content
 
 
-def update_form_data(client: client.Client, report_page: bytes, run_report: str) -> None:
+def update_form_data(client: Client, report_page: bytes, run_report: str) -> None:
     form = html.fromstring(report_page).forms[0]
     elements = {el.name: el.value for el in form.inputs if el.get("type") not in {"checkbox", "image"}}
 
@@ -122,7 +122,7 @@ def update_form_data(client: client.Client, report_page: bytes, run_report: str)
         raise errors.CompassReportError("Compass Error!")
 
 
-def report_keep_alive(client: client.Client, report_page: str) -> str:
+def report_keep_alive(client: Client, report_page: str) -> str:
     logger.info(f"Extending Report Session {datetime.datetime.now()}")
     keep_alive_encoded = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1)  # type: ignore[union-attr]
     keep_alive = keep_alive_encoded.encode().decode("unicode-escape")
@@ -131,7 +131,7 @@ def report_keep_alive(client: client.Client, report_page: str) -> str:
     return keep_alive  # response
 
 
-def download_report_streaming(client: client.Client, url: str, params: dict[str, str], filename: str) -> None:
+def download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
     with client.get(url, params=params, stream=True) as r:
         r.raise_for_status()
         with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
@@ -139,7 +139,7 @@ def download_report_streaming(client: client.Client, url: str, params: dict[str,
                 f.write(chunk)
 
 
-def download_report_normal(client: client.Client, url: str, params: dict[str, str], filename: str) -> bytes:
+def download_report_normal(client: Client, url: str, params: dict[str, str], filename: str) -> bytes:
     start = time.time()
     csv_export = client.get(url, params=params)
     logger.debug(f"Exporting took {time.time() - start}s")
