@@ -1,12 +1,11 @@
-import requests
-
 from compass.core.interface_base import InterfaceBase
+from compass.core.util import counting_session
 
 
 class TestInterfaceBase:
     def test_init(self):
         # Given
-        s = requests.Session()
+        s = counting_session.CountingSession()
 
         # When
         result = InterfaceBase(s)

@@ -17,11 +17,11 @@ from compass.core.util import auth_header
 from compass.core.util import context_managers
 
 if TYPE_CHECKING:
-    import requests
+    from compass.core.util import counting_session
 
 
 class ReportsScraper(InterfaceBase):
-    def __init__(self, session: requests.Session, membership_number: int, role_number: int, jk: str):
+    def __init__(self, session: counting_session.CountingSession, membership_number: int, role_number: int, jk: str):
         """Constructor for ReportsScraper.
 
         takes an initialised Session object from Logon

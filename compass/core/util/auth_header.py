@@ -4,8 +4,6 @@ import datetime
 import time
 from typing import Any, Optional, TYPE_CHECKING
 
-import requests
-
 from compass.core.logger import logger
 from compass.core.settings import Settings
 from compass.core.util.compass_helpers import compass_restify
@@ -13,8 +11,12 @@ from compass.core.util.compass_helpers import compass_restify
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    import requests
 
-def jk_hash(session: requests.Session, membership_number: int, role_number: int, jk: str) -> str:
+    from compass.core.util import counting_session
+
+
+def jk_hash(session: counting_session.CountingSession, membership_number: int, role_number: int, jk: str) -> str:
     """Generate JK Hash needed by Compass."""
     # hash_code(f"{time.time() * 1000:.0f}")
     key_hash = f"{time.time() * 1000:.0f}{jk}{role_number}{membership_number}"  # JK, MRN & CN are all required.
@@ -29,7 +31,7 @@ def auth_header_get(
     membership_number: int,
     role_number: int,
     jk: str,
-    session: requests.Session,
+    session: counting_session.CountingSession,
     url: str,
     *,
     params: Optional[Mapping[str, Optional[str]]] = None,
@@ -66,7 +68,7 @@ def auth_header_get(
         params: Mapping to be sent in the query string for the request
         headers: Mapping of HTTP Headers
         stream: Whether to stream download the response content.
-        kwargs: Optional arguments to requests.sessions.Session.get
+        kwargs: Optional arguments to session.get
 
     Returns:
         requests.Response object from executing the request
