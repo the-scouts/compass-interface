@@ -282,7 +282,7 @@ class MemberDetails(MemberBase):
             if phonenumbers.is_valid_number(n):
                 if n.country_code == 44:
                     return str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.NATIONAL))
-                str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.INTERNATIONAL))
+                return str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.INTERNATIONAL))
         except phonenumbers.NumberParseException:
             pass
 
