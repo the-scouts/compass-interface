@@ -25,6 +25,7 @@ def validation_errors_logging(id_value: int, name: str = "Member No") -> Iterato
     try:
         yield
     except pydantic.ValidationError as err:
-        logger.exception(f"Parsing Error! {name}: {id_value}")
         if Settings.validation_errors is True:
+            logger.error(f"Parsing Error! {name}: {id_value}")  # don't duplicate tracebacks
             raise err
+        logger.exception(f"Parsing Error! {name}: {id_value}")
