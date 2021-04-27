@@ -237,21 +237,14 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
     details["religion"], details["religion_detail"] = _process_extra(personal_details.get("Religion/Faith:", ""))
     details["occupation"], details["occupation_detail"] = _process_extra(personal_details.get("Occupation:", ""))
 
-    # ## Other Sections (note double looping but hopefully not large impact)
+    # ## Other Sections
     if len(div_profile_tbl) >= 17:  # As far as I know, the `other' sections are all-or-nothing, so we can skip to check hobbies
-        details["disabilities"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[9][2])}
-        details["qualifications"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[13][2])}
-        details["hobbies"] = {k: v for k, _, v in (row[0][0].text.partition(" - ") for row in div_profile_tbl[17][2])}
+        details["disabilities"] = _process_misc_sections(div_profile_tbl[9][2], "Disabilities")
+        details["qualifications"] = _process_misc_sections(div_profile_tbl[13][2], "Qualifications")
+        details["hobbies"] = _process_misc_sections(div_profile_tbl[17][2], "Hobbies")
 
     # Filter out keys with no value.
     details = {k: v for k, v in details.items() if v}
-
-    # Filter out no-info sections. After the filter as empty here means we found the section, but it was empty
-    for additional in ("disabilities", "qualifications", "hobbies"):
-        if additional in details:
-            add_sect: dict[str, str] = details[additional]  # type: ignore[assignment]
-            if f"No {additional.title()} Entered" in add_sect:
-                details[additional] = {}
 
     with validation_errors_logging(membership_number):
         return schema.MemberDetails.parse_obj(details)
@@ -275,6 +268,18 @@ def _process_extra(field: str) -> tuple[str, Optional[str]]:
         field, _, extra = field.strip().partition(" - ")
         return field, extra
     return field.strip(), None
+
+
+def _process_misc_sections(section_table: html.HtmlElement, section_type: Literal["Disabilities", "Qualifications", "Hobbies"]) -> dict[str, Optional[str]]:
+    out = {}
+    for row in section_table:
+        field, _, optional_detail = row[0][0].text.partition(" - ")
+        out[field] = optional_detail or None
+
+    # Filter out no-info sections. After the filter as empty here means we found the section, but it was empty
+    if len(out) == 1 and f"No {section_type} Entered" in out:
+        return {}
+    return out
 
 
 @cache_hooks.cache_result(key=("roles", 1))
