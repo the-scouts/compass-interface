@@ -30,38 +30,25 @@ TYPES_ETHNICITY = Literal[
     "18.Other",
     "19.Prefer not to say",
 ]
-TYPES_RELIGION = Union[  # type: ignore[misc]
-    Literal[
-        "Buddhist",
-        "Christian (including all Christian denominations)",
-        "Hindu",
-        "Jewish",
-        "Muslim",
-        "Any other religion (please specify)",
-        "No religion",
-        "Prefer not to say",
-    ],
-    pydantic.constr(regex=r"^Christian.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Any other religion.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^No religion.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
+TYPES_RELIGION = Literal[
+    "Buddhist",
+    "Christian (including all Christian denominations)",
+    "Hindu",
+    "Jewish",
+    "Muslim",
+    "Sikh",
+    "Any other religion (please specify)",
+    "No religion",
+    "Prefer not to say",
 ]
-TYPES_OCCUPATION = Union[  # type: ignore[misc]
-    Literal[
-        "Employed",
-        "Unemployed",
-        "Retired (whether receiving a pension or not)",
-        "Student",
-        "Long term sick or disabled",
-        "Looking after home of family",
-        "Other",
-    ],
-    pydantic.constr(regex=r"^Employed.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Unemployed.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Retired.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Student.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Long term sick or disabled.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Looking after home of family.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
-    pydantic.constr(regex=r"^Other.*"),  # NoQA: F722 (https://stackoverflow.com/a/64917499)
+TYPES_OCCUPATION = Literal[
+    "Employed",
+    "Unemployed",
+    "Retired (whether receiving a pension or not)",
+    "Student",
+    "Long term sick or disabled",
+    "Looking after home of family",
+    "Other",
 ]
 TYPES_ROLE_CLASS = Literal[
     "Administrator",
@@ -268,7 +255,9 @@ class MemberDetails(MemberBase):
     nationality: Optional[str] = None  # literal? Big list...!
     ethnicity: Optional[TYPES_ETHNICITY] = None
     religion: Optional[TYPES_RELIGION] = None  # type: ignore[valid-type]
+    religion_detail: Optional[str] = None  # type: ignore[valid-type]
     occupation: Optional[TYPES_OCCUPATION] = None  # type: ignore[valid-type]
+    occupation_detail: Optional[str] = None  # type: ignore[valid-type]
     join_date: Optional[datetime.date] = None
 
     # Contact Details
