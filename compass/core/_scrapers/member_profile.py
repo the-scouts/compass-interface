@@ -417,46 +417,46 @@ def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -
     return round(membership_duration_days / 365.2425, 3)  # Leap year except thrice per 400 years.
 
 
-def _reduce_date_list(dl: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
+def _reduce_date_list(dates: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
     """Reduce list of start and end dates to disjoint ranges.
 
     Iterate through date pairs and get longest consecutive date ranges. For
     disjoint ranges, call function recursively. Returns all found date pairs.
 
     Args:
-        dl: list of start, end date pairs
+        dates: list of start, end date pairs
 
     Returns:
         list of start, end date pairs
 
     """
     unused_values = set()  # We init the date values with the first
-    sdl = sorted(dl)
-    start_, end_ = sdl[0]
-    for i, (start, end) in enumerate(sdl):
+    sdl = sorted(dates)
+    earliest_start, latest_end = sdl[0]
+    for i, (start, end) in enumerate(sdl[1:]):
         # If date range completely outwith, set both start and end
-        if start < start_ and end > end_:
-            start_, end_ = start, end
+        if start < earliest_start and end > latest_end:
+            earliest_start, latest_end = start, end
         # If start and latest end overlap, and end is later than latest end, update latest end
-        elif start <= end_ < end:
-            end_ = end
+        elif start <= latest_end < end:
+            latest_end = end
         # If end and earliest start overlap, and start is earlier than earliest start, update earliest start
-        elif end >= start_ > start:
-            start_ = start
+        elif end >= earliest_start > start:
+            earliest_start = start
         # If date range completely within, do nothing
-        elif start >= start_ and end <= end_:
-            pass
+        elif start >= earliest_start and end <= latest_end:
+            continue
         # If adjacent
-        elif abs(end_ - start).days == 1 or abs(start_ - end).days == 1:
-            end_ = max(end, end_)
-            start_ = min(start, start_)
+        elif abs(latest_end - start).days == 1 or abs(earliest_start - end).days == 1:
+            latest_end = max(end, latest_end)
+            earliest_start = min(start, earliest_start)
         # If none of these (date forms a disjoint set) note as unused
         else:
-            unused_values.add(i)
-    yield start_, end_
+            unused_values.add((start, end))
+    yield earliest_start, latest_end
     # If there are remaining items not used, pass recursively
-    if len(unused_values) != 0:
-        yield from _reduce_date_list((pair for i, pair in enumerate(sdl) if i in unused_values))
+    if unused_values:
+        yield from _reduce_date_list(unused_values)
 
 
 @cache_hooks.cache_result(key=("permits", 1))
