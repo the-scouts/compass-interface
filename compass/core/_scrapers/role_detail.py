@@ -165,7 +165,7 @@ def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Opt
     """Return tuple of disclosure check status, disclosure date."""
     if disclosure_status.startswith("Disclosure Issued : "):
         return "Disclosure Issued", parse(disclosure_status.removeprefix("Disclosure Issued : "))
-    return disclosure_status or None, None
+    return (disclosure_status or None), None
 
 
 def _process_hierarchy(inputs: dict[str, html.HtmlElement]) -> Iterator[tuple[str, str]]:
