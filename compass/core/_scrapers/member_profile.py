@@ -274,7 +274,7 @@ def _process_misc_sections(section_table: html.HtmlElement, section_type: Litera
     out = {}
     for row in section_table:
         field, _, optional_detail = row[0][0].text.partition(" - ")
-        out[field] = optional_detail or None
+        out[field] = optional_detail
 
     # Filter out no-info sections. After the filter as empty here means we found the section, but it was empty
     if len(out) == 1 and f"No {section_type} Entered" in out:
