@@ -219,7 +219,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
     # ## Core - Positional:
     details["name"] = personal_details["Name:"]  # Full Name
     details["known_as"] = personal_details["Known As:"]
-    join_date = personal_details["Date of Joining:"]  # TODO Unknown - take date from earliest role?
+    join_date = personal_details["Date of Joining:"]
     details["join_date"] = parse(join_date) if join_date != "Unknown" else None
 
     # ## Core - Position Varies:
