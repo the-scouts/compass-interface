@@ -406,7 +406,7 @@ def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, 
         return role_status, review_date
     if review_status in ROLE_STATUSES:
         return review_status, None  # type: ignore[return-value]  # str -> Literal type narrowing doesn't seem to work?
-    raise ValueError(f"Invalid value for review status '{review_status}'!")
+    raise errors.CompassError(f"Invalid value for review status '{review_status}'!")
 
 
 def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
