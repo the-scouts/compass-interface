@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
     import requests
 
-    from compass.core.util.client import Client
+    from compass.core.util.client import Client  # pylint: disable=ungrouped-imports
 
 
 def jk_hash(client: Client, membership_number: int, role_number: int, jk: str) -> str:

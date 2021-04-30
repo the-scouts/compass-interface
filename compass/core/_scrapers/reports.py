@@ -29,8 +29,8 @@ def get_report_token(session: logon.Logon, report_number: int) -> str:
     response = auth_header.auth_header_get(
         session.membership_number,
         session.role_number,
-        session._jk,
-        session._client,
+        session._jk,  # pylint: disable=protected-access
+        session._client,  # pylint: disable=protected-access
         f"{Settings.web_service_path}/ReportToken",
         params=params,
     )
