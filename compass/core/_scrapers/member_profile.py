@@ -432,6 +432,9 @@ def _reduce_date_list(dates: Iterable[tuple[datetime.date, datetime.date]]) -> I
 
     """
     unused_values = set()  # We init the date values with the first
+    # sdl = iter(dates)
+    # earliest_start, latest_end = next(sdl)
+    # for i, (start, end) in enumerate(sdl):
     sdl = sorted(dates)
     earliest_start, latest_end = sdl[0]
     for start, end in sdl[1:]:
@@ -458,6 +461,18 @@ def _reduce_date_list(dates: Iterable[tuple[datetime.date, datetime.date]]) -> I
     # If there are remaining items not used, pass recursively
     if unused_values:
         yield from _reduce_date_list(unused_values)
+
+    # unused_dates = []
+    # earliest_start, latest_end = sdl[0]
+    # for start, end in sdl[1:]:
+    #     if (start - latest_end).days > 1:
+    #         unused_dates.append((start, end))
+    #         continue
+    #     if end > latest_end:
+    #         latest_end = end
+    # yield earliest_start, latest_end
+    # if unused_dates:
+    #     yield from _reduce_date_list(unused_dates)
 
 
 @cache_hooks.cache_result(key=("permits", 1))
