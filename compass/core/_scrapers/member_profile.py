@@ -271,7 +271,7 @@ def _process_extra(field: str) -> tuple[str, Optional[str]]:
     return field.strip(), None
 
 
-def _process_misc_sections(section_table: html.HtmlElement, section_type: TYPES_OTHER_SECTIONS) -> dict[str, Optional[str]]:
+def _process_misc_sections(section_table: html.HtmlElement, section_type: TYPES_OTHER_SECTIONS) -> dict[str, str]:
     out = {}
     for row in section_table:
         field, _, optional_detail = row[0][0].text.partition(" - ")
