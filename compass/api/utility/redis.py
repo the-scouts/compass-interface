@@ -15,10 +15,6 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 
-class RedisError(Exception):
-    pass
-
-
 class RedisSettings(pydantic.BaseSettings):
     type: Literal["redis"] = "redis"
 
@@ -39,25 +35,24 @@ class RedisSettings(pydantic.BaseSettings):
 
 
 class RedisPlugin:
-    def __init__(self, config: RedisSettings = RedisSettings()):
+    def __init__(self):
         self.redis: Optional[Redis] = None
-        self.config = config
 
-    async def setup_redis(self, app: FastAPI) -> None:
+    async def setup_redis(self, app: FastAPI, config: RedisSettings = RedisSettings()) -> None:
         logger.info("Setting up Redis plugin")
 
-        if self.config.type != "redis":
-            raise NotImplementedError(f"Invalid Redis type '{self.config.type}' selected!")
+        if config.type != "redis":
+            raise NotImplementedError(f"Invalid Redis type '{config.type}' selected!")
 
-        logger.debug(f"Creating connection to Redis at {self.config.url}")
+        logger.debug(f"Creating connection to Redis at {config.url}")
         self.redis = await create_redis_pool(
-            self.config.url.lower(),
-            db=self.config.db,
-            password=self.config.password,
-            minsize=self.config.pool_min_size,
-            maxsize=self.config.pool_max_size,
-            timeout=self.config.connection_timeout,
-            ssl=self.config.ssl,
+            config.url.lower(),
+            db=config.db,
+            password=config.password,
+            minsize=config.pool_min_size,
+            maxsize=config.pool_max_size,
+            timeout=config.connection_timeout,
+            ssl=config.ssl,
         )
 
         logger.debug("Storing redis object in FastAPI app state")
@@ -76,22 +71,18 @@ class RedisPlugin:
 
         # remove class attributes
         del self.redis
-        del self.config
 
 
 async def lifetime(app: FastAPI) -> AsyncGenerator:
     logger.debug("Initialising RedisPlugin")
-    redis_plugin = RedisPlugin(config=RedisSettings())
+    redis_plugin = RedisPlugin()
 
     logger.debug("FastAPI startup: Redis setup")
-    await redis_plugin.setup_redis(app)
+    await redis_plugin.setup_redis(app, config=RedisSettings())
     yield
     logger.debug("FastAPI shutdown: Redis teardown")
     await redis_plugin.terminate()
 
 
-async def depends_redis(request: Request) -> Redis:
-    redis = await request.app.state.redis
-    if redis is None:
-        raise RedisError("Redis is not initialized")
-    return redis
+async def get_redis(request: Request) -> Redis:
+    return request.app.state.redis
