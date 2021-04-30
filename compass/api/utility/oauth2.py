@@ -29,10 +29,7 @@ if TYPE_CHECKING:
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 aes_gcm = AESGCM(bytes.fromhex(SECRET_KEY))
 ALGORITHM = "HS256"
-
-SESSION_STORE = Path("sessions")
-SESSION_STORE.mkdir(parents=True, exist_ok=True)
-
+SESSION_STORE = Path(os.getenv("CI_SESSION_STORE", "sessions/")).resolve()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/token/")
 
 
