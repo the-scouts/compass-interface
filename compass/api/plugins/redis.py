@@ -91,7 +91,4 @@ async def lifetime(app: FastAPI) -> AsyncGenerator:
 
 
 async def depends_redis(request: Request) -> Redis:
-    redis = await request.app.state.redis
-    if redis is None:
-        raise RedisError("Redis is not initialized")
-    return redis
+    return request.app.state.redis
