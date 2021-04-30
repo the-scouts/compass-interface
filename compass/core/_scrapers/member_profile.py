@@ -59,6 +59,7 @@ if TYPE_CHECKING:
         town: Optional[str]
         street: Optional[str]
 
+    TYPES_OTHER_SECTIONS = Literal["Disabilities", "Qualifications", "Hobbies"]
     TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
     TYPES_TRAINING_PLPS = dict[int, list[TYPES_TRAINING_MODULE]]
     TYPES_TRAINING_OGL_DATES = dict[Literal["completed_date", "renewal_date"], Optional[datetime.date]]
@@ -270,7 +271,7 @@ def _process_extra(field: str) -> tuple[str, Optional[str]]:
     return field.strip(), None
 
 
-def _process_misc_sections(section_table: html.HtmlElement, section_type: Literal["Disabilities", "Qualifications", "Hobbies"]) -> dict[str, Optional[str]]:
+def _process_misc_sections(section_table: html.HtmlElement, section_type: TYPES_OTHER_SECTIONS) -> dict[str, Optional[str]]:
     out = {}
     for row in section_table:
         field, _, optional_detail = row[0][0].text.partition(" - ")
@@ -433,7 +434,7 @@ def _reduce_date_list(dates: Iterable[tuple[datetime.date, datetime.date]]) -> I
     unused_values = set()  # We init the date values with the first
     sdl = sorted(dates)
     earliest_start, latest_end = sdl[0]
-    for i, (start, end) in enumerate(sdl[1:]):
+    for start, end in sdl[1:]:
         # If date range completely outwith, set both start and end
         if start < earliest_start and end > latest_end:
             earliest_start, latest_end = start, end

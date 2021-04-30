@@ -159,7 +159,7 @@ class Hierarchy:
 
         child_level = Levels(level_numeric + 1) if descendants else None
         if descendants:
-            children = self._scraper.get_units_from_hierarchy(unit_id, UnitChildren(level_numeric).name)  # type: ignore[arg-type]
+            children = scraper.get_units_from_hierarchy(unit_id, UnitChildren(level_numeric).name)  # type: ignore[arg-type]
             children_updated = []
             for child in children:
                 if not child:

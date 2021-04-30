@@ -281,8 +281,8 @@ class MemberDetails(MemberBase):
             n = phonenumbers.parse(v, "GB")
             if phonenumbers.is_valid_number(n):
                 if n.country_code == 44:
-                    return str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.NATIONAL))
-                return str(phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.INTERNATIONAL))
+                    return f"{phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.NATIONAL)}"
+                return f"{phonenumbers.format_number(n, phonenumbers.PhoneNumberFormat.INTERNATIONAL)}"
         except phonenumbers.NumberParseException:
             pass
 
