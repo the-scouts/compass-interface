@@ -17,7 +17,7 @@ from jose import JWTError
 from starlette import requests
 from starlette import status
 
-from compass.api.utility.redis import depends_redis
+from compass.api.utility.redis import get_redis
 from compass.api.schemas.auth import User
 import compass.core as ci
 from compass.core.logger import logger
@@ -89,7 +89,7 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
     try:  # try fast-path
         session_decoded = SESSION_STORE.joinpath(f"{token}.bin").read_bytes()
     except (FileNotFoundError, IOError):
-        store = await depends_redis(request)
+        store = await get_redis(request)
         session_encoded = await store.get(f"session:{token}")
         try:
             session_decoded = base64.b85decode(session_encoded)
