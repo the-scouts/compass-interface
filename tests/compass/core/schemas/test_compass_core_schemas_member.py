@@ -12,9 +12,9 @@ base_data = {
 class TestSchemaMember:
     def test_member_details_phone_number_valid(self):
         # Given
-        number_landline = "01632 160 400"  # Fictitious number
-        number_mobile = "07700 900420"  # Fictitious number
-        number_international = "+1 311 555 2368"  # Fictitious international number
+        number_landline = "01212345679"  # Fictitious number
+        number_mobile = "07707123456"  # Fictitious number
+        number_international = "+1 2015550123"  # Fictitious international number
         # https://www.ofcom.org.uk/phones-telecoms-and-internet/information-for-industry/numbering/numbers-for-drama
 
         #  When
@@ -23,9 +23,9 @@ class TestSchemaMember:
         result_international = member.MemberDetails(main_phone=number_international, **base_data)
 
         # Them
-        assert result_landline.main_phone == "01632 160400"
-        assert result_mobile.main_phone == "07700 900420"
-        assert result_international.main_phone == "+1 311-555-2368"
+        assert result_landline.main_phone == "0121 234 5679"
+        assert result_mobile.main_phone == "07707 123456"
+        assert result_international.main_phone == "+1 201-555-0123"
 
     def test_member_details_phone_number_passing(self):
         # Given
