@@ -84,5 +84,5 @@ async def lifetime(app: FastAPI) -> AsyncGenerator:
     await redis_plugin.terminate()
 
 
-async def depends_redis(request: Request) -> Redis:
+async def get_redis(request: Request) -> Redis:
     return request.app.state.redis
