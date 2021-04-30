@@ -254,10 +254,10 @@ class MemberDetails(MemberBase):
     sex: Optional[TYPES_SEX] = None
     nationality: Optional[str] = None  # literal? Big list...!
     ethnicity: Optional[TYPES_ETHNICITY] = None
-    religion: Optional[TYPES_RELIGION] = None  # type: ignore[valid-type]
-    religion_detail: Optional[str] = None  # type: ignore[valid-type]
-    occupation: Optional[TYPES_OCCUPATION] = None  # type: ignore[valid-type]
-    occupation_detail: Optional[str] = None  # type: ignore[valid-type]
+    religion: Optional[TYPES_RELIGION] = None
+    religion_detail: Optional[str] = None
+    occupation: Optional[TYPES_OCCUPATION] = None
+    occupation_detail: Optional[str] = None
     join_date: Optional[datetime.date] = None
 
     # Contact Details
@@ -288,6 +288,7 @@ class MemberDetails(MemberBase):
 
         membership_number = values["membership_number"]
         warnings.warn(f"Member No {membership_number}: phone number {v} is not valid!", RuntimeWarning)
+        return None  # mypy being silly
 
 
 # Roles Tab (Main List - item)
