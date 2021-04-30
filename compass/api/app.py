@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
 
-from compass.api.plugins import redis
+from compass.api.utility import redis
 from compass.api.routes import authentication
 from compass.api.routes import members
 
@@ -12,7 +12,7 @@ open_api_tag_metadata = [
     },
     {
         "name": "Authentication",
-        "description": "OAuth2 **authentication** operations.",
+        "description": "OAuth2 *authentication* operations.",
     },
 ]
 

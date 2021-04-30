@@ -17,7 +17,7 @@ from jose import JWTError
 from starlette import requests
 from starlette import status
 
-from compass.api.plugins.redis import depends_redis
+from compass.api.utility.redis import depends_redis
 from compass.api.schemas.auth import User
 import compass.core as ci
 from compass.core.logger import logger

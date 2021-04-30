@@ -3,7 +3,7 @@ import fastapi
 from fastapi import HTTPException
 from starlette import status
 
-from compass.api.plugins.redis import depends_redis
+from compass.api.utility.redis import depends_redis
 from compass.api.schemas import auth
 from compass.api.utility.oauth2 import create_token
 from compass.core.logger import logger
