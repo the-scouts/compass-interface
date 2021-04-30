@@ -27,7 +27,7 @@ class User(pydantic.BaseModel):
     logon_info: tuple[str, str, Optional[str], Optional[str]]
     asp_net_id: str
     props: CompassPropsMasterUser
-    expires: datetime.datetime
+    expires: int
 
 
 class Token(pydantic.BaseModel):
