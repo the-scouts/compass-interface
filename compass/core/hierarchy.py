@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from compass.core.logon import Logon
     from compass.core.util.client import Client
 
-    TYPE_LEVEL_META = tuple[str | None, scraper.TYPES_ENDPOINT_LEVELS | None, scraper.TYPES_ENDPOINT_LEVELS]
+TYPE_LEVEL_META = tuple[Union[str, None], Union[scraper.TYPES_ENDPOINT_LEVELS, None], scraper.TYPES_ENDPOINT_LEVELS]
 
 
 class HierarchyState(TypedDict, total=False):
@@ -35,13 +35,13 @@ class HierarchyState(TypedDict, total=False):
     Group_name: Optional[str]
 
 
-class Levels(tuple, enum.Enum):
-    Group: TYPE_LEVEL_META = None, None, "hq_sections"
-    District: TYPE_LEVEL_META = "Group", "groups", "district_sections"
-    County: TYPE_LEVEL_META = "District", "districts", "county_sections"
-    Region: TYPE_LEVEL_META = "County", "counties", "region_sections"
-    Country: TYPE_LEVEL_META = "Region", "regions", "country_sections"
-    Organisation: TYPE_LEVEL_META = "Country", "countries", "hq_sections"
+class Levels(TYPE_LEVEL_META, enum.Enum):
+    Group = None, None, "group_sections"
+    District = "Group", "groups", "district_sections"
+    County = "District", "districts", "county_sections"
+    Region = "County", "counties", "region_sections"
+    Country = "Region", "regions", "country_sections"
+    Organisation = "Country", "countries", "hq_sections"
 
 
 class Hierarchy:
@@ -185,7 +185,7 @@ def _get_descendants_recursive(client: Client, unit_id: int, level: Levels, /) -
 
     # Do child units exist? (i.e. is this level != group)
     child_level_name, endpoint_children, endpoint_sections = level
-    if endpoint_children:
+    if endpoint_children and child_level_name:
         child_level = Levels[child_level_name]  # initialise outside of loop
         children = scraper.get_units_from_hierarchy(client, unit_id, endpoint_children)
         # extend children with grandchildren
