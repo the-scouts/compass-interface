@@ -35,12 +35,13 @@ class HierarchyLevel(HierarchyBase):
 
 
 class UnitData(HierarchyLevel):
+    name: Literal[None] = None
     child: Optional[list[DescendantData]]  # NOTE: deliberate recursive/forward reference here!
     sections: list[HierarchySection]
 
 
 class DescendantData(UnitData, HierarchyUnit):
-    pass
+    name: str  # override UnitData name=None
 
 
 UnitData.update_forward_refs()  # NOTE: updating recursive/forward reference here!
