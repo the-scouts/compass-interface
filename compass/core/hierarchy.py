@@ -15,24 +15,23 @@ if TYPE_CHECKING:
     from compass.core.logon import Logon
     from compass.core.util.client import Client
 
+    class HierarchyState(TypedDict, total=False):
+        compass: int
+        name: Optional[str]
+        Organisation_ID: int
+        Organisation_name: Optional[str]
+        Country_ID: int
+        Country_name: Optional[str]
+        Region_ID: int
+        Region_name: Optional[str]
+        County_ID: int
+        County_name: Optional[str]
+        District_ID: int
+        District_name: Optional[str]
+        Group_ID: int
+        Group_name: Optional[str]
+
 TYPE_LEVEL_META = tuple[Union[str, None], Union[scraper.TYPES_ENDPOINT_LEVELS, None], scraper.TYPES_ENDPOINT_LEVELS]
-
-
-class HierarchyState(TypedDict, total=False):
-    compass: int
-    name: Optional[str]
-    Organisation_ID: int
-    Organisation_name: Optional[str]
-    Country_ID: int
-    Country_name: Optional[str]
-    Region_ID: int
-    Region_name: Optional[str]
-    County_ID: int
-    County_name: Optional[str]
-    District_ID: int
-    District_name: Optional[str]
-    Group_ID: int
-    Group_name: Optional[str]
 
 
 class Levels(TYPE_LEVEL_META, enum.Enum):
