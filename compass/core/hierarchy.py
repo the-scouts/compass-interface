@@ -31,6 +31,7 @@ if TYPE_CHECKING:
         Group_ID: int
         Group_name: Optional[str]
 
+
 TYPE_LEVEL_META = tuple[Union[str, None], Union[scraper.TYPES_ENDPOINT_LEVELS, None], scraper.TYPES_ENDPOINT_LEVELS]
 
 
@@ -118,16 +119,14 @@ class Hierarchy:
         return {members.contact_number for unit_members in units_members for members in unit_members.members}
 
     @cache_hooks.cache_result(key=("all-members", 1), model_type=list[schema.UnitData])
-    def get_members_in_units(self, _cache_key: int, compass_ids: Iterable[int]) -> list[schema.HierarchyUnitMembers]:
+    def get_members_in_units(self, _cache_key: int, unit_ids: Iterable[int]) -> Iterator[schema.HierarchyUnitMembers]:
         # Fetch all members
-        all_members = []
-        for unit_id in set(compass_ids):
-            logger.debug(f"Getting members for {unit_id}")
-            data = schema.HierarchyUnitMembers(
-                unit_id=unit_id, members=scraper.get_members_with_roles_in_unit(self.client, unit_id)
-            )
-            all_members.append(data)
-        return all_members
+        for unit_id in set(unit_ids):
+            yield schema.HierarchyUnitMembers(unit_id=unit_id, members=self.unit_members(unit_id))
+
+    def unit_members(self, unit_id: int) -> list[schema.HierarchyMember]:
+        logger.debug(f"Getting members for {unit_id}")
+        return scraper.get_members_with_roles_in_unit(self.client, unit_id)
 
 
 def _get_unit_level(
