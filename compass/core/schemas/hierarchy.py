@@ -41,7 +41,7 @@ class UnitData(HierarchyLevel):
 
 
 class DescendantData(UnitData, HierarchyUnit):
-    name: str  # override UnitData name=None
+    name: str  # type: ignore[assignment]  # override UnitData name=None
 
 
 UnitData.update_forward_refs()  # NOTE: updating recursive/forward reference here!
