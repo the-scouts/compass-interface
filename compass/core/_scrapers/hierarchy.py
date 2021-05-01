@@ -11,7 +11,7 @@ from compass.core.settings import Settings
 from compass.core.util.compass_helpers import compass_restify
 
 if TYPE_CHECKING:
-    from compass.core.util import client
+    from compass.core.util.client import Client
 
 # TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
 TYPES_ENDPOINT_LEVELS = Literal[
@@ -43,7 +43,7 @@ section_type_map = {
 
 
 # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
-def get_units_from_hierarchy(client: client.Client, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[schema.HierarchyUnit]:
+def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[schema.HierarchyUnit]:
     """Get all children of a given unit.
 
     If LiveData=Y is passed, the resulting JSON additionally contains:
@@ -53,6 +53,7 @@ def get_units_from_hierarchy(client: client.Client, parent_unit: int, level: TYP
         - section type details, if requesting sections data
 
     Args:
+        client: HTTP client
         parent_unit: The unit ID to get descendants from
         level: string org type, used for selecting API endpoint
 
@@ -112,7 +113,7 @@ def get_units_from_hierarchy(client: client.Client, parent_unit: int, level: TYP
 
 
 def get_members_with_roles_in_unit(
-    client: client.Client, unit_number: int, include_name: bool = False, include_primary_role: bool = False
+    client: Client, unit_number: int, include_name: bool = False, include_primary_role: bool = False
 ) -> list[schema.HierarchyMember]:
     """Get details of members with roles in a given unit.
 
@@ -124,6 +125,7 @@ def get_members_with_roles_in_unit(
      - role (This is Primary role and so only sometimes useful)
 
     Args:
+        client: HTTP client
         unit_number: Compass unit number
         include_name: include member name in returned data
         include_primary_role: include primary role in returned data
