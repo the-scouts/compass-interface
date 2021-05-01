@@ -52,7 +52,7 @@ class Hierarchy:
 
     # See recurseRetrieve in PGS\Needle
     @cache_hooks.cache_result(key=("hierarchy", 1), model_type=schema.UnitData)
-    def get_hierarchy(
+    def unit_data(
         self,
         unit_id: Optional[int] = None,
         level: Optional[schema.TYPES_UNIT_LEVELS] = None,
@@ -78,7 +78,7 @@ class Hierarchy:
         unit_meta = _get_unit_level(self.session, unit_id, level, use_default)
         return schema.UnitData.parse_obj(_get_descendants_level(self.client, unit_meta))
 
-    def get_unique_members(
+    def unique_members(
         self,
         unit_id: Optional[int] = None,
         level: Optional[schema.TYPES_UNIT_LEVELS] = None,
@@ -104,7 +104,7 @@ class Hierarchy:
 
         """
         # get tree of all units
-        hierarchy_dict = self.get_hierarchy(unit_id, level, use_default)
+        hierarchy_dict = self.unit_data(unit_id, level, use_default)
 
         # flatten tree
         flat_hierarchy = flatten_hierarchy(hierarchy_dict)
@@ -113,15 +113,19 @@ class Hierarchy:
         compass_ids = (unit["compass"] for unit in flat_hierarchy)
 
         # get members from the list of IDs
-        units_members = self.get_members_in_units(unit_id, compass_ids)
+        seen = set()  # Unit ID deduplication
+        unit_member_lists = (self.unit_members(sub_id) for sub_id in compass_ids if not (sub_id in seen or seen.add(sub_id)))
 
         # return a set of membership numbers
-        return {members.contact_number for unit_members in units_members for members in unit_members.members}
+        return {members.contact_number for unit_member_list in unit_member_lists for members in unit_member_list}
 
-    @cache_hooks.cache_result(key=("all-members", 1), model_type=list[schema.UnitData])
-    def get_members_in_units(self, _cache_key: int, unit_ids: Iterable[int]) -> Iterator[schema.HierarchyUnitMembers]:
-        # Fetch all members
-        for unit_id in set(unit_ids):
+    def units_members(self, unit_ids: Iterable[int]) -> Iterator[schema.HierarchyUnitMembers]:
+        """Fetch all members from an iterable of unit IDs."""
+        seen = set()  # Unit ID cache
+        for unit_id in unit_ids:
+            if unit_id in seen:
+                continue
+            seen.add(unit_id)  # store already fetched unit IDs
             yield schema.HierarchyUnitMembers(unit_id=unit_id, members=self.unit_members(unit_id))
 
     def unit_members(self, unit_id: int) -> list[schema.HierarchyMember]:
