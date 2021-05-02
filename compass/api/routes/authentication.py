@@ -3,9 +3,9 @@ import fastapi
 from fastapi import HTTPException
 from starlette import status
 
-from compass.api.utility.redis import get_redis
 from compass.api.schemas import auth
 from compass.api.utility.oauth2 import create_token
+from compass.api.utility.redis import get_redis
 from compass.core.logger import logger
 
 router = fastapi.APIRouter()

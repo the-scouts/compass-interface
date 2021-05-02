@@ -1,6 +1,6 @@
 import contextlib
-from typing import Optional
 from types import TracebackType
+from typing import Optional
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -8,16 +8,16 @@ from fastapi import HTTPException
 from starlette import status
 
 from compass.api.utility.oauth2 import people_accessor
+from compass.core import errors
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.schemas import member
-from compass.core import errors
 
 router = APIRouter()
 
 
 class ErrorHandling(contextlib.AbstractAsyncContextManager):
-    async def __aexit__(self, exc_type: Optional[type[BaseException]], exc_value: Optional[BaseException], exc_traceback: Optional[TracebackType]):
+    async def __aexit__(self, exc_type: Optional[type[BaseException]], _val: Optional[BaseException], _tb: Optional[TracebackType]):
         if not exc_type:
             return True
         if exc_type == errors.CompassPermissionError:
