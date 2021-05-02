@@ -17,8 +17,8 @@ from jose import JWTError
 from starlette import requests
 from starlette import status
 
-from compass.api.utility.redis import get_redis
 from compass.api.schemas.auth import User
+from compass.api.utility.redis import get_redis
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.logon import Logon
@@ -75,14 +75,15 @@ def authenticate_user(username: str, password: str, role: Optional[str], locatio
     session = ci.login(username, password, role=role, location=location)
 
     logger.info(f"Successfully authenticated  -- {username}")
-    return User(
+    user = User(
         selected_role=session.current_role,
         logon_info=(username, password, role, location),
         asp_net_id=session._asp_net_id,  # pylint: disable=protected-access
         session_id=session._session_id,  # pylint: disable=protected-access
         props=session.compass_props.master.user,
         expires=int(time.time() + 9.5 * 60),  # Compass timeout is 10m, use 9.5 here
-    ), session
+    )
+    return user, session
 
 
 async def get_current_user(request: requests.Request, token: str) -> Logon:

@@ -1,10 +1,10 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
 
-from compass.api.utility import redis
 from compass.api.routes import authentication
 from compass.api.routes import hierarchy
 from compass.api.routes import members
+from compass.api.utility import redis
 
 open_api_tag_metadata = [
     {

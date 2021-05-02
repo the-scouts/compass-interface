@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 class ErrorHandling(contextlib.AbstractAsyncContextManager):
-    async def __aexit__(self, exc_type: Optional[type[BaseException]], exc_value: Optional[BaseException], exc_traceback: Optional[TracebackType]):
+    async def __aexit__(self, exc_type: Optional[type[BaseException]], _val: Optional[BaseException], _tb: Optional[TracebackType]):
         if not exc_type:
             return True
         if exc_type == errors.CompassPermissionError:
@@ -34,5 +34,5 @@ class ErrorHandling(contextlib.AbstractAsyncContextManager):
 async def get_default_hierarchy(hierarchy: ci.Hierarchy = Depends(hierarchy_accessor)) -> schema.UnitData:
     """Gets default hierarchy details."""
     logger.debug(f"Getting /hierarchy/ for {hierarchy.session.membership_number}")
-    with ErrorHandling():
+    async with ErrorHandling():
         return hierarchy.unit_data(use_default=True, recurse_children=False)
