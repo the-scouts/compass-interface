@@ -71,6 +71,7 @@ def authenticate_user(username: str, password: str, role: Optional[str], locatio
         selected_role=user.current_role,
         logon_info=(username, password, role, location),
         asp_net_id=user._asp_net_id,  # pylint: disable=protected-access
+        session_id=user._session_id,  # pylint: disable=protected-access
         props=user.compass_props.master.user,
         expires=int(time.time() + 9.5 * 60),  # Compass timeout is 10m, use 9.5 here
     )
@@ -105,7 +106,7 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
         raise raise_auth_error("Could not validate credentials [Error: A23]")
 
     if time.time() < user.expires:
-        session = Logon.from_session(user.asp_net_id, user.props.__dict__, user.selected_role)
+        session = Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role)
     else:
         session = Logon.from_logon(user.logon_info[:2], *user.logon_info[2:])
 
