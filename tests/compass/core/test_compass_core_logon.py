@@ -131,3 +131,33 @@ class TestLogon:
         assert client.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
         assert props == expected_props
         assert roles == expected_roles
+
+    def test_login_from_session_props(self, server):
+        # Given
+        Settings.base_url = base_url
+        user_props = {
+            "cn": 10000000,
+            "mrn": 9000000,
+            "on": 10000001,
+            "lvl": "ORG",
+            "jk": "9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15",  # NoQA: E501
+        }
+        session_id = "d6c76537-1b6c-3910-c3d4-d21d4e6453a6"
+        current_role = "Role", "Place"
+
+        # When
+        session = logon.Logon.from_session(asp_net_id, user_props, session_id, current_role)
+
+        # Then
+        assert session._client.cookies["ASP.NET_SessionId"] == asp_net_id
+        assert session._asp_net_id == asp_net_id
+
+        assert session._session_id == session_id
+        assert session._client.headers["SID"] == session_id
+
+        assert session._client.headers["Authorization"] == f'{user_props["cn"]}~{user_props["mrn"]}'
+
+        assert session.current_role == current_role
+        assert session.membership_number == user_props["cn"]
+        assert session.role_number == user_props["mrn"]
+        assert session._jk == user_props["jk"]
