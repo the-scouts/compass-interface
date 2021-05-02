@@ -90,6 +90,7 @@ class Hierarchy:
         unit_id: Optional[int] = None,
         level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
+        recurse_children: bool = True,
     ) -> set[int]:
         """Get all unique members for a given level and its descendants.
 
@@ -111,7 +112,7 @@ class Hierarchy:
 
         """
         # get tree of all units
-        hierarchy_dict = self.unit_data(unit_id, level, use_default)
+        hierarchy_dict = self.unit_data(unit_id, level, use_default, recurse_children)
 
         # flatten tree
         flat_hierarchy = flatten_hierarchy(hierarchy_dict)
