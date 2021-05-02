@@ -6,7 +6,7 @@ dependencies:
   - pip
 
   # Compass-Interface Core
-  - compass-interface-core>=0.13.0
+  - compass-interface-core>=0.14.1
 
   # Compass-Interface Utilities
   - pydantic  # cache
@@ -21,6 +21,7 @@ dependencies:
   # API - Auth
   - python-jose  # JSON Web Tokens
   - python-multipart  # Form Data (OAuth2)
+  - cryptography  # Encryption
 
   # Deployment
   - uvicorn
@@ -37,6 +38,3 @@ dependencies:
   - isort
   - ipython
 #  - dtale
-
-  - pip:
-    - crypyography  # Encryption
