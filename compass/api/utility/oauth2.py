@@ -125,3 +125,13 @@ async def people_accessor(request: requests.Request, token: str = Depends(oauth2
     """
     session = await get_current_user(request, token)
     return ci.People(session)
+
+
+async def hierarchy_accessor(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.Hierarchy:
+    """Returns an initialised ci.Hierarchy object.
+
+    Note `Depends` adds the oAuth2 integration with OpenAPI.
+    TODO: manual integration without depends?
+    """
+    session = await get_current_user(request, token)
+    return ci.Hierarchy(session)
