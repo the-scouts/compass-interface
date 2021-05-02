@@ -88,7 +88,9 @@ def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDP
     is_sections = "/sections" in level_endpoint
     model_class = schema.HierarchySection if is_sections else schema.HierarchyUnit  # chose right model to use
 
-    result = client.post(f"{Settings.base_url}/hierarchy{level_endpoint}", json={"LiveData": "Y", "ParentID": f"{parent_unit}"})
+    # LiveData causes a ~75x slowdown for non-section data, and we only use LiveData for sections anyway
+    json_data = ({"LiveData": "Y"} if is_sections else {}) | {"ParentID": f"{parent_unit}"}
+    result = client.post(f"{Settings.base_url}/hierarchy{level_endpoint}", json=json_data)
     result_json = result.json()
 
     # Handle unauthorised access
