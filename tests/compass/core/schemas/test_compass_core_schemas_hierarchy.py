@@ -95,7 +95,7 @@ class TestSchemaHierarchy:
         result = hierarchy.UnitData(**data)
 
         # Then
-        assert data == result.dict()
+        assert data | {"name": None} == result.dict()
 
     def test_unit_data_invalid_missing(self):
         # Given
