@@ -121,8 +121,9 @@ class Hierarchy:
         compass_ids = (unit["compass"] for unit in flat_hierarchy)
 
         # get members from the list of IDs
-        seen = set()  # Unit ID deduplication
-        unit_member_lists = (self.unit_members(sub_id) for sub_id in compass_ids if not (sub_id in seen or seen.add(sub_id)))
+        seen: set[int] = set()  # Unit ID deduplication
+        add = seen.add
+        unit_member_lists = (self.unit_members(sub_id) for sub_id in compass_ids if (sub_id not in seen and not add(sub_id)))
 
         # return a set of membership numbers
         return {members.contact_number for unit_member_list in unit_member_lists for members in unit_member_list}
@@ -216,7 +217,7 @@ def _get_descendants_immediate(client: Client, unit_id: int, level: Levels, /) -
     # Do child units exist? (i.e. is this level != group)
     child_level_name, endpoint_children, endpoint_sections = level
     if endpoint_children:
-        blank_descendant_data = {"level": child_level_name, "child": None, "sections": []}
+        blank_descendant_data: dict[str, object] = {"level": child_level_name, "child": None, "sections": []}
         children = scraper.get_units_from_hierarchy(client, unit_id, endpoint_children)
         unit_data["child"] = [child.__dict__ | blank_descendant_data for child in children]
     unit_data["sections"] = scraper.get_units_from_hierarchy(client, unit_id, endpoint_sections)
