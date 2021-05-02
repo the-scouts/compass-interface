@@ -57,6 +57,7 @@ class Hierarchy:
         unit_id: Optional[int] = None,
         level: Optional[schema.TYPES_UNIT_LEVELS] = None,
         use_default: bool = False,
+        recurse_children: bool = True,
     ) -> schema.UnitData:
         """Gets all units at given level and below, including sections.
 
@@ -69,6 +70,12 @@ class Hierarchy:
             2. literals
             3. default data
 
+        Args:
+            unit_id: Compass unit ID to get data for
+            level: Level for unit ID (Group, District, ...)
+            use_default: Use current role's hierarchy level (overridden by explicit unit_id/level)
+            recurse_children: Return all data down to group sections, or just immediate children
+
         Raises:
             CompassError:
                 When no unit data information has been provided
@@ -76,7 +83,7 @@ class Hierarchy:
         """
         # Fetch the hierarchy
         unit_meta = _get_unit_level(self.session, unit_id, level, use_default)
-        return schema.UnitData.parse_obj(_get_descendants_level(self.client, unit_meta))
+        return schema.UnitData.parse_obj(_get_descendants_level(self.client, unit_meta, recurse_children))
 
     def unique_members(
         self,
@@ -167,19 +174,20 @@ def _get_unit_level(
     raise errors.CompassError("No level data specified! unit_level, id and level, or use_default must be set!")
 
 
-def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel) -> dict[str, object]:
+def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel, recurse_children: bool) -> dict[str, object]:
     try:
         level_numeric = Levels[unit_meta.level]
     except KeyError:
         valid_levels = [level.name for level in Levels]
         raise errors.CompassError(f"Passed level: {unit_meta.level} is illegal. Valid values are {valid_levels}") from None
-    return _get_descendants_recursive(client, unit_meta.unit_id, level_numeric)
+    if recurse_children:
+        return _get_descendants_recursive(client, unit_meta.unit_id, level_numeric)
+    return _get_descendants_immediate(client, unit_meta.unit_id, level_numeric)
 
 
 # See recurseRetrieve in PGS\Needle
 def _get_descendants_recursive(client: Client, unit_id: int, level: Levels, /) -> dict[str, object]:
     """Recursively get all children from given unit ID and level."""
-
     logger.debug(f"getting data for unit {unit_id}")
 
     # All to handle as Group doesn't have grand-children
@@ -194,6 +202,23 @@ def _get_descendants_recursive(client: Client, unit_id: int, level: Levels, /) -
         unit_data["child"] = [child.__dict__ | _get_descendants_recursive(client, child.unit_id, child_level) for child in children]
     unit_data["sections"] = scraper.get_units_from_hierarchy(client, unit_id, endpoint_sections)
 
+    return unit_data
+
+
+def _get_descendants_immediate(client: Client, unit_id: int, level: Levels, /) -> dict[str, object]:
+    """Recursively get all children from given unit ID and level."""
+    logger.debug(f"getting data for unit {unit_id}")
+
+    # All to handle as Group doesn't have grand-children
+    unit_data = {"unit_id": unit_id, "level": level.name}
+
+    # Do child units exist? (i.e. is this level != group)
+    child_level_name, endpoint_children, endpoint_sections = level
+    if endpoint_children:
+        blank_descendant_data = {"level": child_level_name, "child": None, "sections": []}
+        children = scraper.get_units_from_hierarchy(client, unit_id, endpoint_children)
+        unit_data["child"] = [child.__dict__ | blank_descendant_data for child in children]
+    unit_data["sections"] = scraper.get_units_from_hierarchy(client, unit_id, endpoint_sections)
     return unit_data
 
 
