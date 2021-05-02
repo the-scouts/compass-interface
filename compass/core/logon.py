@@ -150,7 +150,9 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         return logon
 
     @classmethod
-    def from_session(cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], current_role: TYPES_ROLE) -> Logon:
+    def from_session(
+        cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], session_id: str, current_role: TYPES_ROLE
+    ) -> Logon:
         """Initialise a Logon object with stored data.
 
         This method is used to avoid logging in many times, by enabling reuse
@@ -160,6 +162,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         Args:
             asp_net_id: ASP.NET Session ID, from cookie
             user_props: Compass master.sys.user properties
+            session_id: Compass session UID
             current_role: Role used by initialised session
 
         Returns:
@@ -171,13 +174,11 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         logon = cls(
             client=client,
-            compass_props=schema.CompassProps.parse_obj({"master": {"user": dict(user_props)}}),
+            compass_props=schema.CompassProps.parse_obj({"master": {"user": dict(user_props), "sys": {"session_id": session_id}}}),
             current_role=current_role,
         )
 
-        _update_auth_headers(
-            client, logon.membership_number, logon.role_number, logon._session_id  # pylint: disable=protected-access
-        )
+        _update_auth_headers(client, logon.membership_number, logon.role_number, session_id)
 
         return logon
 
