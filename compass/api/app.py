@@ -3,6 +3,7 @@ from fastapi import FastAPI
 
 from compass.api.utility import redis
 from compass.api.routes import authentication
+from compass.api.routes import hierarchy
 from compass.api.routes import members
 
 open_api_tag_metadata = [
@@ -41,16 +42,22 @@ app.router.lifespan_context = redis.lifetime
 # V1 Routing
 version_one = APIRouter()
 version_one.include_router(
+    authentication.router,
+    prefix="/token",
+    tags=["Authentication"],
+    responses={404: {"description": "Not found!"}},
+)
+version_one.include_router(
+    hierarchy.router,
+    prefix="/hierarchy",
+    tags=["Hierarchy"],
+    responses={404: {"description": "Not found!"}},
+)
+version_one.include_router(
     members.router,
     prefix="/members",
     tags=["Members"],
     dependencies=[],  # can't currently put auth here as we want the logon object directly...
-    responses={404: {"description": "Not found!"}},
-)
-version_one.include_router(
-    authentication.router,
-    prefix="/token",
-    tags=["Authentication"],
     responses={404: {"description": "Not found!"}},
 )
 
