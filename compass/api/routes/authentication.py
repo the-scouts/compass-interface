@@ -22,5 +22,5 @@ async def login_for_access_token(
     except HTTPException as err:
         raise err
     except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Authentication error!") from None
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Authentication error!") from None
     return auth.Token(access_token=access_token)

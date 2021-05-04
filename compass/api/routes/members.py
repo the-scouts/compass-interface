@@ -21,13 +21,13 @@ class ErrorHandling(contextlib.AbstractAsyncContextManager):
         if not exc_type:
             return True
         if exc_type == errors.CompassPermissionError:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your current role does not have permission to access details for the requested member!")
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Your current role does not have permission to access details for the requested member!")
         if exc_type == errors.CompassNetworkError:
-            raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail="The request to the Compass server failed!")
+            raise HTTPException(status.HTTP_424_FAILED_DEPENDENCY, "The request to the Compass server failed!")
         if exc_type == errors.CompassError:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="API Error (Core)! Please contact Adam.")
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "API Error (Core)! Please contact Adam.")
         if exc_type == Exception:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server panic (Interpreter)! Please contact Adam.")
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Interpreter)! Please contact Adam.")
 
 
 # @router.get("/", response_model=list[member.MemberDetails])
