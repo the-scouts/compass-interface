@@ -26,7 +26,7 @@ if TYPE_CHECKING:
         group: int
 
 
-TYPE_LEVEL_META = tuple[Union[str, None], Union[scraper.TYPES_ENDPOINT_LEVELS, None], scraper.TYPES_ENDPOINT_LEVELS]
+TYPE_LEVEL_META = tuple[Union[schema.TYPES_UNIT_LEVELS, None], Union[scraper.TYPES_ENDPOINT_LEVELS, None], scraper.TYPES_ENDPOINT_LEVELS]
 
 
 class Levels(TYPE_LEVEL_META, enum.Enum):
