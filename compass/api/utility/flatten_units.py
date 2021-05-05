@@ -46,7 +46,4 @@ def make_hierarchy_resource(session: Logon) -> dict[int, UnitRecord]:
 
 def load_hierarchy_map(path: Path = FLAT_PATH) -> dict[int, UnitRecord]:
     json_hierarchy = json.loads(path.read_text(encoding="utf-8"))
-    flat_hierarchy = {}
-    for unit_id, unit_data in json_hierarchy.items():
-        flat_hierarchy[int(unit_id)] = UnitRecord(*unit_data)
-    return flat_hierarchy
+    return {int(unit_id): UnitRecord(*unit_data) for unit_id, unit_data in json_hierarchy.items()}
