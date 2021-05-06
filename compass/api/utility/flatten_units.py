@@ -20,19 +20,26 @@ FLAT_PATH = RESOURCE_FOLDER.joinpath("hierarchy_flat.json")
 class UnitRecord(NamedTuple):
     name: str
     parent: int
+    children: dict[int, str]
+    sections: dict[int, str]
+
+
+class NullableUnitRecord(NamedTuple):
+    name: str
+    parent: int
     children: Union[dict[int, str], None]
     sections: Union[dict[int, str], None]
 
 
 def _flatten_hierarchy(d: Union[schema.UnitData, schema.DescendantData], parent_id: int) -> Iterator[tuple[int, UnitRecord]]:
     unit_id = d.unit_id
-    sections = {section.unit_id: section.name for section in d.sections} or None
-    children = {child.unit_id: child.name for child in d.child} if d.child else None
+    sections = {section.unit_id: section.name for section in d.sections}
+    children = {child.unit_id: child.name for child in d.child} if d.child else {}
     yield unit_id, UnitRecord(d.name, parent_id, children, sections)
     for child in d.child or []:
         yield from _flatten_hierarchy(child, unit_id)
     for section in d.sections:
-        yield section.unit_id, UnitRecord(section.name, unit_id, None, None)
+        yield section.unit_id, UnitRecord(section.name, unit_id, {}, {})
 
 
 def make_hierarchy_resource(session: Logon) -> dict[int, UnitRecord]:
@@ -44,6 +51,12 @@ def make_hierarchy_resource(session: Logon) -> dict[int, UnitRecord]:
     return flat_hierarchy
 
 
-def load_hierarchy_map(path: Path = FLAT_PATH) -> dict[int, UnitRecord]:
+def load_hierarchy_map(path: Path = FLAT_PATH) -> dict[int, NullableUnitRecord]:
     json_hierarchy = json.loads(path.read_text(encoding="utf-8"))
-    return {int(unit_id): UnitRecord(*unit_data) for unit_id, unit_data in json_hierarchy.items()}
+    flat_hierarchy = {}
+    for unit_id, unit_data in json_hierarchy.items():
+        name, parent_id, children, sections = unit_data
+        children = {int(unit_id): unit_name for unit_id, unit_name in children.items()} or None
+        sections = {int(unit_id): unit_name for unit_id, unit_name in sections.items()} or None
+        flat_hierarchy[int(unit_id)] = NullableUnitRecord(name, parent_id, children, sections)
+    return flat_hierarchy
