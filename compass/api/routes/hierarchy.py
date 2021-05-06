@@ -2,18 +2,21 @@ import contextlib
 from types import TracebackType
 from typing import Optional
 
+import pydantic
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
 from starlette import status
 
 from compass.api.utility.oauth2 import hierarchy_accessor
+from compass.api.utility import flatten_units
 from compass.core import errors
 import compass.core as ci
 from compass.core.logger import logger
-from compass.core.schemas import hierarchy as schema
 
 router = APIRouter()
+HIERARCHY = flatten_units.load_hierarchy_map()
+UnitRecordModel = pydantic.create_model_from_namedtuple(flatten_units.NullableUnitRecord)
 
 
 class ErrorHandling(contextlib.AbstractAsyncContextManager):
@@ -30,9 +33,23 @@ class ErrorHandling(contextlib.AbstractAsyncContextManager):
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Interpreter)! Please contact Adam.")
 
 
-@router.get("/", response_model=schema.UnitData)
-async def get_default_hierarchy(hierarchy: ci.Hierarchy = Depends(hierarchy_accessor)) -> schema.UnitData:
+@router.get("/", response_model=UnitRecordModel)
+async def get_default_unit_data(hierarchy: ci.Hierarchy = Depends(hierarchy_accessor)) -> UnitRecordModel:
     """Gets default hierarchy details."""
     logger.debug(f"Getting /hierarchy/ for {hierarchy.session.membership_number}")
     async with ErrorHandling():
-        return hierarchy.unit_data(use_default=True, recurse_children=False)
+        try:
+            return UnitRecordModel(**HIERARCHY[hierarchy.session.hierarchy.unit_id]._asdict())
+        except KeyError:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Requested unit ID was not found!")
+
+
+@router.get("/{unit_id}", response_model=UnitRecordModel)
+async def get_unit_data(unit_id: int) -> UnitRecordModel:
+    """Gets hierarchy details for given unit ID."""
+    logger.debug(f"Getting /hierarchy/{{unit_id}} for {unit_id=}")
+    async with ErrorHandling():
+        try:
+            return UnitRecordModel(**HIERARCHY[unit_id]._asdict())
+        except KeyError:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Requested unit ID was not found!")
