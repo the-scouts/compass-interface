@@ -101,7 +101,7 @@ def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDP
     for unit_dict in result_json:
         parsed = {
             "unit_id": int(unit_dict["Value"]),
-            "name": unit_dict["Description"],
+            "name": unit_dict["Description"].strip(),
         }
         if unit_dict["Tag"]:
             tag = json.loads(unit_dict["Tag"])[0]
