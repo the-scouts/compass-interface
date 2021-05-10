@@ -8,8 +8,8 @@ from fastapi import Depends
 from fastapi import HTTPException
 from starlette import status
 
-from compass.api.utility.oauth2 import hierarchy_accessor
-from compass.api.utility import flatten_units
+from compass.api.util.oauth2 import hierarchy_accessor
+from compass.api.util import flatten_units
 from compass.core import errors
 import compass.core as ci
 from compass.core.logger import logger
