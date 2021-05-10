@@ -1,11 +1,11 @@
 import fastapi
 from starlette import exceptions
-from starlette import status
 from starlette import requests
+from starlette import status
 
 from compass.api.schemas import auth
-from compass.api.util.oauth2 import create_token
 from compass.api.util.http_errors import http_error
+from compass.api.util.oauth2 import create_token
 from compass.core.logger import logger
 
 router = fastapi.APIRouter()
