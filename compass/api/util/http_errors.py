@@ -5,8 +5,8 @@ from types import TracebackType
 from typing import NoReturn
 
 from fastapi import HTTPException
-from starlette import status
 from starlette import exceptions
+from starlette import status
 
 from compass.core import errors
 
@@ -40,4 +40,3 @@ class ErrorHandling(contextlib.AbstractAsyncContextManager):
             raise http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Z1", "API Error (Core)! Please contact Adam.")
         if issubclass(exc_type, Exception):
             raise http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Z0", "Server panic (Interpreter)! Please contact Adam.")
-
