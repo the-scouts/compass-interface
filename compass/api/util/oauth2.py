@@ -5,19 +5,18 @@ import base64
 import os
 from pathlib import Path
 import time
-from typing import NoReturn, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import Depends
-from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose import JWTError
 from starlette import requests
-from starlette import status
 
 from compass.api.schemas.auth import User
+from compass.api.util.http_errors import auth_error
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.logon import Logon
@@ -30,10 +29,6 @@ aes_gcm = AESGCM(bytes.fromhex(SECRET_KEY))
 ALGORITHM = "HS256"
 SESSION_STORE = Path(os.getenv("CI_SESSION_STORE", "sessions/")).resolve()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/token/")
-
-
-def raise_auth_error(detail: str, code: int = status.HTTP_401_UNAUTHORIZED) -> NoReturn:
-    raise HTTPException(status_code=code, detail=detail, headers={"WWW-Authenticate": "Bearer"}) from None
 
 
 def encrypt(data: bytes) -> bytes:
@@ -52,7 +47,7 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
     try:
         user, _ = authenticate_user(username, pw, role, location)
     except ci.errors.CompassError:
-        raise raise_auth_error("Incorrect username or password! [Error: A10]")
+        raise auth_error("A10", "Incorrect username or password!")
     access_token_expire_minutes = 30
 
     jwt_expiry_time = int(time.time()) + access_token_expire_minutes * 60
@@ -89,11 +84,11 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
-        raise raise_auth_error("Could not validate credentials [Error: A20]")
+        raise auth_error("A20", "Could not validate credentials")
     if not {"sub", "exp"} <= payload.keys():
-        raise raise_auth_error("Your token is malformed! Please get a new token. [Error: A26]")
+        raise auth_error("A26", "Your token is malformed! Please get a new token.")
     if time.time() > payload["exp"]:
-        raise raise_auth_error("Your token has expired! Please get a new token. [Error: A26]")
+        raise auth_error("A26", "Your token has expired! Please get a new token.")
 
     logger.debug(f"Getting data from token:{token}")
     try:  # try fast-path
@@ -104,18 +99,18 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
         try:
             session_decoded = base64.b85decode(session_encoded)
         except ValueError:
-            raise raise_auth_error("Could not validate credentials [Error: A21]")
+            raise auth_error("A21", "Could not validate credentials")
 
     try:
         session_decrypted = aes_gcm.decrypt(session_decoded[:12], session_decoded[12:], None)
     except InvalidTag:
-        raise raise_auth_error("Could not validate credentials [Error: A22]")
+        raise auth_error("A22", "Could not validate credentials")
 
     try:
         user = User.parse_raw(session_decrypted)
         logger.debug(f"Created parsed user object {user.__dict__}")
     except KeyError:
-        raise raise_auth_error("Could not validate credentials [Error: A23]")
+        raise auth_error("A23", "Could not validate credentials")
 
     if time.time() < user.expires:
         session = Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role)
@@ -126,9 +121,9 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
     try:
         if int(payload["sub"]) == int(session.membership_number):
             return session
-        raise raise_auth_error("Could not validate credentials [Error: A24]")  # this should be impossible
+        raise auth_error("A24", "Could not validate credentials")  # this should be impossible
     except ValueError:
-        raise raise_auth_error("Could not validate credentials [Error: A25]")
+        raise auth_error("A25", "Could not validate credentials")
 
 
 async def people_accessor(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.People:
