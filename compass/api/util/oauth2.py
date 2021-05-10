@@ -18,7 +18,7 @@ from starlette import requests
 from starlette import status
 
 from compass.api.schemas.auth import User
-from compass.api.utility.redis import get_redis
+from compass.api.util.redis import get_redis
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.logon import Logon
