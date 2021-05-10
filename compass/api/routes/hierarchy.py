@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
-import pydantic
 from starlette import status
 
+from compass.api.schemas.unit_records import UnitRecordModel
 from compass.api.util import flatten_units
 from compass.api.util import http_errors
 from compass.api.util.oauth2 import hierarchy_accessor
@@ -15,7 +15,6 @@ router = APIRouter()
 cpe_hierarchy = status.HTTP_403_FORBIDDEN, "A32", "Your current role does not have permission for the requested unit!"
 error_handler = http_errors.ErrorHandling({errors.CompassPermissionError: cpe_hierarchy})
 HIERARCHY = flatten_units.load_hierarchy_map()
-UnitRecordModel = pydantic.create_model_from_namedtuple(flatten_units.NullableUnitRecord)
 
 
 @router.get("/", response_model=UnitRecordModel)
