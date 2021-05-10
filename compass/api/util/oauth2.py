@@ -18,7 +18,6 @@ from starlette import requests
 from starlette import status
 
 from compass.api.schemas.auth import User
-from compass.api.util.redis import get_redis
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.logon import Logon
@@ -100,7 +99,7 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
     try:  # try fast-path
         session_decoded = SESSION_STORE.joinpath(f"{token}.bin").read_bytes()
     except (FileNotFoundError, IOError):
-        store = await get_redis(request)
+        store = request.app.state.redis
         session_encoded = await store.get(f"session:{token}")
         try:
             session_decoded = base64.b85decode(session_encoded)
