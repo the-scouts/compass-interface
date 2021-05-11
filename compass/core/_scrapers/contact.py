@@ -71,7 +71,9 @@ lookup_occupation = {
 
 
 def get_contact_profile(client: Client, membership_number: int, /) -> schema.MemberDetails:
-    response = client.post(f"{Settings.base_url}/Contact/Profile", json={"Source": "ADULT", "ContactNumber": f"{membership_number}"})
+    request_json = {"Source": "ADULT", "ContactNumber": f"{membership_number}"}
+    response = client.post(f"{Settings.base_url}/Contact/Profile", json=request_json)
+    # yes, double loading the JSON is deliberate. The serialisation from Compass is insane...
     data = json.loads(json.loads(response.content.decode("utf-8")))
 
     if "PersonData" not in data:
@@ -110,15 +112,15 @@ def get_contact_profile(client: Client, membership_number: int, /) -> schema.Mem
 
 def _process_address(addresses_props: list[dict[str, str]]):
     if not addresses_props:
-        return {'unparsed_address': None, 'country': None, 'postcode': None, 'county': None, 'town': None, 'street': None}
+        return {"unparsed_address": None, "country": None, "postcode": None, "county": None, "town": None, "street": None}
     address_props = addresses_props[0]
     return {
-        'unparsed_address': address_props["Address"],
-        'country': address_props["Country"],
-        'postcode': address_props["Postcode"],
-        'county': address_props["County"],
-        'town': address_props["Town"],
-        'street': f"""{address_props["Line1"]}, {address_props["Line2"]}, {address_props["Line3"]}"""
+        "unparsed_address": address_props["Address"],
+        "country": address_props["Country"],
+        "postcode": address_props["Postcode"],
+        "county": address_props["County"],
+        "town": address_props["Town"],
+        "street": f"""{address_props["Line1"]}, {address_props["Line2"]}, {address_props["Line3"]}""",
     }
 
 
