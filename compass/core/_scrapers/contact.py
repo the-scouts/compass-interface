@@ -6,13 +6,12 @@ from typing import TYPE_CHECKING
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
 from compass.core.util.context_managers import validation_errors_logging
-from compass.core.util.type_coercion import parse
+from compass.core.util.type_coercion import parse_date
 
 if TYPE_CHECKING:
     from compass.core.util.client import Client
 
 # /Contact/Avatar
-# /Contact/Roles
 # /Contact/ArchiveAlert
 # /Contact/Alerts
 
@@ -87,12 +86,12 @@ def get_contact_profile(client: Client, membership_number: int, /) -> schema.Mem
         "surname": person_data["Surname"],
         "name": f"""{person_data["Forenames"]} {person_data["Surname"]}""",  # Full Name
         "known_as": person_data["KnownAs"],
-        "join_date": parse(person_data["JoinDate"]),
+        "join_date": parse_date(person_data["JoinDate"]),
         "sex": "Male" if person_data["Gender"] == "M" else "Female",
         "address": _process_address(person_data["Addresses"]),
         "main_phone": _process_phone_numbers(person_data["PhoneNumbers"]),
         "main_email": _process_email(person_data["EmailAddresses"]),
-        "birth_date": parse(person_data["DOB"]),
+        "birth_date": parse_date(person_data["DOB"]),
         "nationality": lookup_nationality.get(person_data["Nationality"]["LookupValue"], "Other"),
         "ethnicity": lookup_ethnicity.get(person_data["Ethnicity"]["LookupValue"], ""),
         "religion": lookup_religion.get(person_data["Religion"]["LookupValue"], ""),

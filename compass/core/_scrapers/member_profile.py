@@ -43,7 +43,7 @@ from compass.core.settings import Settings
 from compass.core.util import cache_hooks
 from compass.core.util.context_managers import validation_errors_logging
 from compass.core.util.type_coercion import maybe_int
-from compass.core.util.type_coercion import parse
+from compass.core.util.type_coercion import parse_date
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -213,7 +213,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
     details["name"] = personal_details["Name:"]  # Full Name
     details["known_as"] = personal_details["Known As:"]
     join_date = personal_details["Date of Joining:"]
-    details["join_date"] = parse(join_date) if join_date != "Unknown" else None
+    details["join_date"] = parse_date(join_date) if join_date != "Unknown" else None
 
     # ## Core - Position Varies:
     details["sex"] = personal_details["Gender:"]
@@ -224,7 +224,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
     details["main_email"] = contact_details.get("Email")
 
     # ## Additional - Position Varies, visible for admin roles (Manager, Administrator etc):
-    details["birth_date"] = parse(personal_details.get("Date of Birth:", ""))
+    details["birth_date"] = parse_date(personal_details.get("Date of Birth:", ""))
     details["nationality"] = personal_details.get("Nationality:", "").strip()
     details["ethnicity"] = _process_extra(personal_details.get("Ethnicity:", ""))[0]  # discard ethnicity detail, could keep?
     details["religion"], details["religion_detail"] = _process_extra(personal_details.get("Religion/Faith:", ""))
@@ -355,8 +355,8 @@ def get_roles_tab(
             # location_id only visible if role is in hierarchy AND location still exists
             location_id=cells[2][0].get("data-ng_id"),
             location_name=cells[2].text_content().strip(),
-            role_start=parse(cells[3].text_content().strip()),  # type: ignore[arg-type]
-            role_end=parse(cells[4].text_content().strip()),
+            role_start=parse_date(cells[3].text_content().strip()),  # type: ignore[arg-type]
+            role_end=parse_date(cells[4].text_content().strip()),
             role_status=role_status,
             review_date=review_date,
             can_view_details=any("VIEWROLE" in el.get("class") for el in cells[6]),
@@ -395,7 +395,7 @@ def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tu
 def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
     if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
         role_status: Literal["Full"] = "Full"
-        review_date = parse(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
+        review_date = parse_date(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
         return role_status, review_date
     if review_status in ROLE_STATUSES:
         return review_status, None  # type: ignore[return-value]  # str -> Literal type narrowing doesn't seem to work?
@@ -502,7 +502,7 @@ def get_permits_tab(client: Client, membership_number: int, /) -> list[schema.Me
                     category=child_nodes[2].text_content(),
                     type=child_nodes[3].text_content(),
                     restrictions=child_nodes[4].text_content(),
-                    expires=parse(expires) if expires != "Revoked" else None,
+                    expires=parse_date(expires) if expires != "Revoked" else None,
                     status=child_nodes[5].get("class"),
                 )
             )
@@ -598,8 +598,8 @@ def _process_personal_learning_plan(plp: html.HtmlElement) -> tuple[int, list[TY
         learning_required = child_nodes[1].text_content().lower()
         module_data["learning_required"] = "yes" in learning_required if learning_required else None
         module_data["learning_method"] = child_nodes[2].text_content() or None
-        module_data["learning_completed"] = parse(child_nodes[3].text_content())
-        module_data["learning_date"] = parse(child_nodes[3].text_content())
+        module_data["learning_completed"] = parse_date(child_nodes[3].text_content())
+        module_data["learning_date"] = parse_date(child_nodes[3].text_content())
 
         validated_by_string = child_nodes[4].text_content()
         if validated_by_string:
@@ -607,7 +607,7 @@ def _process_personal_learning_plan(plp: html.HtmlElement) -> tuple[int, list[TY
             validated_by_data = validated_by_string.split(" ", 1) + [""]
             module_data["validated_membership_number"] = maybe_int(validated_by_data[0])
             module_data["validated_name"] = validated_by_data[1]
-        module_data["validated_date"] = parse(child_nodes[5].text_content())
+        module_data["validated_date"] = parse_date(child_nodes[5].text_content())
 
         plp_data.append(module_data)
 
@@ -622,13 +622,13 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     role_number = int(role.get("data-ng_mrn"))
     role_data["role_number"] = role_number
     role_data["role_title"] = child_nodes[0].text_content()
-    role_data["role_start"] = parse(child_nodes[1].text_content())
+    role_data["role_start"] = parse_date(child_nodes[1].text_content())
     status_with_review = child_nodes[2].text_content()
     # TODO for `Ending: blah` roles, should we store the ending date?
     if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
         role_data["role_status"] = "Full"
         date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
-        role_data["review_date"] = parse(date_str)
+        role_data["review_date"] = parse_date(date_str)
     else:
         role_data["role_status"] = status_with_review
         role_data["review_date"] = None
@@ -645,7 +645,7 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
         role_data["completion"] = completion_string
         parts = completion_string.split(":")
         role_data["completion_type"] = parts[0].strip()
-        role_data["completion_date"] = parse(parts[1].strip())
+        role_data["completion_date"] = parse_date(parts[1].strip())
     role_data["wood_badge_number"] = child_nodes[5].get("id", "").removeprefix("WB_") or None
 
     return role_number, role_data
@@ -681,8 +681,8 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
         cell_text = {c.get("id", "<None>").split("_")[0]: c.text_content() for c in ongoing_learning}
         # TODO missing data-pk from list(cell)[0].tag == "input", and module names/codes. Are these important?
         training_ogl[mogl_modules[ongoing_learning.get("data-ng_code")]] = dict(
-            completed_date=parse(cell_text.get("tdLastComplete", "")),
-            renewal_date=parse(cell_text.get("tdRenewal", "")),
+            completed_date=parse_date(cell_text.get("tdLastComplete", "")),
+            renewal_date=parse_date(cell_text.get("tdRenewal", "")),
         )
 
     # Update training_ogl with missing mandatory ongoing learning types
@@ -726,7 +726,7 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[schema.Mem
                     membership_number=membership_number,
                     type=award_props[0][1].text_content(),
                     location=award_props[1][1].text_content() or None,
-                    date=parse(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
+                    date=parse_date(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
                 )
             )
     return awards
@@ -778,9 +778,9 @@ def get_disclosures_tab(client: Client, membership_number: int, /) -> list[schem
                     type=cells[2].text_content(),
                     number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
                     issuer=cells[4].text_content() or None,
-                    issue_date=parse(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
+                    issue_date=parse_date(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
                     status=cells[6].text_content(),
-                    expiry_date=parse(cells[7].text_content()),  # If Application Withdrawn, no expiry date
+                    expiry_date=parse_date(cells[7].text_content()),  # If Application Withdrawn, no expiry date
                 )
             )
     return disclosures
