@@ -8,8 +8,7 @@ class _SettingsModel(pydantic.BaseSettings):
     # Network
     base_domain: str = "compass.scouts.org.uk"
     wcf_json_endpoint: str = "/JSon.svc"  # Windows communication foundation JSON service endpoint
-    secure_connection: bool = True
-    base_url: pydantic.HttpUrl = f"http{'s' if secure_connection else ''}://{base_domain}"  # type: ignore[assignment]
+    base_url: pydantic.HttpUrl = f"https://{base_domain}"  # type: ignore[assignment]
     web_service_path: pydantic.HttpUrl = base_url + wcf_json_endpoint  # type: ignore[assignment]
     # Requests
     total_requests: int = 0
