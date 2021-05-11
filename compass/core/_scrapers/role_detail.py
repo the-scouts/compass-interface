@@ -12,7 +12,7 @@ from compass.core.settings import Settings
 from compass.core.util import cache_hooks
 from compass.core.util.context_managers import validation_errors_logging
 from compass.core.util.type_coercion import maybe_int
-from compass.core.util.type_coercion import parse
+from compass.core.util.type_coercion import parse_date
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -118,17 +118,17 @@ def get_roles_detail(client: Client, role_number: int, /) -> schema.MemberRolePo
         role_number=role_number,
         # `organisation_level` is ignored, no corresponding field in MemberTrainingRole:
         organisation_level=fields.get("ctl00$workarea$cbo_p1_level"),
-        birth_date=parse(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
+        birth_date=parse_date(inputs["ctl00$workarea$txt_p1_membername"].get("data-dob")),
         membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno", 0)),
         # `name` is ignored, no corresponding field in MemberTrainingRole:
         name=fields.get("ctl00$workarea$txt_p1_membername", " ").split(" ", 1)[1],
         role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
-        role_start=parse(fields.get("ctl00$workarea$txt_p1_startdate", "")),
+        role_start=parse_date(fields.get("ctl00$workarea$txt_p1_startdate", "")),
         role_status=fields.get("ctl00$workarea$txt_p2_status"),
         line_manager_number=line_manager_number,
         line_manager=line_manager_name,
-        review_date=parse(fields.get("ctl00$workarea$txt_p2_review", "")),
-        ce_check=parse(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
+        review_date=parse_date(fields.get("ctl00$workarea$txt_p2_review", "")),
+        ce_check=parse_date(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
         disclosure_check=disclosure_check,
         disclosure_date=disclosure_date,
         references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status", "")),
@@ -164,7 +164,7 @@ def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Option
 def _extract_disclosure_date(disclosure_status: str) -> tuple[Optional[str], Optional[datetime.date]]:
     """Return tuple of disclosure check status, disclosure date."""
     if disclosure_status.startswith("Disclosure Issued : "):
-        return "Disclosure Issued", parse(disclosure_status.removeprefix("Disclosure Issued : "))
+        return "Disclosure Issued", parse_date(disclosure_status.removeprefix("Disclosure Issued : "))
     return (disclosure_status or None), None
 
 
@@ -189,7 +189,7 @@ def _process_getting_started(getting_started_modules: html.HtmlElement) -> dict[
         if module_name in module_names:
             info = {
                 # "name": module_names[module_name],  # short_name
-                "validated": parse(module[2][0].value),  # Save module validation date
+                "validated": parse_date(module[2][0].value),  # Save module validation date
                 "validated_by": module[1][1].get("value") or None,  # Save who validated the module
             }
             mod_code: str = module[2][0].get("data-ng_value")

@@ -91,7 +91,7 @@ class TestUtility:
         data = "01 Jan 2000"
 
         # When
-        result = type_coercion.parse(data)
+        result = type_coercion.parse_date(data)
 
         # Then
         assert isinstance(result, datetime.date)
@@ -102,7 +102,7 @@ class TestUtility:
         data = "01 January 2000"
 
         # When
-        result = type_coercion.parse(data)
+        result = type_coercion.parse_date(data)
 
         # Then
         assert isinstance(result, datetime.date)
@@ -115,14 +115,14 @@ class TestUtility:
         # Then
         with pytest.raises(ValueError, match=f"time data '{data}' does not match format '%d %b %Y'"):
             # When
-            type_coercion.parse(data)
+            type_coercion.parse_date(data)
 
     def test_parse_empty(self):
         # Given
         data = ""
 
         # When
-        result = type_coercion.parse(data)
+        result = type_coercion.parse_date(data)
 
         # Then
         assert result is None

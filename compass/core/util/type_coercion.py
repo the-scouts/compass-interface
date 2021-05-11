@@ -10,7 +10,7 @@ def maybe_int(value: Any) -> Optional[int]:
         return None
 
 
-def parse(date_time_str: str) -> Optional[datetime.date]:
+def parse_date(date_time_str: str) -> Optional[datetime.date]:
     if not date_time_str:
         return None
     try:
