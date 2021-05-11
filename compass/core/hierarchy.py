@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 TYPES_NULLABLE_UNIT_LEVEL = Union[schema.TYPES_UNIT_LEVELS, None]
-TYPE_LEVEL_META = tuple[TYPES_NULLABLE_UNIT_LEVEL, TYPES_NULLABLE_UNIT_LEVEL, scraper.TYPES_ENDPOINT_LEVELS]
+TYPE_LEVEL_META = tuple[TYPES_NULLABLE_UNIT_LEVEL, scraper.TYPES_ENDPOINT_LEVELS, scraper.TYPES_ENDPOINT_LEVELS]
 
 
 class Levels(TYPE_LEVEL_META, enum.Enum):
@@ -173,13 +173,13 @@ def _get_unit_level(
 
 def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel, recurse_children: bool) -> dict[str, object]:
     try:
-        level_numeric = Levels[unit_meta.level]
+        level = Levels[unit_meta.level]
     except KeyError:
         valid_levels = [level.name for level in Levels]
         raise errors.CompassError(f"Passed level: {unit_meta.level} is illegal. Valid values are {valid_levels}") from None
     if recurse_children:
-        return _get_descendants_recursive(client, unit_meta.unit_id, level_numeric)
-    return _get_descendants_immediate(client, unit_meta.unit_id, level_numeric)
+        return _get_descendants_recursive(client, unit_meta.unit_id, level)
+    return _get_descendants_immediate(client, unit_meta.unit_id, level)
 
 
 # See recurseRetrieve in PGS\Needle
