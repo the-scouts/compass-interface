@@ -81,20 +81,27 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         self.compass_props: schema.CompassProps = compass_props
         self.current_role: TYPES_ROLE = current_role
+        user_props = compass_props.master.user
 
         # Default hierarchy level
-        unit_number = compass_props.master.user.on  # Organisation Number
-        unit_level = compass_props.master.user.lvl  # Level
+        unit_number = user_props.on  # Organisation Number
+        unit_level = user_props.lvl  # Level
+        if unit_number is None or unit_level is None:
+            raise errors.CompassError("Unit Number and Level must be specified!")
         self.hierarchy = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
 
         # User / role IDs
-        self.membership_number: int = self.compass_props.master.user.cn  # type: ignore[assignment]
-        self.role_number: int = self.compass_props.master.user.mrn  # type: ignore[assignment]
-        self._jk: str = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512  # type: ignore[assignment]
+        if user_props.cn is None or user_props.mrn is None or user_props.jk is None:
+            raise errors.CompassError("User IDs must be specified!")
+        self.membership_number: int = user_props.cn
+        self.role_number: int = user_props.mrn
+        self._jk: str = user_props.jk  # ???? Key?  # Join Key??? SHA2-512
 
         # Session IDs
         self._asp_net_id: str = client.cookies["ASP.NET_SessionId"]
-        self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
+        if compass_props.master.sys.session_id is None:
+            raise errors.CompassError("ASP.NET ID must be specified!")
+        self._session_id: str = compass_props.master.sys.session_id
 
         # TODO session timeout logic
 
@@ -132,7 +139,6 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         logon = cls(
             client=client,
             compass_props=props,
-            # Set current_role explicitly as work done in worker
             current_role=roles[props.master.user.mrn],  # type: ignore[index]
         )
 
@@ -226,7 +232,7 @@ def _change_role(
 
     # Confirm Compass is reporting the changed role number, update auth headers
     compass_props, roles_dict = _check_login(client, check_role_number=member_role_number)
-    current_role = roles_dict[member_role_number]  # Set explicitly as work done in worker
+    current_role = roles_dict[member_role_number]
 
     logger.info(f"Role updated successfully! Role is now {current_role[0]} ({current_role[1]}).")
 
