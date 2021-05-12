@@ -26,6 +26,7 @@ class User(pydantic.BaseModel):
     selected_role: tuple[str, str]
     logon_info: tuple[str, str, Optional[str], Optional[str]]
     asp_net_id: str
+    session_id: str
     props: CompassPropsMasterUser
     expires: int
 

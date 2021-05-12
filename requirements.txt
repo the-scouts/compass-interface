@@ -1,5 +1,5 @@
 # Compass-Interface Core
-compass-interface-core>=0.13.0
+compass-interface-core>=0.14.1
 
 # Compass-Interface Utilities
 pydantic
