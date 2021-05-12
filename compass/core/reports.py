@@ -30,10 +30,10 @@ class ReportTypes(enum.IntEnum):
 class Reports:
     def __init__(self, session: Logon):
         """Constructor for Reports."""
-        self.session = session
+        self.auth_ids = session.membership_number, session.role_number, session._jk
         self.client = session._client
-        self.current_role: tuple[str, str] = session.current_role
 
+        self.current_role = session.current_role
         self.membership_number = session.membership_number
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
@@ -83,7 +83,7 @@ class Reports:
         try:
             # report_type is given as `Title Case` with spaces, enum keys are in `snake_case`
             rt_key = report_type.lower().replace(" ", "_")
-            run_report_url = scraper.get_report_token(self.session, ReportTypes[rt_key].value)
+            run_report_url = scraper.get_report_token(self.client, self.auth_ids, ReportTypes[rt_key].value)
         except KeyError:
             # enum keys are in `snake_case`, output types as `Title Case` with spaces
             types = [rt.name.title().replace("_", " ") for rt in ReportTypes]

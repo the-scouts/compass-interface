@@ -10,7 +10,6 @@ import urllib.parse
 from lxml import html
 
 from compass.core import errors
-from compass.core import logon
 from compass.core.logger import logger
 from compass.core.settings import Settings
 from compass.core.util import auth_header
@@ -20,17 +19,18 @@ if TYPE_CHECKING:
     from compass.core.util.client import Client
 
 
-def get_report_token(session: logon.Logon, report_number: int) -> str:
+def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
+    membership_number, role_number, jk = auth_ids
     params = {
         "pReportNumber": str(report_number),
-        "pMemberRoleNumber": str(session.role_number),
+        "pMemberRoleNumber": str(role_number),
     }
     logger.debug("Getting report token")
     response = auth_header.auth_header_get(
-        session.membership_number,
-        session.role_number,
-        session._jk,  # pylint: disable=protected-access
-        session._client,  # pylint: disable=protected-access
+        membership_number,
+        role_number,
+        jk,
+        client,
         f"{Settings.web_service_path}/ReportToken",
         params=params,
     )
