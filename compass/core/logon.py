@@ -139,19 +139,12 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         if props.master.user.mrn is None:
             raise errors.CompassError("Role Number must be an integer!")
 
-        logon = cls(
-            client=client,
-            compass_props=props,
-            current_role=roles[props.master.user.mrn],
-        )
-
         if role_to_use is not None:
             # Session contains updated auth headers from role change
             current_role, _roles_dict, compass_props = _change_role(client, role_to_use, role_location)
-            setattr(logon, "current_role", current_role)  # bypass Final type restriction
-            setattr(logon, "compass_props", compass_props)  # bypass Final type restriction
+            return cls(client=client, compass_props=compass_props, current_role=current_role)
 
-        return logon
+        return cls(client=client, compass_props=props, current_role=roles[props.master.user.mrn])
 
     @classmethod
     def from_session(
