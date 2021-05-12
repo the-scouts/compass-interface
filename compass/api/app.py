@@ -45,20 +45,17 @@ version_one.include_router(
     authentication.router,
     prefix="/token",
     tags=["Authentication"],
-    responses={404: {"description": "Not found!"}},
 )
 version_one.include_router(
     hierarchy.router,
     prefix="/hierarchy",
     tags=["Hierarchy"],
-    responses={404: {"description": "Not found!"}},
 )
 version_one.include_router(
     members.router,
     prefix="/members",
     tags=["Members"],
     dependencies=[],  # can't currently put auth here as we want the logon object directly...
-    responses={404: {"description": "Not found!"}},
 )
 
 # Overall app routing
