@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, TypedDict, Union
 import warnings
 
 import phonenumbers
@@ -217,6 +217,16 @@ TYPES_DISCLOSURE_STATUSES = Literal[
     "ID check required",
     "ID selection required",
 ]  # Disclosure statuses in disclosures tab
+
+
+# TODO find a better place to put this - not a pydantic type...
+class AddressData(TypedDict):
+    unparsed_address: Optional[str]
+    country: Optional[str]
+    postcode: Optional[str]
+    county: Optional[str]
+    town: Optional[str]
+    street: Optional[str]
 
 
 class MemberBase(pydantic.BaseModel):
