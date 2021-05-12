@@ -11,22 +11,10 @@ from compass.core.logon import Logon
 from compass.core.people import People
 from compass.core.reports import Reports
 
-__all__ = (
-    # sub-packages: CI-Core
-    "errors",
-    "logger",
-    # public classes
-    "CompassInterface",
-    "Logon",
-    "Hierarchy",
-    "People",
-    "Reports",
-    # public functions
-    "login",
-)
-
 
 class CompassInterface:
+    """CompassInterface is the main (programmatic) interface to CI core."""
+
     def __init__(self, user_props: Logon, /):
         self._user_props = logon
         self.people = People(user_props)
@@ -40,3 +28,18 @@ def login(username: str, password: str, /, *, role: str | None = None, location:
     This function is provided as a convenient interface to the logon module.
     """
     return CompassInterface(Logon.from_logon((username, password), role, location))
+
+
+__all__ = (
+    # sub-packages: CI-Core
+    "errors",
+    "logger",
+    # public classes
+    "CompassInterface",
+    "Logon",
+    "Hierarchy",
+    "People",
+    "Reports",
+    # public functions
+    "login",
+)
