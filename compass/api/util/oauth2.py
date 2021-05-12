@@ -19,7 +19,6 @@ from compass.api.schemas.auth import User
 from compass.api.util.http_errors import auth_error
 import compass.core as ci
 from compass.core.logger import logger
-from compass.core.logon import Logon
 
 if TYPE_CHECKING:
     from aioredis import Redis
@@ -64,9 +63,10 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
     return access_token
 
 
-def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> tuple[User, Logon]:
+def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> tuple[User, ci.CompassInterface]:
     logger.info(f"Logging in to Compass -- {username}")
-    session = ci.login(username, password, role=role, location=location)
+    api = ci.login(username, password, role=role, location=location)
+    session = api._user_props  # pylint: disable=protected-access
 
     logger.info(f"Successfully authenticated  -- {username}")
     user = User(
@@ -77,10 +77,10 @@ def authenticate_user(username: str, password: str, role: Optional[str], locatio
         props=session.compass_props.master.user,
         expires=int(time.time() + 9.5 * 60),  # Compass timeout is 10m, use 9.5 here
     )
-    return user, session
+    return user, api
 
 
-async def get_current_user(request: requests.Request, token: str) -> Logon:
+async def get_current_user(request: requests.Request, token: str) -> ci.CompassInterface:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
@@ -113,17 +113,26 @@ async def get_current_user(request: requests.Request, token: str) -> Logon:
         raise auth_error("A23", "Could not validate credentials")
 
     if time.time() < user.expires:
-        session = Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role)
+        api = ci.CompassInterface(ci.Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role))
     else:
-        user, session = authenticate_user(*user.logon_info)
+        user, api = authenticate_user(*user.logon_info)
         asyncio.create_task(store_kv(token, encrypt(user.json().encode())))
 
     try:
-        if int(payload["sub"]) == int(session.membership_number):
-            return session
+        if int(payload["sub"]) == int(api._user_props.membership_number):
+            return api
         raise auth_error("A24", "Could not validate credentials")  # this should be impossible
     except ValueError:
         raise auth_error("A25", "Could not validate credentials")
+
+
+async def ci_accessor(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.CompassInterface:
+    """Returns an initialised ci.CompassInterface object.
+
+    Note `Depends` adds the oAuth2 integration with OpenAPI.
+    TODO: manual integration without depends?
+    """
+    return await get_current_user(request, token)
 
 
 async def people_accessor(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.People:
@@ -132,8 +141,7 @@ async def people_accessor(request: requests.Request, token: str = Depends(oauth2
     Note `Depends` adds the oAuth2 integration with OpenAPI.
     TODO: manual integration without depends?
     """
-    session = await get_current_user(request, token)
-    return ci.People(session)
+    return (await get_current_user(request, token)).people
 
 
 async def hierarchy_accessor(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.Hierarchy:
