@@ -32,7 +32,7 @@ class ErrorHandling(contextlib.AbstractAsyncContextManager):
             raise http_error(status_code, error_code, message)
 
         # pass-through for Starlette HTTP exceptions
-        if exc_type == exceptions.HTTPException:
+        if issubclass(exc_type, exceptions.HTTPException):
             raise
 
         # fallback
