@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import get_args, Literal, Optional, TYPE_CHECKING, TypedDict, Union
+from typing import get_args, Literal, Optional, TYPE_CHECKING, Union
 
 from lxml import html
 
@@ -50,14 +50,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from compass.core.util.client import Client
-
-    class _AddressData(TypedDict):
-        unparsed_address: Optional[str]
-        country: Optional[str]
-        postcode: Optional[str]
-        county: Optional[str]
-        town: Optional[str]
-        street: Optional[str]
 
     TYPES_OTHER_SECTIONS = Literal["Disabilities", "Qualifications", "Hobbies"]
     TYPES_TRAINING_MODULE = dict[str, Union[None, int, str, datetime.date]]
@@ -198,7 +190,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
 
     """
     tree = _get_member_profile_tab(client, membership_number, "Personal")
-    details: dict[str, Union[None, int, str, datetime.date, _AddressData, dict[str, str]]] = dict()
+    details: dict[str, Union[None, int, str, datetime.date, schema.AddressData, dict[str, str]]] = dict()
 
     # ### Extractors
     # ## Core:
@@ -251,7 +243,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
         return schema.MemberDetails.parse_obj(details)
 
 
-def _process_address(address: str) -> _AddressData:
+def _process_address(address: str) -> schema.AddressData:
     if "UK" in address:
         addr_main, addr_code = address.rsplit(". ", 1)
         postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 import json
+from typing import TYPE_CHECKING
 
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
@@ -110,7 +110,7 @@ def get_contact_profile(client: Client, membership_number: int, /) -> schema.Mem
         return schema.MemberDetails.parse_obj(details)
 
 
-def _process_address(addresses_props: list[dict[str, str]]):
+def _process_address(addresses_props: list[dict[str, str]]) -> schema.AddressData:
     if not addresses_props:
         return {"unparsed_address": None, "country": None, "postcode": None, "county": None, "town": None, "street": None}
     address_props = addresses_props[0]
@@ -124,7 +124,7 @@ def _process_address(addresses_props: list[dict[str, str]]):
     }
 
 
-def _process_phone_numbers(phone_numbers: list[dict[str, str]]):
+def _process_phone_numbers(phone_numbers: list[dict[str, str]]) -> str:
     """Return a main phone number from a list of phone number properties.
 
     Each phone number record is as follows:
@@ -152,7 +152,7 @@ def _process_phone_numbers(phone_numbers: list[dict[str, str]]):
     return numbers[0]
 
 
-def _process_email(email_properties: list[dict[str, str]]):
+def _process_email(email_properties: list[dict[str, str]]) -> str:
     """Return a main phone number from a list of phone number properties.
 
     Each email record is as follows:
