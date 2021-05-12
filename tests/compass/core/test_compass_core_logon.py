@@ -22,7 +22,7 @@ class TestLogon:
         Settings.base_url = base_url
 
         # When
-        client = logon.create_session()
+        client = logon._create_session()
 
         # Then
         assert isinstance(client, requests.Session)
@@ -36,8 +36,9 @@ class TestLogon:
         # Then
         with pytest.raises(CompassError, match="Could not create a session with Compass"):
             # When
-            logon.create_session()
+            logon._create_session()
 
+    # TODO this test is useless
     def test_login_post_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
         Settings.base_url = base_url
@@ -45,14 +46,15 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        monkeypatch.setattr(logon, "check_login", lambda _client: (schema.CompassProps(), {}))
-        response, _props, _roles = logon.logon_remote(client, ("username", "password"))
+        monkeypatch.setattr(logon, "_check_login", lambda _client: (schema.CompassProps(), {}))
+        _props, _roles = logon._logon_remote(client, ("username", "password"))
 
         # Then
         expected_response = b"<head><title>Compass - System Startup</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"https://compass.scouts.org.uk/ScoutsPortal.aspx\"'></body>"  # NoQA: E501
         assert client.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
-        assert response.content == expected_response
+        # assert response.content == expected_response
 
+    # TODO this test is useless
     def test_login_post_incorrect_credentials(self, server, monkeypatch: pytest.MonkeyPatch):
         # Given
         Settings.base_url = base_url
@@ -60,13 +62,13 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        monkeypatch.setattr(logon, "check_login", lambda _client: (schema.CompassProps(), {}))
-        response, _props, _roles = logon.logon_remote(client, ("wrong", "credentials"))
+        monkeypatch.setattr(logon, "_check_login", lambda _client: (schema.CompassProps(), {}))
+        _props, _roles = logon._logon_remote(client, ("wrong", "credentials"))
 
         # Then
         expected_response = b"<head><title>Compass - Failed Login</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"\"'></body>"  # NoQA: E501
         assert client.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
-        assert response.content == expected_response
+        # assert response.content == expected_response
 
     def test_login_check_login(self, server):
         # Given
@@ -75,7 +77,7 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        props, roles = logon.check_login(client)
+        props, roles = logon._check_login(client)
 
         # Then
         expected_props = schema.CompassProps(
