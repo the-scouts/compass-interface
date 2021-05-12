@@ -66,15 +66,14 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
 def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> tuple[User, ci.CompassInterface]:
     logger.info(f"Logging in to Compass -- {username}")
     api = ci.login(username, password, role=role, location=location)
-    session = api._user_props  # pylint: disable=protected-access
 
     logger.info(f"Successfully authenticated  -- {username}")
     user = User(
-        selected_role=session.current_role,
+        selected_role=api.user.current_role,
         logon_info=(username, password, role, location),
-        asp_net_id=session._asp_net_id,  # pylint: disable=protected-access
-        session_id=session._session_id,  # pylint: disable=protected-access
-        props=session.compass_props.master.user,
+        asp_net_id=api.user._asp_net_id,  # pylint: disable=protected-access
+        session_id=api.user._session_id,  # pylint: disable=protected-access
+        props=api.user.compass_props.master.user,
         expires=int(time.time() + 9.5 * 60),  # Compass timeout is 10m, use 9.5 here
     )
     return user, api
@@ -119,7 +118,7 @@ async def get_current_user(request: requests.Request, token: str) -> ci.CompassI
         asyncio.create_task(store_kv(token, encrypt(user.json().encode())))
 
     try:
-        if int(payload["sub"]) == int(api._user_props.membership_number):
+        if int(payload["sub"]) == int(api.user.membership_number):
             return api
         raise auth_error("A24", "Could not validate credentials")  # this should be impossible
     except ValueError:
