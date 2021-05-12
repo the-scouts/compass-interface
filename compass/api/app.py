@@ -34,7 +34,7 @@ and is licensed under the **[MIT license](https://choosealicense.com/licenses/mi
 app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
     description=long_description,
-    version="0.23.0",
+    version="0.23.1",
     openapi_tags=open_api_tag_metadata,
 )
 app.router.lifespan_context = redis.lifetime
@@ -76,7 +76,7 @@ app.include_router(
 #    /members/me ✔
 #    /members/{memberNumber} ✔
 #            /XXX/ - default is profile ✔
-#                /roles ✘
+#                /roles ✔
 #                /permits ✔
 #                /training ✔
 #                /ongoing-learning ✔
@@ -88,16 +88,16 @@ app.include_router(
 #                /compliance_data            ??
 #                /training_data              ??
 #                /awards_data                ??
-#    /hierarchy/
+#    /hierarchy/ ✔
 #              /organisations
 #              /countries
 #              /regions
 #              /counties  - symlinks for Areas/Scot Region/Islands/Bailiwicks?
 #              /districts
 #              /groups
-#              /XXX/children
-#              /XXX/sections
-#              /XXX/members
+#              /XXX/children ✔
+#              /XXX/sections ✔
+#              /XXX/members ✔
 #    /reports/{reportType}/
 #    /
 
