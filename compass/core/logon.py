@@ -136,10 +136,13 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         # Log in and try to confirm success
         props, roles = _logon_remote(client, credentials)
 
+        if props.master.user.mrn is None:
+            raise errors.CompassError("Role Number must be an integer!")
+
         logon = cls(
             client=client,
             compass_props=props,
-            current_role=roles[props.master.user.mrn],  # type: ignore[index]
+            current_role=roles[props.master.user.mrn],
         )
 
         if role_to_use is not None:
@@ -298,9 +301,12 @@ def _check_login(client: Client, check_role_number: Optional[int] = None) -> tup
     compass_props = _create_compass_props(form)  # Updates MRN property etc.
     roles_dict = dict(_roles_iterator(form))
 
-    membership_number: int = compass_props.master.user.cn  # type: ignore[assignment]
-    role_number: int = compass_props.master.user.mrn  # type: ignore[assignment]
-    session_id: str = compass_props.master.sys.session_id  # type: ignore[assignment]
+    master_props = compass_props.master
+    if master_props.user.cn is None or master_props.user.mrn is None or master_props.sys.session_id is None:
+        raise errors.CompassError("Login verification failed! User and Session IDs not found!")
+    membership_number: int = master_props.user.cn
+    role_number: int = master_props.user.mrn
+    session_id: str = master_props.sys.session_id
 
     # Set auth headers for new role
     _update_auth_headers(client, membership_number, role_number, session_id)
