@@ -125,7 +125,7 @@ async def get_current_user(request: requests.Request, token: str) -> ci.CompassI
         raise auth_error("A25", "Could not validate credentials")
 
 
-async def ci_accessor(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.CompassInterface:
+async def ci_user(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.CompassInterface:
     """Returns an initialised ci.CompassInterface object.
 
     Note `Depends` adds the oAuth2 integration with OpenAPI.

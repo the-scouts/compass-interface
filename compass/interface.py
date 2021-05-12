@@ -2,13 +2,12 @@ import compass.core as ci
 
 
 def compass_read(username: str, password: str, /):
-    logon = ci.login(username, password)
-    people = ci.People(logon)
+    api = ci.login(username, password)
 
-    member_number = logon.membership_number
-    training_data = people.training(member_number)
-    permits_data = people.permits(member_number)
-    roles_detail = {role: people.role_detail(role) for role in training_data.roles}
+    member_number = api.user.membership_number
+    training_data = api.people.training(member_number)
+    permits_data = api.people.permits(member_number)
+    roles_detail = {role: api.people.role_detail(role) for role in training_data.roles}
 
     obj = {
         # **training_data,
