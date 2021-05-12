@@ -18,8 +18,6 @@ from compass.core.util.client import Client
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    import requests
-
 TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
 TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
@@ -70,31 +68,35 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         *,
         client: Client,
         compass_props: schema.CompassProps,
-        roles_dict: Optional[TYPES_ROLES_DICT] = None,
         current_role: TYPES_ROLE,
     ):
-        """Constructor for Logon."""
+        """Constructor for Logon.
+
+        We treat all properties as immutable after we leave init. Role can
+        theoretically change in server-side state, but this is not supported
+        behaviour.
+
+        """
         self._client: Client = client
+
         self.compass_props: schema.CompassProps = compass_props
-        self.roles_dict: TYPES_ROLES_DICT = roles_dict or {}
-        self.current_role: TYPES_ROLE = current_role or ("", "")
+        self.current_role: TYPES_ROLE = current_role
 
-        # For session timeout logic
-        # self._sto_thread = timeout.PeriodicTimer(150, self._extend_session_timeout)
-        # self._sto_thread.start()
+        # Default hierarchy level
+        unit_number = compass_props.master.user.on  # Organisation Number
+        unit_level = compass_props.master.user.lvl  # Level
+        self.hierarchy = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
 
+        # User / role IDs
+        self.membership_number: int = self.compass_props.master.user.cn  # type: ignore[assignment]
+        self.role_number: int = self.compass_props.master.user.mrn  # type: ignore[assignment]
+        self._jk: str = self.compass_props.master.user.jk  # ???? Key?  # Join Key??? SHA2-512  # type: ignore[assignment]
+
+        # Session IDs
         self._asp_net_id: str = client.cookies["ASP.NET_SessionId"]
         self._session_id: str = self.compass_props.master.sys.session_id  # type: ignore[assignment]
 
-        # Set these last, treat as immutable after we leave init. Role can
-        # theoretically change, but this is not supported behaviour.
-
-        # Contact Number
-        self.membership_number: int = self.compass_props.master.user.cn  # type: ignore[assignment]
-        # Member Role Number
-        self.role_number: int = self.compass_props.master.user.mrn  # type: ignore[assignment]
-        # ???? Key?  # Join Key??? SHA2-512
-        self._jk: str = self.compass_props.master.user.jk  # type: ignore[assignment]
+        # TODO session timeout logic
 
     @classmethod
     def from_logon(
@@ -122,22 +124,21 @@ class Logon:  # pylint: disable=too-many-instance-attributes
                 If authentication with Compass fails
 
         """
-        client = create_session()
+        client = _create_session()
 
         # Log in and try to confirm success
-        _response, props, roles = logon_remote(client, credentials)
+        props, roles = _logon_remote(client, credentials)
 
         logon = cls(
             client=client,
             compass_props=props,
-            roles_dict=roles,
             # Set current_role explicitly as work done in worker
             current_role=roles[props.master.user.mrn],  # type: ignore[index]
         )
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
-            logon.current_role, logon.roles_dict, logon.compass_props = _change_role(client, role_to_use, role_location)
+            logon.current_role, _roles_dict, logon.compass_props = _change_role(client, role_to_use, role_location)
 
         return logon
 
@@ -178,19 +179,11 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         """String representation of the Logon class."""
         return f"{self.__class__} Compass ID: {self.membership_number} ({' - '.join(self.current_role)})"
 
-    @property
-    def hierarchy(self) -> schemas.hierarchy.HierarchyLevel:
-        # Organisation Number
-        unit_number: int = self.compass_props.master.user.on  # type: ignore[assignment]
-        # Level
-        unit_level: schema.TYPES_ORG_LEVELS = self.compass_props.master.user.lvl  # type: ignore[assignment]
-        return schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
-
-    def _extend_session_timeout(self, sto: TYPES_STO = "0") -> requests.Response:
+    def _extend_session_timeout(self, sto: TYPES_STO = "0") -> str:
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
-        return auth_header.auth_header_get(
+        response = auth_header.auth_header_get(
             self.membership_number,
             self.role_number,
             self._jk,
@@ -198,6 +191,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             f"{Settings.web_service_path}/STO_CHK",
             params={"pExtend": sto},
         )
+        return response.content.decode("utf-8")
 
 
 def _change_role(
@@ -217,7 +211,7 @@ def _change_role(
 
     # If we don't have the roles dict, generate it.
     if roles_dict is None:
-        _props, roles_dict = check_login(client)
+        _props, roles_dict = _check_login(client)
 
     # Change role to the specified role number
     if location is not None:
@@ -231,7 +225,7 @@ def _change_role(
     logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
     # Confirm Compass is reporting the changed role number, update auth headers
-    compass_props, roles_dict = check_login(client, check_role_number=member_role_number)
+    compass_props, roles_dict = _check_login(client, check_role_number=member_role_number)
     current_role = roles_dict[member_role_number]  # Set explicitly as work done in worker
 
     logger.info(f"Role updated successfully! Role is now {current_role[0]} ({current_role[1]}).")
@@ -239,7 +233,7 @@ def _change_role(
     return current_role, roles_dict, compass_props
 
 
-def create_session() -> Client:
+def _create_session() -> Client:
     """Create a session and get ASP.Net Session ID cookie from the compass server."""
     client = Client()
 
@@ -255,7 +249,7 @@ def create_session() -> Client:
     return client
 
 
-def logon_remote(client: Client, auth: tuple[str, str]) -> tuple[requests.Response, schema.CompassProps, TYPES_ROLES_DICT]:
+def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
     """Log in to Compass and confirm success."""
     # Referer is genuinely needed otherwise login doesn't work
     headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
@@ -269,15 +263,15 @@ def logon_remote(client: Client, auth: tuple[str, str]) -> tuple[requests.Respon
 
     # log in
     logger.info("Logging in")
-    response = client.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
+    client.post(f"{Settings.base_url}/Login.ashx", headers=headers, data=credentials)
 
     # verify log in was successful
-    props, roles = check_login(client)
+    props, roles = _check_login(client)
 
-    return response, props, roles
+    return props, roles
 
 
-def check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
+def _check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
     """Confirms success and updates authorisation."""
     # Test 'get' for an exemplar page that needs authorisation.
     portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
@@ -332,12 +326,11 @@ def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
         cd_tmp[levels[-1]] = value  # int or str
 
     if "Sys" in compass_props.get("Master", {}):
-        compass_props_master_sys = compass_props["Master"]["Sys"]
-        if "WebPath" in compass_props_master_sys:
-            compass_props_master_sys["WebPath"] = urllib.parse.unquote(compass_props_master_sys["WebPath"])
-        if "HardTime" in compass_props_master_sys:
-            hard_time_isoformat = compass_props_master_sys["HardTime"].replace(".", ":")
-            compass_props_master_sys["HardTime"] = datetime.time.fromisoformat(hard_time_isoformat)
+        props_sys = compass_props["Master"]["Sys"]
+        if "WebPath" in props_sys:
+            props_sys["WebPath"] = urllib.parse.unquote(props_sys["WebPath"])
+        if "HardTime" in props_sys:
+            props_sys["HardTime"] = datetime.time.fromisoformat(props_sys["HardTime"].replace(".", ":"))
 
     return schema.CompassProps(**compass_props)
 
