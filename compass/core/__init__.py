@@ -15,7 +15,7 @@ from compass.core.reports import Reports
 class CompassInterface:
     def __init__(self, user_props: Logon, /):
         """This is the main (programmatic) interface to CI core."""
-        self._user_props = user_props
+        self.user = user_props
         self.people = People(user_props)
         self.hierarchy = Hierarchy(user_props)
         self.reports = Reports(user_props)
