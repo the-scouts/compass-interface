@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from fastapi import Depends
-from fastapi import HTTPException
 from starlette import status
 
 from compass.api.schemas.unit_records import UnitRecordModel
@@ -25,7 +24,7 @@ async def get_default_unit_data(hierarchy: ci.Hierarchy = Depends(hierarchy_acce
         try:
             return UnitRecordModel(**HIERARCHY[hierarchy.session.hierarchy.unit_id]._asdict())
         except KeyError:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Requested unit ID was not found!")
+            raise http_errors.http_error(status.HTTP_404_NOT_FOUND, "H10", "Requested unit ID was not found!")
 
 
 @router.get("/{unit_id}", response_model=UnitRecordModel)
@@ -36,4 +35,4 @@ async def get_unit_data(unit_id: int) -> UnitRecordModel:
         try:
             return UnitRecordModel(**HIERARCHY[unit_id]._asdict())
         except KeyError:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Requested unit ID was not found!")
+            raise http_errors.http_error(status.HTTP_404_NOT_FOUND, "H10", "Requested unit ID was not found!")

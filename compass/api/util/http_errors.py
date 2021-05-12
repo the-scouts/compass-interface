@@ -16,7 +16,7 @@ def http_error(status_code: int, error_code: str, message: str, /, headers: dict
 
 
 def auth_error(error_code: str, message: str, /, status_code: int = status.HTTP_401_UNAUTHORIZED) -> NoReturn:
-    raise HTTPException(status_code, {"code": error_code, "message": message}, headers={"WWW-Authenticate": "Bearer"}) from None
+    raise http_error(status_code, error_code, message, headers={"WWW-Authenticate": "Bearer"})
 
 
 class ErrorHandling(contextlib.AbstractAsyncContextManager):
