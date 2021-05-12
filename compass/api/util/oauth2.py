@@ -30,7 +30,7 @@ SESSION_STORE = Path(os.getenv("CI_SESSION_STORE", "sessions/")).resolve()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="v1/token/")
 
 
-def encrypt(data: bytes) -> bytes:
+async def encrypt(data: bytes) -> bytes:
     nonce = os.urandom(12)  # GCM mode needs 12 fresh bytes every time
     return nonce + aes_gcm.encrypt(nonce, data, None)
 
@@ -44,7 +44,7 @@ async def store_kv(key: str, value: bytes, redis: Optional[Redis] = None, expire
 
 async def create_token(username: str, pw: str, role: Optional[str], location: Optional[str], store: Redis) -> str:
     try:
-        user, _ = authenticate_user(username, pw, role, location)
+        user, _ = await authenticate_user(username, pw, role, location)
     except ci.errors.CompassError:
         raise auth_error("A10", "Incorrect username or password!")
     access_token_expire_minutes = 30
@@ -53,7 +53,7 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
     to_encode = dict(sub=f"{user.props.cn}", exp=jwt_expiry_time)
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-    data = encrypt(user.json().encode())
+    data = await encrypt(user.json().encode())
     encoded = base64.b85encode(data)
     logger.debug(f"Created JWT for user {username}. Redis key={access_token}, data={encoded}")
 
@@ -63,7 +63,7 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
     return access_token
 
 
-def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> tuple[User, ci.CompassInterface]:
+async def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> tuple[User, ci.CompassInterface]:
     logger.info(f"Logging in to Compass -- {username}")
     api = ci.login(username, password, role=role, location=location)
 
@@ -114,8 +114,8 @@ async def get_current_user(request: requests.Request, token: str) -> ci.CompassI
     if time.time() < user.expires:
         api = ci.CompassInterface(ci.Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role))
     else:
-        user, api = authenticate_user(*user.logon_info)
-        asyncio.create_task(store_kv(token, encrypt(user.json().encode())))
+        user, api = await authenticate_user(*user.logon_info)
+        asyncio.create_task(store_kv(token, await encrypt(user.json().encode())))
 
     try:
         if int(payload["sub"]) == int(api.user.membership_number):
