@@ -1,7 +1,8 @@
 from typing import NamedTuple, Union
-from compass.core.schemas import hierarchy as schema
 
 import pydantic
+
+from compass.core.schemas import hierarchy as schema
 
 
 class UnitRecord(NamedTuple):
