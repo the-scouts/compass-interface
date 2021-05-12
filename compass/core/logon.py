@@ -137,7 +137,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
-            logon._change_role(client, role_to_use, role_location)  # pylint: disable=protected-access
+            logon.current_role, logon.roles_dict, logon.compass_props = _change_role(client, role_to_use, role_location)
 
         return logon
 
@@ -199,38 +199,44 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             params={"pExtend": sto},
         )
 
-    def _change_role(self, client: Client, new_role: str, location: Optional[str] = None) -> Logon:
-        """Returns new Logon object with new role.
 
-        If the user has multiple roles with the same role title, the first is used,
-        unless the location parameter is set, where the location is exactly matched.
-        """
-        logger.info("Changing role")
+def _change_role(
+    client: Client,
+    new_role: str,
+    location: Optional[str] = None,
+    roles_dict: Optional[TYPES_ROLES_DICT] = None,
+) -> tuple[TYPES_ROLE, TYPES_ROLES_DICT, schema.CompassProps]:
+    """Returns new Logon object with new role.
 
-        new_role = new_role.strip()
+    If the user has multiple roles with the same role title, the first is used,
+    unless the location parameter is set, where the location is exactly matched.
+    """
+    logger.info("Changing role")
 
-        # If we don't have the roles dict, generate it.
-        if not self.roles_dict:
-            _props, self.roles_dict = check_login(client)
+    new_role = new_role.strip()
 
-        # Change role to the specified role number
-        if location is not None:
-            location = location.strip()
-            member_role_number = next(num for num, name in self.roles_dict.items() if name == (new_role, location))
-        else:
-            member_role_number = next(num for num, name in self.roles_dict.items() if name[0] == new_role)
+    # If we don't have the roles dict, generate it.
+    if roles_dict is None:
+        _props, roles_dict = check_login(client)
 
-        response = client.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
-        Settings.total_requests += 1
-        logger.debug(f"Compass ChangeRole call returned: {response.json()}")
+    # Change role to the specified role number
+    if location is not None:
+        location = location.strip()
+        member_role_number = next(num for num, name in roles_dict.items() if name == (new_role, location))
+    else:
+        member_role_number = next(num for num, name in roles_dict.items() if name[0] == new_role)
 
-        # Confirm Compass is reporting the changed role number, update auth headers
-        self.compass_props, self.roles_dict = check_login(client, check_role_number=member_role_number)
-        self.current_role = self.roles_dict[member_role_number]  # Set explicitly as work done in worker
+    response = client.post(f"{Settings.base_url}/API/ChangeRole", json={"MRN": member_role_number})  # b"false"
+    Settings.total_requests += 1
+    logger.debug(f"Compass ChangeRole call returned: {response.json()}")
 
-        logger.info(f"Role updated successfully! Role is now {self.current_role[0]} ({self.current_role[1]}).")
+    # Confirm Compass is reporting the changed role number, update auth headers
+    compass_props, roles_dict = check_login(client, check_role_number=member_role_number)
+    current_role = roles_dict[member_role_number]  # Set explicitly as work done in worker
 
-        return self
+    logger.info(f"Role updated successfully! Role is now {current_role[0]} ({current_role[1]}).")
+
+    return current_role, roles_dict, compass_props
 
 
 def create_session() -> Client:
