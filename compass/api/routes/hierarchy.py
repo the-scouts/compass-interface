@@ -5,7 +5,7 @@ from starlette import status
 from compass.api.schemas.unit_records import UnitRecordModel
 from compass.api.util import flatten_units
 from compass.api.util import http_errors
-from compass.api.util.oauth2 import hierarchy_accessor
+from compass.api.util.oauth2 import ci_accessor
 from compass.core import errors
 import compass.core as ci
 from compass.core.logger import logger
@@ -17,12 +17,12 @@ HIERARCHY = flatten_units.load_hierarchy_map()
 
 
 @router.get("/", response_model=UnitRecordModel)
-async def get_default_unit_data(hierarchy: ci.Hierarchy = Depends(hierarchy_accessor)) -> UnitRecordModel:
+async def get_default_unit_data(api: ci.CompassInterface = Depends(ci_accessor)) -> UnitRecordModel:
     """Gets default hierarchy details."""
-    logger.debug(f"Getting /hierarchy/ for {hierarchy.session.membership_number}")
+    logger.debug(f"Getting /hierarchy/ for {api.hierarchy.session.membership_number}")
     async with error_handler:
         try:
-            return UnitRecordModel(**HIERARCHY[hierarchy.session.hierarchy.unit_id]._asdict())
+            return UnitRecordModel(**HIERARCHY[api.hierarchy.session.hierarchy.unit_id]._asdict())
         except KeyError:
             raise http_errors.http_error(status.HTTP_404_NOT_FOUND, "H10", "Requested unit ID was not found!")
 
