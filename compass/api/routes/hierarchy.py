@@ -5,7 +5,7 @@ from starlette import status
 from compass.api.schemas.unit_records import UnitRecordModel
 from compass.api.util import flatten_units
 from compass.api.util import http_errors
-from compass.api.util.oauth2 import ci_accessor
+from compass.api.util.oauth2 import ci_user
 from compass.core import errors
 import compass.core as ci
 from compass.core.logger import logger
@@ -30,7 +30,7 @@ async def get_unit(unit_id: int) -> UnitRecordModel:
 
 
 @router.get("/", response_model=UnitRecordModel)
-async def get_default_unit_data(api: ci.CompassInterface = Depends(ci_accessor)) -> UnitRecordModel:
+async def get_default_unit_data(api: ci.CompassInterface = Depends(ci_user)) -> UnitRecordModel:
     """Gets default hierarchy details."""
     logger.debug(f"Getting /hierarchy/ for {api.user.membership_number}")
     async with error_handler:
@@ -62,7 +62,7 @@ async def get_unit_data(unit_id: int) -> list[schema.HierarchyUnit]:
 
 
 @router.get("/{unit_id}/members", response_model=list[schema.HierarchyMember])
-async def get_unit_members(unit_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> list[schema.HierarchyMember]:
+async def get_unit_members(unit_id: int, api: ci.CompassInterface = Depends(ci_user)) -> list[schema.HierarchyMember]:
     """Gets hierarchy details for given unit ID."""
     logger.debug(f"Getting /hierarchy/{{unit_id}} for {unit_id=}")
     async with error_handler:

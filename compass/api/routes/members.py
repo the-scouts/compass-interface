@@ -5,7 +5,7 @@ from fastapi import Depends
 from starlette import status
 
 from compass.api.util import http_errors
-from compass.api.util.oauth2 import ci_accessor
+from compass.api.util.oauth2 import ci_user
 from compass.core import errors
 import compass.core as ci
 from compass.core.logger import logger
@@ -22,7 +22,7 @@ error_handler = http_errors.ErrorHandling({errors.CompassPermissionError: cpe_me
 
 
 @router.get("/me", response_model=member.MemberDetails)
-async def get_current_member(api: ci.CompassInterface = Depends(ci_accessor)) -> member.MemberDetails:
+async def get_current_member(api: ci.CompassInterface = Depends(ci_user)) -> member.MemberDetails:
     """Gets my personal details."""
     logger.debug(f"Getting /me for {api.user.membership_number}")
     async with error_handler:
@@ -30,7 +30,7 @@ async def get_current_member(api: ci.CompassInterface = Depends(ci_accessor)) ->
 
 
 @router.get("/me/roles", response_model=member.MemberRolesCollection)
-async def get_current_member_roles(api: ci.CompassInterface = Depends(ci_accessor), volunteer_only: bool = False) -> member.MemberRolesCollection:
+async def get_current_member_roles(api: ci.CompassInterface = Depends(ci_user), volunteer_only: bool = False) -> member.MemberRolesCollection:
     """Gets my roles."""
     logger.debug(f"Getting /me/roles for {api.user.membership_number}")
     async with error_handler:
@@ -38,7 +38,7 @@ async def get_current_member_roles(api: ci.CompassInterface = Depends(ci_accesso
 
 
 @router.get("/me/permits", response_model=list[member.MemberPermit])
-async def get_current_member_permits(api: ci.CompassInterface = Depends(ci_accessor)) -> list[member.MemberPermit]:
+async def get_current_member_permits(api: ci.CompassInterface = Depends(ci_user)) -> list[member.MemberPermit]:
     """Gets my permits."""
     logger.debug(f"Getting /me/permits for {api.user.membership_number}")
     async with error_handler:
@@ -46,7 +46,7 @@ async def get_current_member_permits(api: ci.CompassInterface = Depends(ci_acces
 
 
 @router.get("/me/training", response_model=member.MemberTrainingTab)
-async def get_current_member_training(api: ci.CompassInterface = Depends(ci_accessor)) -> member.MemberTrainingTab:
+async def get_current_member_training(api: ci.CompassInterface = Depends(ci_user)) -> member.MemberTrainingTab:
     """Gets my training."""
     logger.debug(f"Getting /me/training for {api.user.membership_number}")
     async with error_handler:
@@ -54,7 +54,7 @@ async def get_current_member_training(api: ci.CompassInterface = Depends(ci_acce
 
 
 @router.get("/me/ongoing-learning", response_model=member.MemberMandatoryTraining)
-async def get_current_member_ongoing_learning(api: ci.CompassInterface = Depends(ci_accessor)) -> member.MemberMandatoryTraining:
+async def get_current_member_ongoing_learning(api: ci.CompassInterface = Depends(ci_user)) -> member.MemberMandatoryTraining:
     """Gets my ongoing learning."""
     logger.debug(f"Getting /me/ongoing for {api.user.membership_number}")
     async with error_handler:
@@ -62,7 +62,7 @@ async def get_current_member_ongoing_learning(api: ci.CompassInterface = Depends
 
 
 @router.get("/me/awards", response_model=list[member.MemberAward])
-async def get_current_member_awards(api: ci.CompassInterface = Depends(ci_accessor)) -> list[member.MemberAward]:
+async def get_current_member_awards(api: ci.CompassInterface = Depends(ci_user)) -> list[member.MemberAward]:
     """Gets my awards."""
     logger.debug(f"Getting /me/awards for {api.user.membership_number}")
     async with error_handler:
@@ -70,7 +70,7 @@ async def get_current_member_awards(api: ci.CompassInterface = Depends(ci_access
 
 
 @router.get("/me/disclosures", response_model=list[member.MemberDisclosure])
-async def get_current_member_disclosures(api: ci.CompassInterface = Depends(ci_accessor)) -> list[member.MemberDisclosure]:
+async def get_current_member_disclosures(api: ci.CompassInterface = Depends(ci_user)) -> list[member.MemberDisclosure]:
     """Gets my disclosures."""
     logger.debug(f"Getting /me/disclosures for {api.user.membership_number}")
     async with error_handler:
@@ -78,7 +78,7 @@ async def get_current_member_disclosures(api: ci.CompassInterface = Depends(ci_a
 
 
 @router.get("/me/latest-disclosure", response_model=Optional[member.MemberDisclosure])
-async def get_current_member_latest_disclosure(api: ci.CompassInterface = Depends(ci_accessor)) -> Optional[member.MemberDisclosure]:
+async def get_current_member_latest_disclosure(api: ci.CompassInterface = Depends(ci_user)) -> Optional[member.MemberDisclosure]:
     """Gets my latest disclosure."""
     logger.debug(f"Getting /me/latest-disclosure for {api.user.membership_number}")
     async with error_handler:
@@ -86,7 +86,7 @@ async def get_current_member_latest_disclosure(api: ci.CompassInterface = Depend
 
 
 @router.get("/{compass_id}", response_model=member.MemberDetails)
-async def get_member(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> member.MemberDetails:
+async def get_member(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> member.MemberDetails:
     """Gets personal details for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}} for {api.user.membership_number}")
     async with error_handler:
@@ -94,7 +94,7 @@ async def get_member(compass_id: int, api: ci.CompassInterface = Depends(ci_acce
 
 
 @router.get("/{compass_id}/roles", response_model=member.MemberRolesCollection)
-async def get_member_roles(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)):
+async def get_member_roles(compass_id: int, api: ci.CompassInterface = Depends(ci_user)):
     """Gets roles for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/roles for {api.user.membership_number}")
     async with error_handler:
@@ -102,7 +102,7 @@ async def get_member_roles(compass_id: int, api: ci.CompassInterface = Depends(c
 
 
 @router.get("/{compass_id}/permits", response_model=list[member.MemberPermit])
-async def get_member_permits(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> list[member.MemberPermit]:
+async def get_member_permits(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> list[member.MemberPermit]:
     """Gets permits for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/permits for {api.user.membership_number}")
     async with error_handler:
@@ -110,7 +110,7 @@ async def get_member_permits(compass_id: int, api: ci.CompassInterface = Depends
 
 
 @router.get("/{compass_id}/training", response_model=member.MemberTrainingTab)
-async def get_training(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> member.MemberTrainingTab:
+async def get_training(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> member.MemberTrainingTab:
     """Gets training for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/training for {api.user.membership_number}")
     async with error_handler:
@@ -118,7 +118,7 @@ async def get_training(compass_id: int, api: ci.CompassInterface = Depends(ci_ac
 
 
 @router.get("/{compass_id}/ongoing-learning", response_model=member.MemberMandatoryTraining)
-async def get_ongoing_learning(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> member.MemberMandatoryTraining:
+async def get_ongoing_learning(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> member.MemberMandatoryTraining:
     """Gets ongoing learning for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/ongoing-learning for {api.user.membership_number}")
     async with error_handler:
@@ -126,7 +126,7 @@ async def get_ongoing_learning(compass_id: int, api: ci.CompassInterface = Depen
 
 
 @router.get("/{compass_id}/awards", response_model=list[member.MemberAward])
-async def get_awards(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> list[member.MemberAward]:
+async def get_awards(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> list[member.MemberAward]:
     """Gets awards for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/awards for {api.user.membership_number}")
     async with error_handler:
@@ -134,7 +134,7 @@ async def get_awards(compass_id: int, api: ci.CompassInterface = Depends(ci_acce
 
 
 @router.get("/{compass_id}/disclosures", response_model=list[member.MemberDisclosure])
-async def get_disclosures(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> list[member.MemberDisclosure]:
+async def get_disclosures(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> list[member.MemberDisclosure]:
     """Gets disclosures for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/disclosures for {api.user.membership_number}")
     async with error_handler:
@@ -142,7 +142,7 @@ async def get_disclosures(compass_id: int, api: ci.CompassInterface = Depends(ci
 
 
 @router.get("/{compass_id}/latest-disclosure", response_model=Optional[member.MemberDisclosure])
-async def get_latest_disclosure(compass_id: int, api: ci.CompassInterface = Depends(ci_accessor)) -> Optional[member.MemberDisclosure]:
+async def get_latest_disclosure(compass_id: int, api: ci.CompassInterface = Depends(ci_user)) -> Optional[member.MemberDisclosure]:
     """Gets the latest disclosure for the member given by `compass_id`."""
     logger.debug(f"Getting /{{compass_id}}/latest-disclosure for {api.user.membership_number}")
     async with error_handler:
