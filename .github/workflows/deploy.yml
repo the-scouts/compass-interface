@@ -7,6 +7,8 @@ on:
 
 jobs:
   deploy:
+    # https://github.com/Azure-App-Service/KuduLite/wiki/Python-Build-Changes
+    # https://azure.github.io/AppService/2017/10/16/Zip-Push-Deployment-for-Web-Apps,-Functions-and-WebJobs.html
     runs-on: ubuntu-latest
 
     steps:

@@ -82,7 +82,3 @@ async def lifetime(app: FastAPI) -> AsyncGenerator:
     yield
     logger.debug("FastAPI shutdown: Redis teardown")
     await redis_plugin.terminate()
-
-
-async def get_redis(request: Request) -> Redis:
-    return request.app.state.redis
