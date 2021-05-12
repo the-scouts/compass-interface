@@ -43,7 +43,7 @@ class Hierarchy:
     def __init__(self, session: Logon):
         """Constructor for Hierarchy."""
         self.client: Client = session._client
-        self.session: Logon = session
+        self.default_hierarchy: schema.HierarchyLevel = session.hierarchy
 
     # See recurseRetrieve in PGS\Needle
     @cache_hooks.cache_result(key=("hierarchy", 1), model_type=schema.UnitData)
@@ -76,8 +76,13 @@ class Hierarchy:
                 When no unit data information has been provided
 
         """
+        if use_default:
+            unit_meta = self.default_hierarchy
+        elif unit_id is not None and level is not None:
+            unit_meta = schema.HierarchyLevel(unit_id=unit_id, level=level)
+        else:
+            raise errors.CompassError("No level data specified! Either `use_default` or `unit_id` and `level` must be set!")
         # Fetch the hierarchy
-        unit_meta = _get_unit_level(self.session, unit_id, level, use_default)
         return schema.UnitData.parse_obj(_get_descendants_level(self.client, unit_meta, recurse_children))
 
     def unique_members(
@@ -135,40 +140,6 @@ class Hierarchy:
     def unit_members(self, unit_id: int) -> list[schema.HierarchyMember]:
         logger.debug(f"Getting members for {unit_id}")
         return scraper.get_members_with_roles_in_unit(self.client, unit_id)
-
-
-def _get_unit_level(
-    session: Logon,
-    unit_id: Optional[int] = None,
-    level: Optional[schema.TYPES_UNIT_LEVELS] = None,
-    use_default: bool = False,
-) -> schema.HierarchyLevel:
-    """Helper function to construct unit level data.
-
-    Unit data can be specified as a pre-constructed model, by passing literals, or
-    by signalling to use the data from the user's current role. If all three
-    options are unset an exception is raised.
-
-    There is a strict priority ordering as follows:
-        1. pre-constructed pydantic model
-        2. literals
-        3. default data
-
-    Returns:
-        Constructed unit level data, as a pydantic model.
-        e.g.:
-            HierarchyLevel(id=..., level="...")
-
-    Raises:
-        CompassError:
-            When no unit data information has been provided
-
-    """
-    if unit_id is not None and level is not None:
-        return schema.HierarchyLevel(unit_id=unit_id, level=level)
-    if use_default:
-        return session.hierarchy  # as this is a property, it will update when roles change
-    raise errors.CompassError("No level data specified! unit_level, id and level, or use_default must be set!")
 
 
 def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel, recurse_children: bool) -> dict[str, object]:
