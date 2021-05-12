@@ -43,14 +43,6 @@ level_map: TYPES_LEVEL_MAP = cast(
 )
 
 
-def login(username: str, password: str, /, *, role: Optional[str] = None, location: Optional[str] = None) -> Logon:
-    """Log in to compass, return a compass.logon.Logon object.
-
-    This function is provided as a convenient interface to the logon module.
-    """
-    return Logon.from_logon((username, password), role, location)
-
-
 class Logon:  # pylint: disable=too-many-instance-attributes
     """Create connection to Compass and authenticate. Holds session state.
 
