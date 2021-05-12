@@ -50,7 +50,7 @@ class TestLogon:
         _props, _roles = logon._logon_remote(client, ("username", "password"))
 
         # Then
-        expected_response = b"<head><title>Compass - System Startup</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"https://compass.scouts.org.uk/ScoutsPortal.aspx\"'></body>"  # NoQA: E501
+        _expected_response = b"<head><title>Compass - System Startup</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"https://compass.scouts.org.uk/ScoutsPortal.aspx\"'></body>"  # NoQA: E501
         assert client.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
         # assert response.content == expected_response
 
@@ -66,7 +66,7 @@ class TestLogon:
         _props, _roles = logon._logon_remote(client, ("wrong", "credentials"))
 
         # Then
-        expected_response = b"<head><title>Compass - Failed Login</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"\"'></body>"  # NoQA: E501
+        _expected_response = b"<head><title>Compass - Failed Login</title><link rel='shortcut icon' type='image/vnd.microsoft.icon' href='https://compass.scouts.org.uk/Images/core/ico_compass.ico' sizes='16x16 24x24 32x32 48x48'></head><body onload='window.location.href=\"\"'></body>"  # NoQA: E501
         assert client.cookies["ASP.NET_SessionId"] == asp_net_id  # always need cookie
         # assert response.content == expected_response
 
