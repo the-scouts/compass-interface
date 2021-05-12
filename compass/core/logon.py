@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, cast, Literal, Optional, TYPE_CHECKING, Union
+from typing import Any, cast, Final, Literal, Optional, TYPE_CHECKING, Union
 import urllib.parse
 
 from lxml import html
@@ -77,10 +77,10 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         behaviour.
 
         """
-        self._client: Client = client
+        self._client: Final[Client] = client
 
-        self.compass_props: schema.CompassProps = compass_props
-        self.current_role: TYPES_ROLE = current_role
+        self.compass_props: Final[schema.CompassProps] = compass_props
+        self.current_role: Final[TYPES_ROLE] = current_role
         user_props = compass_props.master.user
 
         # Default hierarchy level
@@ -88,20 +88,20 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         unit_level = user_props.lvl  # Level
         if unit_number is None or unit_level is None:
             raise errors.CompassError("Unit Number and Level must be specified!")
-        self.hierarchy = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
+        self.hierarchy: Final = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
 
         # User / role IDs
         if user_props.cn is None or user_props.mrn is None or user_props.jk is None:
             raise errors.CompassError("User IDs must be specified!")
-        self.membership_number: int = user_props.cn
-        self.role_number: int = user_props.mrn
-        self._jk: str = user_props.jk  # ???? Key?  # Join Key??? SHA2-512
+        self.membership_number: Final[int] = user_props.cn
+        self.role_number: Final[int] = user_props.mrn
+        self._jk: Final[str] = user_props.jk  # ???? Key?  # Join Key??? SHA2-512
 
         # Session IDs
-        self._asp_net_id: str = client.cookies["ASP.NET_SessionId"]
+        self._asp_net_id: Final[str] = client.cookies["ASP.NET_SessionId"]
         if compass_props.master.sys.session_id is None:
             raise errors.CompassError("ASP.NET ID must be specified!")
-        self._session_id: str = compass_props.master.sys.session_id
+        self._session_id: Final[str] = compass_props.master.sys.session_id
 
         # TODO session timeout logic
 
@@ -147,7 +147,9 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
-            logon.current_role, _roles_dict, logon.compass_props = _change_role(client, role_to_use, role_location)
+            current_role, _roles_dict, compass_props = _change_role(client, role_to_use, role_location)
+            setattr(logon, "current_role", current_role)  # bypass Final type restriction
+            setattr(logon, "compass_props", compass_props)  # bypass Final type restriction
 
         return logon
 
