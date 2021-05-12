@@ -68,16 +68,10 @@ import compass.core as ci
 ci.logger.enable_debug_logging()
 
 # Login to Compass
-compass_session = ci.login("username", "password")
-
-# Setup Compass Helpers
-hierarchy = ci.Hierarchy(compass_session)
-people = ci.People(compass_session)
+api = ci.login("username", "password")
 
 # Get all unique members from your hierarchy
-member_set = hierarchy.get_unique_members()
-
-
+member_set = api.hierarchy.get_unique_members()
 ```
 
 ### Specifying a role
@@ -93,7 +87,7 @@ import compass.core as ci
 ci.logger.enable_debug_logging()
 
 # Login to Compass
-compass_session = ci.login("username", "password", role="role_as_on_compass")
+api = ci.login("username", "password", role="role_as_on_compass")
 ```
 
 The string passed to the `role` argument must match the role title on Compass
@@ -113,7 +107,7 @@ import compass.core as ci
 ci.logger.enable_debug_logging()
 
 # Login to Compass
-compass_session = ci.login("username", "password", role="role_as_on_compass", location="location_as_on_compass")
+api = ci.login("username", "password", role="role_as_on_compass", location="location_as_on_compass")
 ```
 
 As with the role title, the location needs to match the text in the `Location` 
