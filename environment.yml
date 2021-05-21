@@ -13,7 +13,7 @@ dependencies:
   - lxml
 
   # Type validation
-  - pydantic
+  - pydantic>=1.8.2
   - email-validator
 #  - phonenumberslite  # not on conda (2021-03-20)
 
