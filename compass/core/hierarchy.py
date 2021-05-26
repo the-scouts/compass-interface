@@ -56,7 +56,7 @@ class Hierarchy:
     def unit_data(
         self,
         unit_id: Optional[int] = None,
-        level: Optional[schema.TYPES_UNIT_LEVELS] = None,
+        level: Optional[schema.TYPES_HIERARCHY_LEVELS] = None,
         use_default: bool = False,
         recurse_children: bool = True,
     ) -> schema.UnitData:
@@ -94,7 +94,7 @@ class Hierarchy:
     def unique_members(
         self,
         unit_id: Optional[int] = None,
-        level: Optional[schema.TYPES_UNIT_LEVELS] = None,
+        level: Optional[schema.TYPES_HIERARCHY_LEVELS] = None,
         use_default: bool = False,
         recurse_children: bool = True,
     ) -> set[int]:
@@ -149,6 +149,9 @@ class Hierarchy:
 
 
 def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel, recurse_children: bool) -> dict[str, object]:
+    # short-circuit if level type is a section hierarchy type
+    if unit_meta.level not in Levels.__members__:
+        return {"unit_id": unit_meta.unit_id, "level": unit_meta.level, "child": [], "sections": []}
     try:
         level = Levels[unit_meta.level]
     except KeyError:
