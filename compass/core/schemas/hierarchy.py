@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import pydantic
 
@@ -15,6 +15,8 @@ TYPES_SECTION = Literal[
     "Other",
 ]
 TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
+TYPES_SECTION_LEVELS = Literal["Group Section", "District Section", "County Section", "Region Section", "Country Section", "Organisation Section"]
+TYPES_HIERARCHY_LEVELS = Union[TYPES_UNIT_LEVELS, TYPES_SECTION_LEVELS]
 
 
 class HierarchyBase(pydantic.BaseModel):
@@ -31,7 +33,7 @@ class HierarchySection(HierarchyUnit):
 
 
 class HierarchyLevel(HierarchyBase):
-    level: TYPES_UNIT_LEVELS
+    level: TYPES_HIERARCHY_LEVELS
 
 
 class UnitData(HierarchyLevel):
