@@ -31,6 +31,12 @@ TYPE_LEVEL_META = tuple[TYPES_NULLABLE_UNIT_LEVEL, scraper.TYPES_ENDPOINT_LEVELS
 
 
 class Levels(TYPE_LEVEL_META, enum.Enum):
+    """Holds unit level metadata.
+
+    Keys are from `schema.TYPES_UNIT_LEVELS`
+    Values are a three-tuple of child level, unit level endpoint, and unit
+    level section endpoint.
+    """
     Group = None, None, "group_sections"
     District = "Group", "groups", "district_sections"
     County = "District", "districts", "county_sections"
