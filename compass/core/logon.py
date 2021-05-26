@@ -9,7 +9,7 @@ from lxml import html
 from compass.core import errors
 from compass.core import schemas
 from compass.core.logger import logger
-from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
+from compass.core.schemas.hierarchy import TYPES_HIERARCHY_LEVELS
 import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
 from compass.core.util import auth_header
@@ -21,22 +21,22 @@ if TYPE_CHECKING:
 TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
 TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
-TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_UNIT_LEVELS]
+TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_HIERARCHY_LEVELS]
 level_map: TYPES_LEVEL_MAP = cast(
     TYPES_LEVEL_MAP,
     {
         "ORG": "Organisation",
-        # "ORST": "Organisation Sections",
+        "ORST": "Organisation Section",
         "CNTR": "Country",
-        # "CNST": "Country Sections",
+        "CNST": "Country Section",
         "REG": "Region",
-        # "RGST": "Regional Sections",
+        "RGST": "Regional Section",
         "CNTY": "County",  # Also Area/Scot Reg/Branch
-        # "CTST": "County Sections",  # Also Area/Scot Reg/Branch
+        "CTST": "County Section",  # Also Area/Scot Reg/Branch
         "DIST": "District",
-        # "DTST": "District Sections",
+        "DTST": "District Section",
         "SGRP": "Group",
-        # "SGST": "Group Sections",
+        "SGST": "Group Section",
     },
 )
 
