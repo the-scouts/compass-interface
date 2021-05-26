@@ -37,6 +37,7 @@ class Levels(TYPE_LEVEL_META, enum.Enum):
     Values are a three-tuple of child level, unit level endpoint, and unit
     level section endpoint.
     """
+
     Group = None, None, "group_sections"
     District = "Group", "groups", "district_sections"
     County = "District", "districts", "county_sections"
