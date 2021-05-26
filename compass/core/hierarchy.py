@@ -87,7 +87,7 @@ class Hierarchy:
         elif unit_id is not None and level is not None:
             unit_meta = schema.HierarchyLevel(unit_id=unit_id, level=level)
         else:
-            raise errors.CompassError("No level data specified! Either `use_default` or `unit_id` and `level` must be set!")
+            raise errors.CompassError("No level data specified! Either `use_default` or both `unit_id` and `level` must be set!")
         # Fetch the hierarchy
         return schema.UnitData.parse_obj(_get_descendants_level(self.client, unit_meta, recurse_children))
 
