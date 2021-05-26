@@ -71,7 +71,7 @@ ci.logger.enable_debug_logging()
 api = ci.login("username", "password")
 
 # Get all unique members from your hierarchy
-member_set = api.hierarchy.get_unique_members()
+member_set = api.hierarchy.unique_members()
 ```
 
 ### Specifying a role
