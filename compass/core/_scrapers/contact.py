@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import json
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from compass.core.schemas import member as schema
 from compass.core.settings import Settings
@@ -187,3 +188,39 @@ def _process_misc_sections(entries: list[str]) -> dict[str, str]:
         field, _, optional_detail = entry.partition(" - ")
         out[field] = optional_detail
     return out
+
+
+def get_contact_roles(client: Client, membership_number: int, /) -> schema.MemberRolesCollection:
+    response = client.post(f"{Settings.base_url}/Contact/Roles", json={"ContactNumber": f"{membership_number}"})
+    data = json.loads(response.content.decode("utf-8"))
+
+    roles_dates = []
+    roles_data = {}
+    for role_dict in data:
+        role_details = schema.MemberRoleCore(
+            role_number=role_dict["member_role_number"],
+            membership_number=membership_number,
+            role_title=role_dict["Role_Desc"],
+            role_class=role_dict["class_desc"],
+            role_type=role_dict["base_role_description"],
+            location_id=role_dict["organisation_number"],
+            location_name=role_dict["location"].strip(),
+            role_start=_parse_iso_date(role_dict["start_date"]),  # type: ignore[arg-type]
+            role_end=role_dict["end_Date"],  # None  # this API seems to only return open roles
+            role_status=role_dict["status_desc"].split(" (")[0],  # TODO text processing
+            review_date=_parse_iso_date(role_dict["review_date"]),
+            can_view_details=False,  # TODO implement this
+        )
+        status_code = role_dict["status"]
+
+        roles_data[role_details.role_number] = role_details
+
+    primary_role = data[0]["member_role_number"] if data else None
+    return schema.MemberRolesCollection(roles=roles_data, membership_duration=0.0, primary_role=primary_role)
+
+
+def _parse_iso_date(date_str: Optional[str]) -> Optional[datetime.date]:
+    """Parses ISO 8601 datetime. Values might be None from the API."""
+    if date_str is None:
+        return None
+    return datetime.datetime.fromisoformat(date_str).date()
