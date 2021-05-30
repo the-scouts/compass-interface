@@ -194,7 +194,6 @@ def get_contact_roles(client: Client, membership_number: int, /) -> schema.Membe
     response = client.post(f"{Settings.base_url}/Contact/Roles", json={"ContactNumber": f"{membership_number}"})
     data = json.loads(response.content.decode("utf-8"))
 
-    roles_dates = []
     roles_data = {}
     for role_dict in data:
         role_details = schema.MemberRoleCore(
@@ -205,7 +204,7 @@ def get_contact_roles(client: Client, membership_number: int, /) -> schema.Membe
             role_type=role_dict["base_role_description"],
             location_id=role_dict["organisation_number"],
             location_name=role_dict["location"].strip(),
-            role_start=_parse_iso_date(role_dict["start_date"]),  # type: ignore[arg-type]
+            role_start=_parse_iso_date(role_dict["start_date"]),
             role_end=role_dict["end_Date"],  # None  # this API seems to only return open roles
             role_status=role_dict["status_desc"].split(" (")[0],  # TODO text processing
             review_date=_parse_iso_date(role_dict["review_date"]),
@@ -216,7 +215,9 @@ def get_contact_roles(client: Client, membership_number: int, /) -> schema.Membe
         roles_data[role_details.role_number] = role_details
 
     primary_role = data[0]["member_role_number"] if data else None
-    return schema.MemberRolesCollection(roles=roles_data, membership_duration=0.0, primary_role=primary_role)
+    # We can't reliably calculate membership duration as only full roles seem
+    # to be returned by the API here. So use magic value of -1 to signal this
+    return schema.MemberRolesCollection(roles=roles_data, membership_duration=-1.0, primary_role=primary_role)
 
 
 def _parse_iso_date(date_str: Optional[str]) -> Optional[datetime.date]:
