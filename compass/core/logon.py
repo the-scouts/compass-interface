@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 _TYPES_STO = Literal[None, "0", "5", "X"]
-TYPES_ROLE = tuple[str, str]
-_TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
+_TYPES_ROLES_DICT = dict[int, schema.TYPES_ROLE]
 _TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_HIERARCHY_LEVELS]
 _level_map: _TYPES_LEVEL_MAP = cast(
     _TYPES_LEVEL_MAP,
@@ -68,7 +67,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         *,
         client: Client,
         compass_props: schema.CompassProps,
-        current_role: TYPES_ROLE,
+        current_role: schema.TYPES_ROLE,
     ):
         """Constructor for Logon.
 
@@ -80,7 +79,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         self._client: Final[Client] = client
 
         self.compass_props: Final[schema.CompassProps] = compass_props
-        self.current_role: Final[TYPES_ROLE] = current_role
+        self.current_role: Final[schema.TYPES_ROLE] = current_role
         user_props = compass_props.master.user
 
         # Default hierarchy level
@@ -148,7 +147,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def from_session(
-        cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], session_id: str, current_role: TYPES_ROLE
+        cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], session_id: str, current_role: schema.TYPES_ROLE
     ) -> Logon:
         """Initialise a Logon object with stored data.
 
@@ -203,7 +202,7 @@ def _change_role(
     new_role: str,
     location: Optional[str] = None,
     roles_dict: Optional[_TYPES_ROLES_DICT] = None,
-) -> tuple[TYPES_ROLE, _TYPES_ROLES_DICT, schema.CompassProps]:
+) -> tuple[schema.TYPES_ROLE, _TYPES_ROLES_DICT, schema.CompassProps]:
     """Returns new Logon object with new role.
 
     If the user has multiple roles with the same role title, the first is used,
@@ -342,7 +341,7 @@ def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
     return schema.CompassProps(**compass_props)
 
 
-def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, TYPES_ROLE]]:
+def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, schema.TYPES_ROLE]]:
     """Generate role number to role name mapping."""
     roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
     for row in roles_rows:

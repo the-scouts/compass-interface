@@ -7,6 +7,7 @@ import pydantic
 
 TYPES_CRUD_STRING = pydantic.constr(regex=r"^[CRUD]{0,4}$")
 TYPES_ORG_LEVELS = Literal["ORG", "ORST", "CNTR", "CNST", "REG", "RGST", "CNTY", "CTST", "DIST", "DTST", "SGRP", "SGST"]
+TYPES_ROLE = tuple[str, str]
 
 
 class CompassPropsBase(pydantic.BaseModel):
