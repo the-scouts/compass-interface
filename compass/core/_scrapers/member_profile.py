@@ -32,13 +32,12 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import get_args, Literal, Optional, TYPE_CHECKING, Union
+from typing import Literal, Optional, TYPE_CHECKING, Union
 
 from lxml import html
 
-from compass.core import errors
+import compass.core as ci
 from compass.core.logger import logger
-from compass.core.schemas import member as schema
 from compass.core.settings import Settings
 from compass.core.util import cache_hooks
 from compass.core.util.context_managers import validation_errors_logging
@@ -60,11 +59,11 @@ if TYPE_CHECKING:
 # _get_member_profile_tab
 MEMBER_PROFILE_TAB_TYPES = Literal[
     "Personal", "Roles", "Permits", "Training", "Awards", "Emergency", "Comms", "Visibility", "Disclosures"
-]
-TABS = {tab.upper() for tab in get_args(MEMBER_PROFILE_TAB_TYPES)}
+]  # sync with below
+TABS = {"PERSONAL", "ROLES", "PERMITS", "TRAINING", "AWARDS", "EMERGENCY", "COMMS", "VISIBILITY", "DISCLOSURES"}  # sync with above
 
 # get_roles_tab
-ROLE_STATUSES = set(get_args(schema.TYPES_ROLE_STATUS))
+ROLE_STATUSES = {"Cancelled", "Closed", "Full", "Pre provisional", "Provisional"}  # sync with schemas/member.py::TYPES_ROLE_STATUS
 NON_VOLUNTEER_TITLES = {
     # occasional helper roles:
     "group occasional helper",
@@ -139,17 +138,17 @@ def _get_member_profile_tab(client: Client, membership_number: int, profile_tab:
     if tab_upper in TABS:
         url += f"&Page={tab_upper}&TAB"
     elif tab_upper != "PERSONAL":  # Personal tab has no key so is a special case
-        raise errors.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {TABS}")
+        raise ci.CompassError(f"Specified member profile tab {profile_tab} is invalid. Allowed values are {TABS}")
 
     response = client.get(url).content
     tree = html.fromstring(response)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=AccessCN":
-        raise errors.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
+        raise ci.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
     return tree
 
 
 @cache_hooks.cache_result(key=("personal", 1))
-def get_personal_tab(client: Client, membership_number: int, /) -> schema.MemberDetails:
+def get_personal_tab(client: Client, membership_number: int, /) -> ci.MemberDetails:
     """Returns data from Personal Details tab for a given member.
 
     Args:
@@ -190,7 +189,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
 
     """
     tree = _get_member_profile_tab(client, membership_number, "Personal")
-    details: dict[str, Union[None, int, str, datetime.date, schema.AddressData, dict[str, str]]] = dict()
+    details: dict[str, Union[None, int, str, datetime.date, ci.AddressData, dict[str, str]]] = dict()
 
     # ### Extractors
     # ## Core:
@@ -240,10 +239,10 @@ def get_personal_tab(client: Client, membership_number: int, /) -> schema.Member
     details = {k: v for k, v in details.items() if v}
 
     with validation_errors_logging(membership_number):
-        return schema.MemberDetails.parse_obj(details)
+        return ci.MemberDetails.parse_obj(details)
 
 
-def _process_address(address: str) -> schema.AddressData:
+def _process_address(address: str) -> ci.AddressData:
     if "UK" in address:
         addr_main, addr_code = address.rsplit(". ", 1)
         postcode, country = addr_code.rsplit(" ", 1)  # Split Postcode & Country
@@ -281,7 +280,7 @@ def get_roles_tab(
     membership_number: int,
     /,
     only_volunteer_roles: bool = True,
-) -> schema.MemberRolesCollection:
+) -> ci.MemberRolesCollection:
     """Returns data from Roles tab for a given member.
 
     Parses the data to a common format, and removes Occasional Helper, PVG,
@@ -352,7 +351,7 @@ def get_roles_tab(
         # process role status & review date string
         role_status, review_date = _extract_review_date(cells[5].text_content().strip())
 
-        role_details = schema.MemberRoleCore(
+        role_details = ci.MemberRoleCore(
             role_number=int(row.get("data-pk")),
             membership_number=membership_number,
             role_title=role_title,
@@ -380,7 +379,7 @@ def get_roles_tab(
 
     with validation_errors_logging(membership_number):
         # Calculate days of membership (inclusive), normalise to years.
-        return schema.MemberRolesCollection(
+        return ci.MemberRolesCollection(
             roles=roles_data,
             membership_duration=_membership_duration(roles_dates),
             primary_role=primary_role,
@@ -395,14 +394,14 @@ def _extract_primary_role(role_title: str, primary_role: Union[int, None]) -> tu
     return role_title, primary_role
 
 
-def _extract_review_date(review_status: str) -> tuple[schema.TYPES_ROLE_STATUS, Optional[datetime.date]]:
+def _extract_review_date(review_status: str) -> tuple[ci.TYPES_ROLE_STATUS, Optional[datetime.date]]:
     if review_status.startswith("Full Review Due ") or review_status.startswith("Full Ending "):
         role_status: Literal["Full"] = "Full"
         review_date = parse_date(review_status.removeprefix("Full Review Due ").removeprefix("Full Ending "))
         return role_status, review_date
     if review_status in ROLE_STATUSES:
         return review_status, None  # type: ignore[return-value]  # str -> Literal type narrowing doesn't seem to work?
-    raise errors.CompassError(f"Invalid value for review status '{review_status}'!")
+    raise ci.CompassError(f"Invalid value for review status '{review_status}'!")
 
 
 def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
@@ -471,7 +470,7 @@ def _reduce_date_list(dates: Iterable[tuple[datetime.date, datetime.date]]) -> I
 
 
 @cache_hooks.cache_result(key=("permits", 1))
-def get_permits_tab(client: Client, membership_number: int, /) -> list[schema.MemberPermit]:
+def get_permits_tab(client: Client, membership_number: int, /) -> list[ci.MemberPermit]:
     """Returns data from Permits tab for a given member.
 
     If a permit has been revoked, the expires value is None and the status is PERM_REV
@@ -499,7 +498,7 @@ def get_permits_tab(client: Client, membership_number: int, /) -> list[schema.Me
             child_nodes = list(row)
             expires = child_nodes[5].text_content()
             permits.append(
-                schema.MemberPermit(
+                ci.MemberPermit(
                     membership_number=membership_number,
                     permit_type=child_nodes[1].text_content(),
                     category=child_nodes[2].text_content(),
@@ -513,7 +512,7 @@ def get_permits_tab(client: Client, membership_number: int, /) -> list[schema.Me
 
 
 @cache_hooks.cache_result(key=("training", 1))
-def get_training_tab(client: Client, membership_number: int, /) -> schema.MemberTrainingTab:
+def get_training_tab(client: Client, membership_number: int, /) -> ci.MemberTrainingTab:
     """Returns data from Training tab for a given member.
 
     Args:
@@ -578,7 +577,7 @@ def get_training_tab(client: Client, membership_number: int, /) -> schema.Member
 
     details = {"roles": training_roles, "plps": training_plps, "mandatory": _compile_ongoing_learning(training_plps, tree)}
     with validation_errors_logging(membership_number):
-        return schema.MemberTrainingTab.parse_obj(details)
+        return ci.MemberTrainingTab.parse_obj(details)
 
 
 def _process_personal_learning_plan(plp: html.HtmlElement) -> tuple[int, list[TYPES_TRAINING_MODULE]]:
@@ -666,7 +665,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
     Returns:
         A map of ogl type -> dates. Data returned here as native types (dicts),
-        see schema.MemberMandatoryTraining for full model.
+        see ci.MemberMandatoryTraining for full model.
 
     """
     # Handle GDPR (Get latest GDPR date)
@@ -694,7 +693,7 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
 
 @cache_hooks.cache_result(key=("awards", 1))
-def get_awards_tab(client: Client, membership_number: int, /) -> list[schema.MemberAward]:
+def get_awards_tab(client: Client, membership_number: int, /) -> list[ci.MemberAward]:
     """Returns data from Awards tab for a given member.
 
     Args:
@@ -725,7 +724,7 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[schema.Mem
         for row in rows:
             award_props = row[1][0]  # Properties are stored as yet another sub-table
             awards.append(
-                schema.MemberAward(
+                ci.MemberAward(
                     membership_number=membership_number,
                     type=award_props[0][1].text_content(),
                     location=award_props[1][1].text_content() or None,
@@ -736,7 +735,7 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[schema.Mem
 
 
 @cache_hooks.cache_result(key=("disclosures", 1))
-def get_disclosures_tab(client: Client, membership_number: int, /) -> list[schema.MemberDisclosure]:
+def get_disclosures_tab(client: Client, membership_number: int, /) -> list[ci.MemberDisclosure]:
     """Returns data from Disclosures tab for a given member.
 
     Args:
@@ -774,7 +773,7 @@ def get_disclosures_tab(client: Client, membership_number: int, /) -> list[schem
             cells = list(row)
 
             disclosures.append(
-                schema.MemberDisclosure(
+                ci.MemberDisclosure(
                     membership_number=membership_number,
                     country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
                     provider=cells[1].text_content(),
