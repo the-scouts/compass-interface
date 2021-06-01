@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, cast, Final, Literal, Optional, TYPE_CHECKING, Union
+from typing import Any, Final, Literal, Optional, TYPE_CHECKING, Union
 import urllib.parse
 
 from lxml import html
 
-from compass.core import errors
-from compass.core import schemas
+import compass.core as ci
 from compass.core.logger import logger
-from compass.core.schemas import logon as schema
-from compass.core.schemas.hierarchy import TYPES_HIERARCHY_LEVELS
 from compass.core.settings import Settings
 from compass.core.util import auth_header
 from compass.core.util.client import Client
@@ -18,26 +15,24 @@ from compass.core.util.client import Client
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-_TYPES_STO = Literal[None, "0", "5", "X"]
-_TYPES_ROLES_DICT = dict[int, schema.TYPES_ROLE]
-_TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_HIERARCHY_LEVELS]
-_level_map: _TYPES_LEVEL_MAP = cast(
-    _TYPES_LEVEL_MAP,
-    {
-        "ORG": "Organisation",
-        "ORST": "Organisation Section",
-        "CNTR": "Country",
-        "CNST": "Country Section",
-        "REG": "Region",
-        "RGST": "Regional Section",
-        "CNTY": "County",  # Also Area/Scot Reg/Branch
-        "CTST": "County Section",  # Also Area/Scot Reg/Branch
-        "DIST": "District",
-        "DTST": "District Section",
-        "SGRP": "Group",
-        "SGST": "Group Section",
-    },
-)
+    _TYPES_STO = Literal[None, "0", "5", "X"]
+    _TYPES_ROLES_DICT = dict[int, ci.TYPES_ROLE]
+    _TYPES_LEVEL_MAP = dict[ci.TYPES_ORG_LEVELS, ci.TYPES_HIERARCHY_LEVELS]
+
+_level_map: _TYPES_LEVEL_MAP = {
+    "ORG": "Organisation",
+    "ORST": "Organisation Section",
+    "CNTR": "Country",
+    "CNST": "Country Section",
+    "REG": "Region",
+    "RGST": "Regional Section",
+    "CNTY": "County",  # Also Area/Scot Reg/Branch
+    "CTST": "County Section",  # Also Area/Scot Reg/Branch
+    "DIST": "District",
+    "DTST": "District Section",
+    "SGRP": "Group",
+    "SGST": "Group Section",
+}
 
 
 class Logon:  # pylint: disable=too-many-instance-attributes
@@ -66,8 +61,8 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         self,
         *,
         client: Client,
-        compass_props: schema.CompassProps,
-        current_role: schema.TYPES_ROLE,
+        compass_props: ci.CompassProps,
+        current_role: ci.TYPES_ROLE,
     ):
         """Constructor for Logon.
 
@@ -78,20 +73,20 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         """
         self._client: Final[Client] = client
 
-        self.compass_props: Final[schema.CompassProps] = compass_props
-        self.current_role: Final[schema.TYPES_ROLE] = current_role
+        self.compass_props: Final[ci.CompassProps] = compass_props
+        self.current_role: Final[ci.TYPES_ROLE] = current_role
         user_props = compass_props.master.user
 
         # Default hierarchy level
         unit_number = user_props.on  # Organisation Number
         unit_level = user_props.lvl  # Level
         if unit_number is None or unit_level is None:
-            raise errors.CompassError("Unit Number and Level must be specified!")
-        self.hierarchy: Final = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=_level_map[unit_level])
+            raise ci.CompassError("Unit Number and Level must be specified!")
+        self.hierarchy: Final = ci.HierarchyLevel(unit_id=unit_number, level=_level_map[unit_level])
 
         # User / role IDs
         if user_props.cn is None or user_props.mrn is None or user_props.jk is None:
-            raise errors.CompassError("User IDs must be specified!")
+            raise ci.CompassError("User IDs must be specified!")
         self.membership_number: Final[int] = user_props.cn
         self.role_number: Final[int] = user_props.mrn
         self._jk: Final[str] = user_props.jk  # ???? Key?  # Join Key??? SHA2-512
@@ -99,7 +94,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         # Session IDs
         self._asp_net_id: Final[str] = client.cookies["ASP.NET_SessionId"]
         if compass_props.master.sys.session_id is None:
-            raise errors.CompassError("ASP.NET ID must be specified!")
+            raise ci.CompassError("ASP.NET ID must be specified!")
         self._session_id: Final[str] = compass_props.master.sys.session_id
 
         # TODO session timeout logic
@@ -136,7 +131,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         props, roles = _logon_remote(client, credentials)
 
         if props.master.user.mrn is None:
-            raise errors.CompassError("Role Number must be an integer!")
+            raise ci.CompassError("Role Number must be an integer!")
 
         if role_to_use is not None:
             # Session contains updated auth headers from role change
@@ -147,7 +142,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def from_session(
-        cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], session_id: str, current_role: schema.TYPES_ROLE
+        cls: type[Logon], asp_net_id: str, user_props: dict[str, Union[str, int]], session_id: str, current_role: ci.TYPES_ROLE
     ) -> Logon:
         """Initialise a Logon object with stored data.
 
@@ -170,7 +165,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         logon = cls(
             client=client,
-            compass_props=schema.CompassProps.parse_obj({"master": {"user": dict(user_props), "sys": {"session_id": session_id}}}),
+            compass_props=ci.CompassProps.parse_obj({"master": {"user": dict(user_props), "sys": {"session_id": session_id}}}),
             current_role=current_role,
         )
 
@@ -202,7 +197,7 @@ def _change_role(
     new_role: str,
     location: Optional[str] = None,
     roles_dict: Optional[_TYPES_ROLES_DICT] = None,
-) -> tuple[schema.TYPES_ROLE, _TYPES_ROLES_DICT, schema.CompassProps]:
+) -> tuple[ci.TYPES_ROLE, _TYPES_ROLES_DICT, ci.CompassProps]:
     """Returns new Logon object with new role.
 
     If the user has multiple roles with the same role title, the first is used,
@@ -244,7 +239,7 @@ def _create_session() -> Client:
     Settings.total_requests += 1
 
     if not client.cookies:
-        raise errors.CompassError(
+        raise ci.CompassError(
             "Could not create a session with Compass. Please check that this programme can "
             "access Compass (including firewalls etc.) and that Compass is currently online. "
         )
@@ -252,7 +247,7 @@ def _create_session() -> Client:
     return client
 
 
-def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[schema.CompassProps, _TYPES_ROLES_DICT]:
+def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[ci.CompassProps, _TYPES_ROLES_DICT]:
     """Log in to Compass and confirm success."""
     # Referer is genuinely needed otherwise login doesn't work
     headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
@@ -274,7 +269,7 @@ def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[schema.Compass
     return props, roles
 
 
-def _check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, _TYPES_ROLES_DICT]:
+def _check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[ci.CompassProps, _TYPES_ROLES_DICT]:
     """Confirms success and updates authorisation."""
     # Test 'get' for an exemplar page that needs authorisation.
     portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
@@ -286,7 +281,7 @@ def _check_login(client: Client, check_role_number: Optional[int] = None) -> tup
     # Naive check for error, Compass redirects to an error page when something goes wrong
     # TODO what is the error page URL - what do we expect? From memory Error.aspx
     if response.url != portal_url:
-        raise errors.CompassAuthenticationError("Login has failed")
+        raise ci.CompassAuthenticationError("Login has failed")
 
     # Create lxml html.FormElement
     form = html.fromstring(response.content).forms[0]
@@ -297,7 +292,7 @@ def _check_login(client: Client, check_role_number: Optional[int] = None) -> tup
 
     master_props = compass_props.master
     if master_props.user.cn is None or master_props.user.mrn is None or master_props.sys.session_id is None:
-        raise errors.CompassError("Login verification failed! User and Session IDs not found!")
+        raise ci.CompassError("Login verification failed! User and Session IDs not found!")
     membership_number: int = master_props.user.cn
     role_number: int = master_props.user.mrn
     session_id: str = master_props.sys.session_id
@@ -314,12 +309,12 @@ def _check_login(client: Client, check_role_number: Optional[int] = None) -> tup
         logger.debug("Confirming role has been changed")
         # Check that the role has been changed to the desired role. If not, raise exception.
         if check_role_number != role_number:
-            raise errors.CompassAuthenticationError("Role failed to update in Compass")
+            raise ci.CompassAuthenticationError("Role failed to update in Compass")
 
     return compass_props, roles_dict
 
 
-def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
+def _create_compass_props(form_tree: html.FormElement) -> ci.CompassProps:
     """Create Compass info dict from FormElement."""
     compass_props: dict[str, Any] = {}
     compass_vars = form_tree.fields["ctl00$_POST_CTRL"]
@@ -338,10 +333,10 @@ def _create_compass_props(form_tree: html.FormElement) -> schema.CompassProps:
         if "HardTime" in props_sys:
             props_sys["HardTime"] = datetime.time.fromisoformat(props_sys["HardTime"].replace(".", ":"))
 
-    return schema.CompassProps(**compass_props)
+    return ci.CompassProps(**compass_props)
 
 
-def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, schema.TYPES_ROLE]]:
+def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, ci.TYPES_ROLE]]:
     """Generate role number to role name mapping."""
     roles_rows = form_tree.xpath("//tbody/tr")  # get roles from compass page (list of table rows (tr))
     for row in roles_rows:
