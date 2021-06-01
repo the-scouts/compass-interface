@@ -2,7 +2,7 @@ from typing import Any
 
 import requests
 
-from compass.core import errors
+import compass.core as ci
 from compass.core.settings import Settings
 
 
@@ -14,4 +14,4 @@ class Client(requests.Session):
         try:
             return super().request(*args, **kwargs)
         except requests.RequestException as err:
-            raise errors.CompassNetworkError("Network Error!") from err
+            raise ci.CompassNetworkError("Network Error!") from err
