@@ -113,7 +113,7 @@ class TestUtility:
         data = "abc"
 
         # Then
-        with pytest.raises(ValueError, match=f"time data '{data}' does not match format '%d %b %Y'"):
+        with pytest.raises(ValueError, match=f"Parsing string `{data}` into a date failed!"):
             # When
             type_coercion.parse_date(data)
 
