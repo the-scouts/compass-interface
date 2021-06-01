@@ -26,6 +26,7 @@ from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
 from compass.core.schemas.hierarchy import UnitData
 from compass.core.schemas.logon import CompassProps
 from compass.core.schemas.logon import TYPES_ROLE
+from compass.core.schemas.logon import TYPES_ORG_LEVELS
 from compass.core.schemas.member import MemberAward
 from compass.core.schemas.member import MemberDetails
 from compass.core.schemas.member import MemberDisclosure
@@ -75,6 +76,7 @@ __all__ = (
     "login",
     # public types
     "TYPES_HIERARCHY_LEVELS",
+    "TYPES_ORG_LEVELS",
     "TYPES_REPORTS",
     "TYPES_ROLE",
     "TYPES_UNIT_LEVELS",
