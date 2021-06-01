@@ -5,8 +5,7 @@ from typing import get_args, Literal, TYPE_CHECKING
 
 from lxml import html
 
-from compass.core import errors
-from compass.core.schemas import hierarchy as schema
+import compass.core as ci
 from compass.core.settings import Settings
 from compass.core.util.compass_helpers import compass_restify
 
@@ -43,7 +42,7 @@ section_type_map = {
 
 
 # see CompassClient::retrieveLevel or retrieveSections in PGS\Needle php
-def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[schema.HierarchyUnit]:
+def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDPOINT_LEVELS) -> list[ci.HierarchyUnit]:
     """Get all children of a given unit.
 
     If LiveData=Y is passed, the resulting JSON additionally contains:
@@ -86,7 +85,7 @@ def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDP
     level_endpoint = endpoints[level]
     # Are we requesting sections here?
     is_sections = "/sections" in level_endpoint
-    model_class = schema.HierarchySection if is_sections else schema.HierarchyUnit  # chose right model to use
+    model_class = ci.HierarchySection if is_sections else ci.HierarchyUnit  # chose right model to use
 
     # LiveData causes a ~75x slowdown for non-section data, and we only use LiveData for sections anyway
     json_data = ({"LiveData": "Y"} if is_sections else {}) | {"ParentID": f"{parent_unit}"}
@@ -95,7 +94,7 @@ def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDP
 
     # Handle unauthorised access
     if result_json == {"Message": "Authorization has been denied for this request."}:
-        raise errors.CompassPermissionError(f"You do not have permission for unit ID:{parent_unit}! E:{level} S:{is_sections}")
+        raise ci.CompassPermissionError(f"You do not have permission for unit ID:{parent_unit}! E:{level} S:{is_sections}")
 
     result_units = []
     for unit_dict in result_json:
@@ -116,7 +115,7 @@ def get_units_from_hierarchy(client: Client, parent_unit: int, level: TYPES_ENDP
 
 def get_members_with_roles_in_unit(
     client: Client, unit_number: int, include_name: bool = False, include_primary_role: bool = False
-) -> list[schema.HierarchyMember]:
+) -> list[ci.HierarchyMember]:
     """Get details of members with roles in a given unit.
 
     Keys within the member_data JSON are (as at 13/01/220):
@@ -170,7 +169,7 @@ def get_members_with_roles_in_unit(
 
     # If the search hasn't worked the form returns an InvalidSearchError
     if form.action == "./ScoutsPortal.aspx?Invalid=SearchError":
-        raise errors.CompassError("Invalid Search")
+        raise ci.CompassError("Invalid Search")
 
     # Get the encoded JSON data from the HTML
     member_data_string = form.fields["ctl00$plInnerPanel_head$txt_h_Data"] or "[]"
@@ -178,4 +177,4 @@ def get_members_with_roles_in_unit(
 
     # parse the data and return it as a usable Python object (list)
     member_data = json.loads(member_data_string)
-    return [schema.HierarchyMember(**{key: member[key] for key in keys_to_keep}) for member in member_data]
+    return [ci.HierarchyMember(**{key: member[key] for key in keys_to_keep}) for member in member_data]
