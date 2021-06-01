@@ -18,12 +18,12 @@ from compass.core.util.client import Client
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-TYPES_STO = Literal[None, "0", "5", "X"]
+_TYPES_STO = Literal[None, "0", "5", "X"]
 TYPES_ROLE = tuple[str, str]
-TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
-TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_HIERARCHY_LEVELS]
-level_map: TYPES_LEVEL_MAP = cast(
-    TYPES_LEVEL_MAP,
+_TYPES_ROLES_DICT = dict[int, TYPES_ROLE]
+_TYPES_LEVEL_MAP = dict[schema.TYPES_ORG_LEVELS, TYPES_HIERARCHY_LEVELS]
+_level_map: _TYPES_LEVEL_MAP = cast(
+    _TYPES_LEVEL_MAP,
     {
         "ORG": "Organisation",
         "ORST": "Organisation Section",
@@ -88,7 +88,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         unit_level = user_props.lvl  # Level
         if unit_number is None or unit_level is None:
             raise errors.CompassError("Unit Number and Level must be specified!")
-        self.hierarchy: Final = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=level_map[unit_level])
+        self.hierarchy: Final = schemas.hierarchy.HierarchyLevel(unit_id=unit_number, level=_level_map[unit_level])
 
         # User / role IDs
         if user_props.cn is None or user_props.mrn is None or user_props.jk is None:
@@ -183,7 +183,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         """String representation of the Logon class."""
         return f"{self.__class__} Compass ID: {self.membership_number} ({' - '.join(self.current_role)})"
 
-    def _extend_session_timeout(self, sto: TYPES_STO = "0") -> str:
+    def _extend_session_timeout(self, sto: _TYPES_STO = "0") -> str:
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
@@ -202,8 +202,8 @@ def _change_role(
     client: Client,
     new_role: str,
     location: Optional[str] = None,
-    roles_dict: Optional[TYPES_ROLES_DICT] = None,
-) -> tuple[TYPES_ROLE, TYPES_ROLES_DICT, schema.CompassProps]:
+    roles_dict: Optional[_TYPES_ROLES_DICT] = None,
+) -> tuple[TYPES_ROLE, _TYPES_ROLES_DICT, schema.CompassProps]:
     """Returns new Logon object with new role.
 
     If the user has multiple roles with the same role title, the first is used,
@@ -253,7 +253,7 @@ def _create_session() -> Client:
     return client
 
 
-def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
+def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[schema.CompassProps, _TYPES_ROLES_DICT]:
     """Log in to Compass and confirm success."""
     # Referer is genuinely needed otherwise login doesn't work
     headers = {"Referer": f"{Settings.base_url}/login/User/Login"}
@@ -275,7 +275,7 @@ def _logon_remote(client: Client, auth: tuple[str, str]) -> tuple[schema.Compass
     return props, roles
 
 
-def _check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, TYPES_ROLES_DICT]:
+def _check_login(client: Client, check_role_number: Optional[int] = None) -> tuple[schema.CompassProps, _TYPES_ROLES_DICT]:
     """Confirms success and updates authorisation."""
     # Test 'get' for an exemplar page that needs authorisation.
     portal_url = f"{Settings.base_url}/MemberProfile.aspx?Page=ROLES&TAB"
