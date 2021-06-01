@@ -9,7 +9,7 @@ import urllib.parse
 
 from lxml import html
 
-from compass.core import errors
+import compass.core as ci
 from compass.core.logger import logger
 from compass.core.settings import Settings
 from compass.core.util import auth_header
@@ -40,10 +40,10 @@ def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_numb
     if report_token_uri not in {"-1", "-2", "-3", "-4"}:
         return report_token_uri
     if report_token_uri in {"-2", "-3"}:
-        raise errors.CompassReportError("Report aborted: Report No Longer Available")
+        raise ci.CompassReportError("Report aborted: Report No Longer Available")
     if report_token_uri == "-4":  # nosec (false positive B105; not a hardcoded passwordstring)
-        raise errors.CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
-    raise errors.CompassReportError("Report aborted")
+        raise ci.CompassReportPermissionError("Report aborted: USER DOES NOT HAVE PERMISSION")
+    raise ci.CompassReportError("Report aborted")
 
 
 def get_report_export_url(report_page: str, filename: Optional[str] = None) -> tuple[str, dict[str, str]]:
@@ -119,7 +119,7 @@ def update_form_data(client: Client, report_page: bytes, run_report: str) -> Non
 
     # Check error state
     if "compass.scouts.org.uk%2fError.aspx|" in report.text:
-        raise errors.CompassReportError("Compass Error!")
+        raise ci.CompassReportError("Compass Error!")
 
 
 def report_keep_alive(client: Client, report_page: str) -> str:
