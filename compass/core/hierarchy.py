@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
 
 import compass.core as ci
@@ -24,25 +23,22 @@ if TYPE_CHECKING:
         district: int
         group: int
 
-
-_TYPES_NULLABLE_UNIT_LEVEL = Union[schema.TYPES_UNIT_LEVELS, None]
-_TYPE_LEVEL_META = tuple[_TYPES_NULLABLE_UNIT_LEVEL, scraper.TYPES_ENDPOINT_LEVELS, scraper.TYPES_ENDPOINT_LEVELS]
+    _TYPES_LEVEL = tuple[Optional[ci.TYPES_UNIT_LEVELS], Optional[scraper.TYPES_ENDPOINT_LEVELS], scraper.TYPES_ENDPOINT_LEVELS]
 
 
-class _Levels(_TYPE_LEVEL_META, enum.Enum):
-    """Holds unit level metadata.
-
-    Keys are from `schema.TYPES_UNIT_LEVELS`
-    Values are a three-tuple of child level, unit level endpoint, and unit
-    level section endpoint.
-    """
-
-    Group = None, None, "group_sections"
-    District = "Group", "groups", "district_sections"
-    County = "District", "districts", "county_sections"
-    Region = "County", "counties", "region_sections"
-    Country = "Region", "regions", "country_sections"
-    Organisation = "Country", "countries", "hq_sections"
+# Holds unit level metadata. Keys are from `schema.TYPES_UNIT_LEVELS`, values
+# are a three-tuple of child level, unit level endpoint, and unit  level
+# section endpoint.
+# Suppress PyCharm inspection (not great at literals)
+# noinspection PyTypeChecker
+_levels: dict[ci.TYPES_UNIT_LEVELS, _TYPES_LEVEL] = {
+    # "Group": (None, None, "group_sections"),
+    "District": ("Group", "groups", "district_sections"),
+    "County": ("District", "districts", "county_sections"),
+    "Region": ("County", "counties", "region_sections"),
+    "Country": ("Region", "regions", "country_sections"),
+    "Organisation": ("Country", "countries", "hq_sections"),
+}
 
 
 class Hierarchy:
@@ -150,30 +146,24 @@ class Hierarchy:
 
 def _get_descendants_level(client: Client, unit_meta: ci.HierarchyLevel, recurse_children: bool) -> dict[str, object]:
     # short-circuit if level type is a section hierarchy type
-    if unit_meta.level not in _Levels.__members__:
+    if unit_meta.level not in _levels:
         return {"unit_id": unit_meta.unit_id, "level": unit_meta.level, "child": [], "sections": []}
-    try:
-        level = _Levels[unit_meta.level]
-    except KeyError:
-        valid_levels = [level.name for level in _Levels]
-        raise ci.CompassError(f"Passed level: {unit_meta.level} is illegal. Valid values are {valid_levels}") from None
     if recurse_children:
-        return _get_descendants_recursive(client, unit_meta.unit_id, level)
-    return _get_descendants_immediate(client, unit_meta.unit_id, level)
+        return _get_descendants_recursive(client, unit_meta.unit_id, unit_meta.level)  # type: ignore[arg-type]
+    return _get_descendants_immediate(client, unit_meta.unit_id, unit_meta.level)  # type: ignore[arg-type]
 
 
 # See recurseRetrieve in PGS\Needle
-def _get_descendants_recursive(client: Client, unit_id: int, level: _Levels, /) -> dict[str, object]:
+def _get_descendants_recursive(client: Client, unit_id: int, level_name: ci.TYPES_UNIT_LEVELS, /) -> dict[str, object]:
     """Recursively get all children from given unit ID and level."""
     logger.debug(f"getting data for unit {unit_id}")
 
     # All to handle as Group doesn't have grand-children
-    unit_data = {"unit_id": unit_id, "level": level.name}
+    unit_data: dict[str, object] = {"unit_id": unit_id, "level": level_name}
 
     # Do child units exist? (i.e. is this level != group)
-    child_level_name, endpoint_children, endpoint_sections = level
-    if endpoint_children and child_level_name:
-        child_level = _Levels[child_level_name]  # initialise outside of loop
+    child_level, endpoint_children, endpoint_sections = _levels[level_name]
+    if endpoint_children and child_level:
         children = scraper.get_units_from_hierarchy(client, unit_id, endpoint_children)
         # extend children with grandchildren
         unit_data["child"] = [child.__dict__ | _get_descendants_recursive(client, child.unit_id, child_level) for child in children]
@@ -182,15 +172,15 @@ def _get_descendants_recursive(client: Client, unit_id: int, level: _Levels, /) 
     return unit_data
 
 
-def _get_descendants_immediate(client: Client, unit_id: int, level: _Levels, /) -> dict[str, object]:
+def _get_descendants_immediate(client: Client, unit_id: int, level_name: ci.TYPES_UNIT_LEVELS, /) -> dict[str, object]:
     """Recursively get all children from given unit ID and level."""
     logger.debug(f"getting data for unit {unit_id}")
 
     # All to handle as Group doesn't have grand-children
-    unit_data = {"unit_id": unit_id, "level": level.name}
+    unit_data: dict[str, object] = {"unit_id": unit_id, "level": level_name}
 
     # Do child units exist? (i.e. is this level != group)
-    child_level_name, endpoint_children, endpoint_sections = level
+    child_level_name, endpoint_children, endpoint_sections = _levels[level_name]
     if endpoint_children:
         blank_descendant_data: dict[str, object] = {"level": child_level_name, "child": None, "sections": []}
         children = scraper.get_units_from_hierarchy(client, unit_id, endpoint_children)

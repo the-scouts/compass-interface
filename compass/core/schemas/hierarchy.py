@@ -19,7 +19,7 @@ TYPES_SECTION_LEVELS = Literal[
     "Group Section",
     "District Section",
     "County Section",
-    "Region Section",
+    "Regional Section",
     "Country Section",
     "Organisation Section",
 ]
