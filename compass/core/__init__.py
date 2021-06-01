@@ -27,14 +27,17 @@ from compass.core.schemas.hierarchy import UnitData
 from compass.core.schemas.logon import CompassProps
 from compass.core.schemas.logon import TYPES_ORG_LEVELS
 from compass.core.schemas.logon import TYPES_ROLE
+from compass.core.schemas.member import AddressData
 from compass.core.schemas.member import MemberAward
 from compass.core.schemas.member import MemberDetails
 from compass.core.schemas.member import MemberDisclosure
 from compass.core.schemas.member import MemberMandatoryTraining
 from compass.core.schemas.member import MemberPermit
+from compass.core.schemas.member import MemberRoleCore
 from compass.core.schemas.member import MemberRolePopup
 from compass.core.schemas.member import MemberRolesCollection
 from compass.core.schemas.member import MemberTrainingTab
+from compass.core.schemas.member import TYPES_ROLE_STATUS
 from compass.core.settings import Settings
 
 
@@ -79,7 +82,9 @@ __all__ = (
     "TYPES_ORG_LEVELS",
     "TYPES_REPORTS",
     "TYPES_ROLE",
+    "TYPES_ROLE_STATUS",
     "TYPES_UNIT_LEVELS",
+    "AddressData",
     "CompassProps",
     "DescendantData",
     "HierarchyLevel",
@@ -91,6 +96,7 @@ __all__ = (
     "MemberDisclosure",
     "MemberMandatoryTraining",
     "MemberPermit",
+    "MemberRoleCore",
     "MemberRolePopup",
     "MemberRolesCollection",
     "MemberTrainingTab",

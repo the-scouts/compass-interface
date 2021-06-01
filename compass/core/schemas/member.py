@@ -7,6 +7,7 @@ import warnings
 import phonenumbers
 import pydantic
 
+# sync with _scrapers/member_profile.py::ROLE_STATUSES
 TYPES_ROLE_STATUS = Literal["Cancelled", "Closed", "Full", "Pre provisional", "Provisional"]
 TYPES_SEX = Literal["Male", "Female", "Unknown"]
 TYPES_ETHNICITY = Literal[
@@ -462,7 +463,7 @@ class MemberDisclosure(MemberBase):
     provider: TYPES_DISCLOSURE_PROVIDERS
     type: Literal["Enhanced with Barring"]
     # If Application Withdrawn, no disclosure number. If Scottish in the early 2000s, 7 digits ending with an R
-    number: Union[Optional[int], pydantic.constr(regex=r"^\d{7}R$")]  # type: ignore[valid-type]  # NoQA: F722
+    number: Union[int, None, pydantic.constr(regex=r"^\d{7}R$")]  # type: ignore[valid-type]  # NoQA: F722
     issuer: Optional[TYPES_DISCLOSURE_PROVIDERS]
     issue_date: Optional[datetime.date]  # If Application Withdrawn, maybe no issue date
     status: TYPES_DISCLOSURE_STATUSES
