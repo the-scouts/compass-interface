@@ -4,7 +4,7 @@ import datetime
 import json
 from typing import Optional, TYPE_CHECKING
 
-from compass.core.schemas import member as schema
+import compass.core as ci
 from compass.core.settings import Settings
 from compass.core.util.context_managers import validation_errors_logging
 from compass.core.util.type_coercion import parse_date
@@ -70,7 +70,7 @@ lookup_occupation = {
 }
 
 
-def get_contact_profile(client: Client, membership_number: int, /) -> schema.MemberDetails:
+def get_contact_profile(client: Client, membership_number: int, /) -> ci.MemberDetails:
     request_json = {"Source": "ADULT", "ContactNumber": f"{membership_number}"}
     response = client.post(f"{Settings.base_url}/Contact/Profile", json=request_json)
     # yes, double loading the JSON is deliberate. The serialisation from Compass is insane...
@@ -107,10 +107,10 @@ def get_contact_profile(client: Client, membership_number: int, /) -> schema.Mem
     details = {k: v for k, v in details.items() if v}
 
     with validation_errors_logging(membership_number):
-        return schema.MemberDetails.parse_obj(details)
+        return ci.MemberDetails.parse_obj(details)
 
 
-def _process_address(addresses_props: list[dict[str, str]]) -> schema.AddressData:
+def _process_address(addresses_props: list[dict[str, str]]) -> ci.AddressData:
     if not addresses_props:
         return {"unparsed_address": None, "country": None, "postcode": None, "county": None, "town": None, "street": None}
     address_props = addresses_props[0]
@@ -190,13 +190,13 @@ def _process_misc_sections(entries: list[str]) -> dict[str, str]:
     return out
 
 
-def get_contact_roles(client: Client, membership_number: int, /) -> schema.MemberRolesCollection:
+def get_contact_roles(client: Client, membership_number: int, /) -> ci.MemberRolesCollection:
     response = client.post(f"{Settings.base_url}/Contact/Roles", json={"ContactNumber": f"{membership_number}"})
     data = json.loads(response.content.decode("utf-8"))
 
     roles_data = {}
     for role_dict in data:
-        role_details = schema.MemberRoleCore(
+        role_details = ci.MemberRoleCore(
             role_number=role_dict["member_role_number"],
             membership_number=membership_number,
             role_title=role_dict["Role_Desc"],
@@ -217,7 +217,7 @@ def get_contact_roles(client: Client, membership_number: int, /) -> schema.Membe
     primary_role = data[0]["member_role_number"] if data else None
     # We can't reliably calculate membership duration as only full roles seem
     # to be returned by the API here. So use magic value of -1 to signal this
-    return schema.MemberRolesCollection(roles=roles_data, membership_duration=-1.0, primary_role=primary_role)
+    return ci.MemberRolesCollection(roles=roles_data, membership_duration=-1.0, primary_role=primary_role)
 
 
 def _parse_iso_date(date_str: Optional[str]) -> Optional[datetime.date]:
