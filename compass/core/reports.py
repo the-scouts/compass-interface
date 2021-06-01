@@ -1,11 +1,9 @@
 import datetime
-import enum
 from typing import Literal
 
-from compass.core import errors
+import compass.core as ci
 from compass.core._scrapers import reports as scraper
 from compass.core.logger import logger
-from compass.core.logon import Logon
 from compass.core.settings import Settings
 
 TYPES_REPORTS = Literal[
@@ -27,7 +25,7 @@ _report_types: dict[str, int] = {
 
 
 class Reports:
-    def __init__(self, session: Logon):
+    def __init__(self, session: ci.Logon):
         """Constructor for Reports."""
         self.auth_ids = session.membership_number, session.role_number, session._jk
         self.client = session._client
@@ -80,7 +78,7 @@ class Reports:
         """
         if report_type not in _report_types:
             types = [*_report_types.keys()]
-            raise errors.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
+            raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
 
         # Get token for report type & role running said report:
         run_report_url = scraper.get_report_token(self.client, self.auth_ids, _report_types[report_type])
