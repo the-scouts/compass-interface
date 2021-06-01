@@ -19,6 +19,7 @@ from compass.core.reports import TYPES_REPORTS
 from compass.core.schemas.hierarchy import DescendantData
 from compass.core.schemas.hierarchy import HierarchyLevel
 from compass.core.schemas.hierarchy import HierarchyMember
+from compass.core.schemas.hierarchy import HierarchySection
 from compass.core.schemas.hierarchy import HierarchyUnit
 from compass.core.schemas.hierarchy import HierarchyUnitMembers
 from compass.core.schemas.hierarchy import TYPES_HIERARCHY_LEVELS
@@ -89,6 +90,7 @@ __all__ = (
     "DescendantData",
     "HierarchyLevel",
     "HierarchyMember",
+    "HierarchySection",
     "HierarchyUnit",
     "HierarchyUnitMembers",
     "MemberAward",
