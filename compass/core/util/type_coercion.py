@@ -4,29 +4,29 @@ from typing import Any, Optional
 from compass.core import errors
 
 months_lookup = {
-    'january': 1,
-    'jan': 1,
-    'february': 2,
-    'feb': 2,
-    'march': 3,
-    'mar': 3,
-    'april': 4,
-    'apr': 4,
-    'may': 5,
-    'june': 6,
-    'jun': 6,
-    'july': 7,
-    'jul': 7,
-    'august': 8,
-    'aug': 8,
-    'september': 9,
-    'sep': 9,
-    'october': 10,
-    'oct': 10,
-    'november': 11,
-    'nov': 11,
-    'december': 12,
-    'dec': 12,
+    "january": 1,
+    "jan": 1,
+    "february": 2,
+    "feb": 2,
+    "march": 3,
+    "mar": 3,
+    "april": 4,
+    "apr": 4,
+    "may": 5,
+    "june": 6,
+    "jun": 6,
+    "july": 7,
+    "jul": 7,
+    "august": 8,
+    "aug": 8,
+    "september": 9,
+    "sep": 9,
+    "october": 10,
+    "oct": 10,
+    "november": 11,
+    "nov": 11,
+    "december": 12,
+    "dec": 12,
 }
 
 
@@ -39,7 +39,7 @@ def maybe_int(value: Any) -> Optional[int]:
 
 
 def parse_date(value: str) -> Optional[datetime.date]:
-    """Custom date parsing function
+    """Custom date parsing function.
 
     datetime.datetime.strptime works, this is 10x quicker
 
@@ -62,5 +62,5 @@ def parse_date(value: str) -> Optional[datetime.date]:
     try:
         day, month, year = value.split(" ", 2)
         return datetime.date(int(year), months_lookup[month.lower()], int(day))
-    except (KeyError, ValueError):
-        raise errors.CompassError(f"Parsing string `{value}` into a date failed!")
+    except (KeyError, ValueError) as err:
+        raise ValueError(f"Parsing string `{value}` into a date failed!") from err

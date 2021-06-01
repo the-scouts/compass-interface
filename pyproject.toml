@@ -27,10 +27,11 @@ testpaths = [
 
 # pylint configuration
 [tool.pylint]
-MASTER.persistent="n"  # pylint runs on CI, so no point saving
+MASTER.persistent=false  # pylint runs on CI, so no point saving
 MASTER.jobs=0  # auto-detect the number of processors to use
 DESIGN.max-statements=60
 FORMAT.max-line-length=132
+SIMILARITIES.ignore-imports=true
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = [

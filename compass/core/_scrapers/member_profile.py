@@ -327,8 +327,7 @@ def get_roles_tab(
     """
     logger.debug(f"getting roles tab for member number: {membership_number}")
 
-    tree = _get_member_profile_tab(client, membership_number, "Roles")
-    rows = tree.xpath("//tbody/tr")
+    rows = _get_member_profile_tab(client, membership_number, "Roles").xpath("//tbody/tr")
 
     primary_role = None
     roles_dates = []
