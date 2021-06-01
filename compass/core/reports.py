@@ -15,7 +15,7 @@ TYPES_REPORTS = Literal[
     "Region Disclosure Report",
     "Region Training Report",
     "Region Disclosure Management Report",
-]
+]  # TODO move to schema.reports if created
 _report_types: dict[str, int] = {
     "Region Member Directory": 37,
     "Region Appointments Report": 52,
