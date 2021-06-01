@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from compass.core.logon import Logon
     from compass.core.util.client import Client
 
-    class HierarchyState(TypedDict, total=False):
+    class _HierarchyState(TypedDict, total=False):
         unit_id: int
         name: Optional[str]
         # organisation: int  # Always 10000001; mildly redundant
@@ -26,11 +26,11 @@ if TYPE_CHECKING:
         group: int
 
 
-TYPES_NULLABLE_UNIT_LEVEL = Union[schema.TYPES_UNIT_LEVELS, None]
-TYPE_LEVEL_META = tuple[TYPES_NULLABLE_UNIT_LEVEL, scraper.TYPES_ENDPOINT_LEVELS, scraper.TYPES_ENDPOINT_LEVELS]
+_TYPES_NULLABLE_UNIT_LEVEL = Union[schema.TYPES_UNIT_LEVELS, None]
+_TYPE_LEVEL_META = tuple[_TYPES_NULLABLE_UNIT_LEVEL, scraper.TYPES_ENDPOINT_LEVELS, scraper.TYPES_ENDPOINT_LEVELS]
 
 
-class Levels(TYPE_LEVEL_META, enum.Enum):
+class _Levels(_TYPE_LEVEL_META, enum.Enum):
     """Holds unit level metadata.
 
     Keys are from `schema.TYPES_UNIT_LEVELS`
@@ -122,7 +122,7 @@ class Hierarchy:
         hierarchy_dict = self.unit_data(unit_id, level, use_default, recurse_children)
 
         # flatten tree
-        flat_hierarchy = flatten_hierarchy(hierarchy_dict)
+        flat_hierarchy = _flatten_hierarchy(hierarchy_dict)
 
         # generator for compass unit IDs
         compass_ids = (unit["unit_id"] for unit in flat_hierarchy)
@@ -151,12 +151,12 @@ class Hierarchy:
 
 def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel, recurse_children: bool) -> dict[str, object]:
     # short-circuit if level type is a section hierarchy type
-    if unit_meta.level not in Levels.__members__:
+    if unit_meta.level not in _Levels.__members__:
         return {"unit_id": unit_meta.unit_id, "level": unit_meta.level, "child": [], "sections": []}
     try:
-        level = Levels[unit_meta.level]
+        level = _Levels[unit_meta.level]
     except KeyError:
-        valid_levels = [level.name for level in Levels]
+        valid_levels = [level.name for level in _Levels]
         raise errors.CompassError(f"Passed level: {unit_meta.level} is illegal. Valid values are {valid_levels}") from None
     if recurse_children:
         return _get_descendants_recursive(client, unit_meta.unit_id, level)
@@ -164,7 +164,7 @@ def _get_descendants_level(client: Client, unit_meta: schema.HierarchyLevel, rec
 
 
 # See recurseRetrieve in PGS\Needle
-def _get_descendants_recursive(client: Client, unit_id: int, level: Levels, /) -> dict[str, object]:
+def _get_descendants_recursive(client: Client, unit_id: int, level: _Levels, /) -> dict[str, object]:
     """Recursively get all children from given unit ID and level."""
     logger.debug(f"getting data for unit {unit_id}")
 
@@ -174,7 +174,7 @@ def _get_descendants_recursive(client: Client, unit_id: int, level: Levels, /) -
     # Do child units exist? (i.e. is this level != group)
     child_level_name, endpoint_children, endpoint_sections = level
     if endpoint_children and child_level_name:
-        child_level = Levels[child_level_name]  # initialise outside of loop
+        child_level = _Levels[child_level_name]  # initialise outside of loop
         children = scraper.get_units_from_hierarchy(client, unit_id, endpoint_children)
         # extend children with grandchildren
         unit_data["child"] = [child.__dict__ | _get_descendants_recursive(client, child.unit_id, child_level) for child in children]
@@ -183,7 +183,7 @@ def _get_descendants_recursive(client: Client, unit_id: int, level: Levels, /) -
     return unit_data
 
 
-def _get_descendants_immediate(client: Client, unit_id: int, level: Levels, /) -> dict[str, object]:
+def _get_descendants_immediate(client: Client, unit_id: int, level: _Levels, /) -> dict[str, object]:
     """Recursively get all children from given unit ID and level."""
     logger.debug(f"getting data for unit {unit_id}")
 
@@ -200,7 +200,7 @@ def _get_descendants_immediate(client: Client, unit_id: int, level: Levels, /) -
     return unit_data
 
 
-def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[HierarchyState]:  # noqa: D417 (hanging indent)
+def _flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[_HierarchyState]:  # noqa: D417 (hanging indent)
     """Flattens a hierarchy tree / graph to a flat sequence of mappings.
 
     Args:
@@ -211,11 +211,11 @@ def flatten_hierarchy(hierarchy_dict: schema.UnitData) -> Iterator[HierarchyStat
     """
     # This args style is allowed, but not yet (2021-03-20) implemented in PyDocStyle, so D417 disabled above.
     # https://github.com/PyCQA/pydocstyle/issues/449
-    blank_state: HierarchyState = {}
+    blank_state: _HierarchyState = {}
     return _flatten(hierarchy_dict, blank_state)
 
 
-def _flatten(d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: HierarchyState) -> Iterator[HierarchyState]:
+def _flatten(d: Union[schema.UnitData, schema.DescendantData], hierarchy_state: _HierarchyState) -> Iterator[_HierarchyState]:
     """Generator expresion to recursively flatten hierarchy."""
     unit_id = d.unit_id
     level_data = hierarchy_state | {d.level.lower(): unit_id}  # type: ignore[operator]
