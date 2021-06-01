@@ -1,6 +1,6 @@
 import pytest
 
-from compass.core import errors
+import compass.core as ci
 
 
 class TestErrors:
@@ -9,45 +9,45 @@ class TestErrors:
         data = "message"
 
         # Then
-        with pytest.raises(errors.CompassError, match=data):
+        with pytest.raises(ci.CompassError, match=data):
             # When
-            raise errors.CompassError(data)
+            raise ci.CompassError(data)
 
     def test_compass_authentication_error(self):
         # Given
         data = "message"
 
         # Then
-        with pytest.raises(errors.CompassAuthenticationError, match=data):
+        with pytest.raises(ci.CompassAuthenticationError, match=data):
             # When
-            raise errors.CompassAuthenticationError(data)
+            raise ci.CompassAuthenticationError(data)
 
     def test_compass_permission_error(self):
         # Given
         data = "message"
 
         # Then
-        with pytest.raises(errors.CompassPermissionError, match=data):
+        with pytest.raises(ci.CompassPermissionError, match=data):
             # When
-            raise errors.CompassPermissionError(data)
+            raise ci.CompassPermissionError(data)
 
     def test_compass_report_error(self):
         # Given
         data = "message"
 
         # Then
-        with pytest.raises(errors.CompassReportError, match=data):
+        with pytest.raises(ci.CompassReportError, match=data):
             # When
-            raise errors.CompassReportError(data)
+            raise ci.CompassReportError(data)
 
     def test_compass_report_permission_error(self):
         # Given
         data = "message"
 
         # Then
-        with pytest.raises(errors.CompassReportPermissionError, match=data):
+        with pytest.raises(ci.CompassReportPermissionError, match=data):
             # When
-            raise errors.CompassReportPermissionError(data)
+            raise ci.CompassReportPermissionError(data)
 
     def test_compass_authentication_error_inheritance(self):
         # Given
@@ -55,9 +55,9 @@ class TestErrors:
 
         # When
         try:
-            raise errors.CompassAuthenticationError(data)
+            raise ci.CompassAuthenticationError(data)
         # Then
-        except errors.CompassError as err:
+        except ci.CompassError as err:
             assert str(err) == data
 
     def test_compass_permission_error_inheritance(self):
@@ -66,9 +66,9 @@ class TestErrors:
 
         # When
         try:
-            raise errors.CompassPermissionError(data)
+            raise ci.CompassPermissionError(data)
         # Then
-        except errors.CompassError as err:
+        except ci.CompassError as err:
             assert str(err) == data
 
     def test_compass_report_error_inheritance(self):
@@ -77,9 +77,9 @@ class TestErrors:
 
         # When
         try:
-            raise errors.CompassReportError(data)
+            raise ci.CompassReportError(data)
         # Then
-        except errors.CompassError as err:
+        except ci.CompassError as err:
             assert str(err) == data
 
     def test_compass_report_permission_error_inheritance(self):
@@ -90,21 +90,21 @@ class TestErrors:
 
         # When
         try:
-            raise errors.CompassReportPermissionError(data)
+            raise ci.CompassReportPermissionError(data)
         # Then
-        except errors.CompassReportError as err:
+        except ci.CompassReportError as err:
             assert str(err) == data
 
         # When
         try:
-            raise errors.CompassReportPermissionError(data)
+            raise ci.CompassReportPermissionError(data)
         # Then
-        except errors.CompassPermissionError as err:
+        except ci.CompassPermissionError as err:
             assert str(err) == data
 
         # When
         try:
-            raise errors.CompassReportPermissionError(data)
+            raise ci.CompassReportPermissionError(data)
         # Then
-        except errors.CompassError as err:
+        except ci.CompassError as err:
             assert str(err) == data

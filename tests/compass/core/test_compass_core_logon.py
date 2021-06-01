@@ -5,8 +5,18 @@ import pytest
 import requests
 
 from compass.core import logon
-from compass.core.errors import CompassError
-from compass.core.schemas import logon as schema
+import compass.core as ci
+from compass.core.schemas.logon import CompassPropsConst
+from compass.core.schemas.logon import CompassPropsConstSys
+from compass.core.schemas.logon import CompassPropsCRUD
+from compass.core.schemas.logon import CompassPropsMaster
+from compass.core.schemas.logon import CompassPropsMasterConst
+from compass.core.schemas.logon import CompassPropsMasterSSO
+from compass.core.schemas.logon import CompassPropsMasterSys
+from compass.core.schemas.logon import CompassPropsMasterUser
+from compass.core.schemas.logon import CompassPropsNav
+from compass.core.schemas.logon import CompassPropsPage
+from compass.core.schemas.logon import CompassPropsUser
 from compass.core.settings import Settings
 from compass.core.util.client import Client
 
@@ -34,7 +44,7 @@ class TestLogon:
         Settings.base_url = f"{base_url}/_testing/no-cookie"
 
         # Then
-        with pytest.raises(CompassError, match="Could not create a session with Compass"):
+        with pytest.raises(ci.CompassError, match="Could not create a session with Compass"):
             # When
             logon._create_session()
 
@@ -46,7 +56,7 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        monkeypatch.setattr(logon, "_check_login", lambda _client: (schema.CompassProps(), {}))
+        monkeypatch.setattr(logon, "_check_login", lambda _client: (ci.CompassProps(), {}))
         _props, _roles = logon._logon_remote(client, ("username", "password"))
 
         # Then
@@ -60,7 +70,7 @@ class TestLogon:
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
 
         # When
-        monkeypatch.setattr(logon, "_check_login", lambda _client: (schema.CompassProps(), {}))
+        monkeypatch.setattr(logon, "_check_login", lambda _client: (ci.CompassProps(), {}))
         _props, _roles = logon._logon_remote(client, ("wrong", "credentials"))
 
         # Then
@@ -76,9 +86,9 @@ class TestLogon:
         props, roles = logon._check_login(client)
 
         # Then
-        expected_props = schema.CompassProps(
-            nav=schema.CompassPropsNav(action="None", start_no=-1, start_page=3),
-            page=schema.CompassPropsPage(
+        expected_props = ci.CompassProps(
+            nav=CompassPropsNav(action="None", start_no=-1, start_page=3),
+            page=CompassPropsPage(
                 use_cn=10000000,
                 hide_badges=True,
                 croc="OK",
@@ -86,19 +96,19 @@ class TestLogon:
                 can_delete_ogl_hrs=False,
                 fold_name="MP_",
             ),
-            crud=schema.CompassPropsCRUD(mdis="R", roles="R", pemd="R", mmmd="R", mvid="R", perm="R", trn="CRD"),
-            user=schema.CompassPropsUser(is_me=True),
-            master=schema.CompassPropsMaster(
-                sso=schema.CompassPropsMasterSSO(on=10000001),
-                user=schema.CompassPropsMasterUser(
+            crud=CompassPropsCRUD(mdis="R", roles="R", pemd="R", mmmd="R", mvid="R", perm="R", trn="CRD"),
+            user=CompassPropsUser(is_me=True),
+            master=CompassPropsMaster(
+                sso=CompassPropsMasterSSO(on=10000001),
+                user=CompassPropsMasterUser(
                     cn=10000000,
                     mrn=9000000,
                     on=10000001,
                     lvl="ORG",
                     jk="9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15",  # NoQA: E501
                 ),
-                const=schema.CompassPropsMasterConst(wales=10000007, scotland=10000005, over_seas=10000002, hq=10000001),
-                sys=schema.CompassPropsMasterSys(
+                const=CompassPropsMasterConst(wales=10000007, scotland=10000005, over_seas=10000002, hq=10000001),
+                sys=CompassPropsMasterSys(
                     session_id="d6c76537-1b6c-3910-c3d4-d21d4e6453a6",
                     safe_json=True,
                     web_path=pydantic.HttpUrl(
@@ -118,7 +128,7 @@ class TestLogon:
                     ping=300000,
                 ),
             ),
-            const=schema.CompassPropsConst(sys=schema.CompassPropsConstSys(sto=5, sto_ask=0)),
+            const=CompassPropsConst(sys=CompassPropsConstSys(sto=5, sto_ask=0)),
         )
 
         expected_roles = {
