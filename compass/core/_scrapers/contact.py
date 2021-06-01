@@ -204,13 +204,13 @@ def get_contact_roles(client: Client, membership_number: int, /) -> schema.Membe
             role_type=role_dict["base_role_description"],
             location_id=role_dict["organisation_number"],
             location_name=role_dict["location"].strip(),
-            role_start=_parse_iso_date(role_dict["start_date"]),
+            role_start=_parse_iso_date(role_dict["start_date"]),  # type: ignore[arg-type]
             role_end=role_dict["end_Date"],  # None  # this API seems to only return open roles
             role_status=role_dict["status_desc"].split(" (")[0],  # TODO text processing
             review_date=_parse_iso_date(role_dict["review_date"]),
             can_view_details=False,  # TODO implement this
         )
-        status_code = role_dict["status"]
+        # status_code = role_dict["status"]  # TODO work out code -> status map ("A" == "Full"?)
 
         roles_data[role_details.role_number] = role_details
 
