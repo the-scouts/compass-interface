@@ -5,9 +5,8 @@ from typing import Optional, TYPE_CHECKING, Union
 
 from lxml import html
 
-from compass.core import errors
+import compass.core as ci
 from compass.core.logger import logger
-from compass.core.schemas import member as schema
 from compass.core.settings import Settings
 from compass.core.util import cache_hooks
 from compass.core.util.context_managers import validation_errors_logging
@@ -53,7 +52,7 @@ references_codes = {
 
 # See getAppointment in PGS\Needle
 @cache_hooks.cache_result(key=("role_detail", 1))
-def get_roles_detail(client: Client, role_number: int, /) -> schema.MemberRolePopup:
+def get_roles_detail(client: Client, role_number: int, /) -> ci.MemberRolePopup:
     """Returns detailed data from a given role number.
 
     Args:
@@ -101,7 +100,7 @@ def get_roles_detail(client: Client, role_number: int, /) -> schema.MemberRolePo
     response = client.get(f"{Settings.base_url}/Popups/Profile/AssignNewRole.aspx?VIEW={role_number}")
     tree = html.fromstring(response.content)
     if tree.forms[0].action == "./ScoutsPortal.aspx?Invalid=Access":
-        raise errors.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
+        raise ci.CompassPermissionError(f"You do not have permission to the details of role {role_number}")
 
     inputs: dict[str, Union[html.InputElement, html.SelectElement]] = dict(tree.forms[0].inputs)
     fields: dict[str, str] = {k: v.value for k, v in inputs.items() if v.value is not None}
@@ -147,7 +146,7 @@ def get_roles_detail(client: Client, role_number: int, /) -> schema.MemberRolePo
     }
 
     with validation_errors_logging(role_number, name="Role Number"):
-        return schema.MemberRolePopup.parse_obj(full_details)
+        return ci.MemberRolePopup.parse_obj(full_details)
 
 
 def _extract_line_manager(line_manager_list: html.SelectElement) -> tuple[Optional[int], Optional[str]]:
