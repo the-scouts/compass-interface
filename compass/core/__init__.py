@@ -16,11 +16,13 @@ from compass.core.logon import Logon
 from compass.core.people import People
 from compass.core.reports import Reports
 from compass.core.reports import TYPES_REPORTS
+from compass.core.schemas.hierarchy import DescendantData
 from compass.core.schemas.hierarchy import HierarchyLevel
 from compass.core.schemas.hierarchy import HierarchyMember
 from compass.core.schemas.hierarchy import HierarchyUnit
 from compass.core.schemas.hierarchy import HierarchyUnitMembers
 from compass.core.schemas.hierarchy import TYPES_HIERARCHY_LEVELS
+from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
 from compass.core.schemas.hierarchy import UnitData
 from compass.core.schemas.logon import CompassProps
 from compass.core.schemas.logon import TYPES_ROLE
@@ -73,9 +75,11 @@ __all__ = (
     "login",
     # public types
     "TYPES_HIERARCHY_LEVELS",
-    "TYPES_ROLE",
     "TYPES_REPORTS",
+    "TYPES_ROLE",
+    "TYPES_UNIT_LEVELS",
     "CompassProps",
+    "DescendantData",
     "HierarchyLevel",
     "HierarchyMember",
     "HierarchyUnit",
