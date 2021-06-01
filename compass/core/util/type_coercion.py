@@ -52,7 +52,7 @@ def parse_date(value: str) -> Optional[datetime.date]:
         Parsed date object
 
     Raises:
-        CompassError: If given string is not in a recognised date format
+        ValueError: If given string is not in a recognised date format
 
     """
     if not value:
