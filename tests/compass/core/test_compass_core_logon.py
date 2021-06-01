@@ -6,7 +6,7 @@ import requests
 
 from compass.core import logon
 from compass.core.errors import CompassError
-import compass.core.schemas.logon as schema
+from compass.core.schemas import logon as schema
 from compass.core.settings import Settings
 from compass.core.util.client import Client
 

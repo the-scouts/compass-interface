@@ -9,8 +9,8 @@ from lxml import html
 from compass.core import errors
 from compass.core import schemas
 from compass.core.logger import logger
+from compass.core.schemas import logon as schema
 from compass.core.schemas.hierarchy import TYPES_HIERARCHY_LEVELS
-import compass.core.schemas.logon as schema
 from compass.core.settings import Settings
 from compass.core.util import auth_header
 from compass.core.util.client import Client
