@@ -1,8 +1,6 @@
 import datetime
 from typing import Any, Optional
 
-from compass.core import errors
-
 months_lookup = {
     "january": 1,
     "jan": 1,
