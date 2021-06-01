@@ -6,19 +6,18 @@ from compass.core._scrapers import member_profile
 from compass.core._scrapers import role_detail
 
 if TYPE_CHECKING:
-    from compass.core.logon import Logon
-    from compass.core.schemas import member as schema
+    import compass.core as ci
 
 # SCRAPER CLASS - 1-1 mapping with compass to minimise calls
 # MAIN CLASS - object/properties focused, with abstractions of actual calls
 
 
 class People:
-    def __init__(self, session: Logon):
+    def __init__(self, session: ci.Logon):
         """Constructor for People."""
         self.client = session._client
 
-    def personal(self, membership_number: int) -> schema.MemberDetails:
+    def personal(self, membership_number: int) -> ci.MemberDetails:
         """Gets personal tab data for a given member.
 
         Args:
@@ -44,7 +43,7 @@ class People:
         *,
         only_volunteer_roles: bool = True,
         only_active: bool = False,
-    ) -> schema.MemberRolesCollection:
+    ) -> ci.MemberRolesCollection:
         """Gets the data from the Role tab in Compass for the given member.
 
         Parses the data to a common format, and removes Occasional Helper, PVG,
@@ -80,7 +79,7 @@ class People:
         # don't mutate cached model
         return roles_data.__class__.parse_obj(roles_data.__dict__ | {"roles": filtered_roles})
 
-    def role_detail(self, role_number: int) -> schema.MemberRolePopup:
+    def role_detail(self, role_number: int) -> ci.MemberRolePopup:
         """Get detailed information for specified role.
 
          Make sure to check `MemberRoleCore.can_view_details` on each role, as
@@ -102,7 +101,7 @@ class People:
         """
         return role_detail.get_roles_detail(self.client, role_number)
 
-    def permits(self, membership_number: int) -> list[schema.MemberPermit]:
+    def permits(self, membership_number: int) -> list[ci.MemberPermit]:
         """Gets permits tab data for a given member.
 
         Args:
@@ -116,7 +115,7 @@ class People:
         """
         return member_profile.get_permits_tab(self.client, membership_number)
 
-    def training(self, membership_number: int) -> schema.MemberTrainingTab:
+    def training(self, membership_number: int) -> ci.MemberTrainingTab:
         """Gets training tab data for a given member.
 
         Args:
@@ -130,7 +129,7 @@ class People:
         """
         return member_profile.get_training_tab(self.client, membership_number)
 
-    def awards(self, membership_number: int) -> list[schema.MemberAward]:
+    def awards(self, membership_number: int) -> list[ci.MemberAward]:
         """Gets awards tab data for a given member.
 
         Args:
@@ -149,7 +148,7 @@ class People:
         """
         return member_profile.get_awards_tab(self.client, membership_number)
 
-    def disclosures(self, membership_number: int) -> list[schema.MemberDisclosure]:
+    def disclosures(self, membership_number: int) -> list[ci.MemberDisclosure]:
         """Gets disclosures tab data for a given member.
 
         Args:
@@ -193,7 +192,7 @@ class People:
         """
         return member_profile.get_roles_tab(self.client, membership_number).membership_duration
 
-    def ongoing_learning(self, membership_number: int) -> schema.MemberMandatoryTraining:
+    def ongoing_learning(self, membership_number: int) -> ci.MemberMandatoryTraining:
         """Gets ongoing learning data for a given member.
 
         Args:
@@ -207,7 +206,7 @@ class People:
         """
         return member_profile.get_training_tab(self.client, membership_number).mandatory
 
-    def latest_disclosure(self, membership_number: int) -> Optional[schema.MemberDisclosure]:
+    def latest_disclosure(self, membership_number: int) -> Optional[ci.MemberDisclosure]:
         """Gets latest disclosure for a given member.
 
         Latest is defined as the expiry date that is furthest away.
