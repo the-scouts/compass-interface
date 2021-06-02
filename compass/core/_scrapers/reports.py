@@ -26,6 +26,62 @@ def _error_status(response: requests.Response, /, msg: str = "Request to Compass
         raise ci.CompassNetworkError(msg) from err
 
 
+def export_report(client: Client, auth_ids: tuple[int, int, str], report_number: int, stream: bool = False) -> bytes:
+    """Exports report as CSV from Compass.
+
+    See `Reports.get_report` for an overview of the export process
+
+    Returns:
+        Report output, as a bytes-encoded object.
+
+    Raises:
+        CompassReportError:
+            - If Compass returns a JSON error
+            - If there is an error updating the form data
+        CompassReportPermissionError:
+            If the user does not have permission to run the report
+        CompassNetworkError:
+            If there is an error in the transport layer, or if Compass
+            reports a HTTP 5XX status code
+
+        """
+    # Get token for report type & role running said report:
+    run_report_url = get_report_token(client, auth_ids, report_number)
+
+    # Get initial reports page, for export URL and config:
+    logger.info("Generating report")
+    report_page = client.get(run_report_url).content
+
+    # Update form data & set location selection:
+    update_form_data(client, report_page, run_report_url)
+
+    # Export the report:
+    logger.info("Exporting report")
+    export_url = extract_report_export_url(report_page.decode("UTF-8"))
+
+    time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
+    filename = f"Compass Report ID {report_number} - {time_string}.csv"
+    csv_export = download_report_normal(client, export_url, filename)
+
+    # start = time.time()
+    # TODO TRAINING REPORT ETC.
+    # # TODO REPORT BODY HAS KEEP ALIVE URL KeepAliveUrl
+    # p = PeriodicTimer(15, lambda: self.report_keep_alive(self.session, report_page.text))
+    # self.session.sto_thread.start()
+    # p.start()
+    # # ska_url = self.report_keep_alive(self.session, report_page.text)
+    # try:
+    #     self.download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
+    # except (ConnectionResetError, requests.ConnectionError):
+    #     logger.info(f"Stopped at {datetime.datetime.now()}")
+    #     p.cancel()
+    #     self.session.sto_thread.cancel()
+    #     raise
+    # logger.debug(f"Exporting took {time.time() -start}s")
+
+    return csv_export
+
+
 def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
     membership_number, role_number, jk = auth_ids
     params = {
@@ -53,7 +109,7 @@ def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_numb
     raise ci.CompassReportError("Report aborted")
 
 
-def get_report_export_url(report_page: str) -> str:
+def extract_report_export_url(report_page: str) -> str:
     cut = report_page[report_page.index("ExportUrlBase"):].removeprefix('ExportUrlBase":"')
     full_url = cut[:cut.index('"')].encode().decode("unicode-escape")
     return f"{full_url}CSV"
