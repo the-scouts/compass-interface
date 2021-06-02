@@ -4,8 +4,7 @@ import datetime
 from pathlib import Path
 import re
 import time
-from typing import Optional, TYPE_CHECKING
-import urllib.parse
+from typing import TYPE_CHECKING
 
 import requests
 from lxml import html
@@ -18,6 +17,13 @@ from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from compass.core.util.client import Client
+
+
+def _error_status(response: requests.Response, /, msg: str = "Request to Compass failed!") -> None:
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as err:
+        raise ci.CompassNetworkError(msg) from err
 
 
 def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
@@ -35,9 +41,9 @@ def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_numb
         f"{Settings.web_service_path}/ReportToken",
         params=params,
     )
-    response.raise_for_status()
+    _error_status(response)
 
-    report_token_uri = str(response.json().get("d"))
+    report_token_uri = response.json().get("d", "")
     if report_token_uri not in {"-1", "-2", "-3", "-4"}:
         return f"{Settings.base_url}/{report_token_uri}"
     if report_token_uri in {"-2", "-3"}:
@@ -47,27 +53,10 @@ def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_numb
     raise ci.CompassReportError("Report aborted")
 
 
-def get_report_export_url(report_page: str, filename: Optional[str] = None) -> tuple[str, dict[str, str]]:
+def get_report_export_url(report_page: str) -> str:
     cut = report_page[report_page.index("ExportUrlBase"):].removeprefix('ExportUrlBase":"')
     full_url = cut[:cut.index('"')].encode().decode("unicode-escape")
-    return f"{full_url}CSV", {}
-
-    # fragments = urllib.parse.urlparse(full_url)
-    # export_url_path = fragments.path[1:]  # strip leading `/`
-    # report_export_url_data = dict(urllib.parse.parse_qsl(fragments.query, keep_blank_values=True))
-    # report_export_url_data["Format"] = "CSV"
-    # if filename is not None:
-    #     report_export_url_data["FileName"] = filename
-    #
-    # return export_url_path, report_export_url_data
-
-
-def get_report_page(client: Client, run_report_url: str) -> bytes:
-    # Get initial reports page, for export URL and config.
-    logger.info("Generating report")
-    report_page = client.get(run_report_url)
-
-    return report_page.content
+    return f"{full_url}CSV"
 
 
 def update_form_data(client: Client, report_page: bytes, run_report: str, full_extract: bool = True) -> None:
@@ -124,10 +113,7 @@ def update_form_data(client: Client, report_page: bytes, run_report: str, full_e
     report = client.post(run_report, data=form_data, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"})
 
     # Check error state
-    try:
-        report.raise_for_status()
-    except requests.HTTPError as err:
-        raise ci.CompassNetworkError("Updating report locations failed!") from err
+    _error_status(report, msg="Updating report locations failed!")
     if "compass.scouts.org.uk%2fError.aspx|" in report.text:
         raise ci.CompassReportError("Compass Error!")
 
@@ -148,15 +134,15 @@ def report_keep_alive(client: Client, report_page: str) -> str:
 
 def download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
     with client.get(url, params=params, stream=True) as r:
-        r.raise_for_status()
+        _error_status(r)
         with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
             for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                 f.write(chunk)
 
 
-def download_report_normal(client: Client, url: str, params: dict[str, str], filename: str) -> bytes:
+def download_report_normal(client: Client, url: str, filename: str) -> bytes:
     start = time.time()
-    csv_export = client.get(url, params=params)
+    csv_export = client.get(f"{Settings.base_url}/{url}")
     logger.debug(f"Exporting took {time.time() - start:.2f}s")
     logger.info("Saving report")
     with context_managers.filesystem_guard("Unable to write report export"):
