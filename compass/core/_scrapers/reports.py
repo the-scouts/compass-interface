@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import time
-from typing import TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 
 from lxml import html
 import requests
@@ -17,8 +17,25 @@ from compass.core.util import context_managers
 if TYPE_CHECKING:
     from compass.core.util.client import Client
 
+TYPES_REPORTS = Literal[
+    "Region Member Directory",
+    "Region Appointments Report",
+    "Region Permit Report",
+    "Region Disclosure Report",
+    "Region Training Report",
+    "Region Disclosure Management Report",
+]  # TODO move to schema.reports if created
+_report_types: dict[str, int] = {
+    "Region Member Directory": 37,
+    "Region Appointments Report": 52,
+    "Region Permit Report": 72,
+    "Region Disclosure Report": 76,
+    "Region Training Report": 84,
+    "Region Disclosure Management Report": 100,
+}
 
-def export_report(client: Client, auth_ids: tuple[int, int, str], report_number: int, stream: bool = False) -> bytes:
+
+def export_report(client: Client, auth_ids: tuple[int, int, str], report_type: TYPES_REPORTS, stream: bool = False) -> bytes:
     """Exports report as CSV from Compass.
 
     See `Reports.get_report` for an overview of the export process
@@ -28,6 +45,7 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
 
     Raises:
         CompassReportError:
+            - If the user passes an invalid report type
             - If Compass returns a JSON error
             - If there is an error updating the form data
         CompassReportPermissionError:
@@ -37,6 +55,11 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
             reports a HTTP 5XX status code
 
     """
+    if report_type not in _report_types:
+        types = [*_report_types.keys()]
+        raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
+    report_number = _report_types[report_type]
+
     # Get token for report type & role running said report:
     run_report_url = _get_report_token(client, auth_ids, report_number)
 

@@ -1,24 +1,6 @@
-from typing import Literal
-
 import compass.core as ci
-from compass.core._scrapers import reports as scraper
-
-TYPES_REPORTS = Literal[
-    "Region Member Directory",
-    "Region Appointments Report",
-    "Region Permit Report",
-    "Region Disclosure Report",
-    "Region Training Report",
-    "Region Disclosure Management Report",
-]  # TODO move to schema.reports if created
-_report_types: dict[str, int] = {
-    "Region Member Directory": 37,
-    "Region Appointments Report": 52,
-    "Region Permit Report": 72,
-    "Region Disclosure Report": 76,
-    "Region Training Report": 84,
-    "Region Disclosure Management Report": 100,
-}
+from compass.core._scrapers.reports import export_report
+from compass.core._scrapers.reports import TYPES_REPORTS
 
 
 class Reports:
@@ -26,10 +8,6 @@ class Reports:
         """Constructor for Reports."""
         self.auth_ids = session.membership_number, session.role_number, session._jk
         self.client = session._client
-
-        self.current_role = session.current_role
-        self.membership_number = session.membership_number
-        self.role_number = session.role_number
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
         """Exports report as CSV from Compass.
@@ -73,11 +51,4 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        if report_type not in _report_types:
-            types = [*_report_types.keys()]
-            raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
-
-        # Export report
-        csv_export = scraper.export_report(self.client, self.auth_ids, _report_types[report_type], stream=False)
-
-        return csv_export
+        return export_report(self.client, self.auth_ids, report_type, stream=False)
