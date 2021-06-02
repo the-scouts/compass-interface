@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 from pathlib import Path
 import re
 import time
@@ -52,9 +51,12 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
     logger.info("Exporting report")
     export_url = _extract_report_export_url(report_page.decode("UTF-8"))
 
-    time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
-    filename = f"Compass Report ID {report_number} - {time_string}.csv"
-    csv_export = _download_report_normal(client, export_url, filename)
+    time_string = time.strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
+    filename = f"Compass Export - {report_type} - {time_string}.csv"
+    if not stream:
+        csv_export = _download_report_normal(client, export_url, filename)
+    else:
+        csv_export = _download_report_streaming(client, export_url, filename)
 
     # start = time.time()
     # TODO TRAINING REPORT ETC.
@@ -179,12 +181,15 @@ def _download_report_normal(client: Client, url: str, filename: str) -> bytes:
     return csv_export.content
 
 
-def _download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
-    with client.get(url, params=params, stream=True) as r:
+def _download_report_streaming(client: Client, url: str, filename: str) -> bytes:
+    csv_export = b""
+    with client.get(url, stream=True) as r:
         _error_status(r)
         with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
             for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
                 f.write(chunk)
+                csv_export += chunk
+    return csv_export
 
 
 def _error_status(response: requests.Response, /, msg: str = "Request to Compass failed!") -> None:
@@ -205,7 +210,7 @@ def _get_defaults_labels(form_data: dict[str, str], default_indices_key: str, la
 
 
 def _report_keep_alive(client: Client, report_page: str) -> str:
-    logger.info(f"Extending Report Session {datetime.datetime.now()}")
+    logger.info(f"Extending Report Session {time.strftime('%Y-%m-%d %H-%M-%S')}")
     keep_alive_encoded = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1)  # type: ignore[union-attr]
     keep_alive = keep_alive_encoded.encode().decode("unicode-escape")
     response = client.post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841 (unused variable)
