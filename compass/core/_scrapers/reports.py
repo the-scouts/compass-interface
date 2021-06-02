@@ -144,12 +144,13 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, full_
 
     # TODO this may not be needed. Test.
     # update text values of role statuses and column names from default indices
-    form_data["ReportViewer1$ctl04$ctl09$txtValue"] = ", ".join(numbered_role_statuses[i] for i in form_data.get("ReportViewer1$ctl04$ctl09$divDropDown$ctl01$HiddenIndices", "").split(","))
-    form_data["ReportViewer1$ctl04$ctl15$txtValue"] = ", ".join(numbered_column_names[i] for i in form_data.get("ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", "").split(","))
+    form_data["ReportViewer1$ctl04$ctl09$txtValue"] = _get_defaults_labels(form_data, "ReportViewer1$ctl04$ctl09$divDropDown$ctl01$HiddenIndices", numbered_role_statuses)
+    form_data["ReportViewer1$ctl04$ctl15$txtValue"] = _get_defaults_labels(form_data, "ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", numbered_column_names)
 
-    # Including MicrosoftAJAX: Delta=true lets us check errors quickly
-    # In reality we don't care about the output of this POST, just that it doesn't fail
-    # Compass does user-agent sniffing in reports!!!
+    # Compass does user-agent sniffing in reports!!! This does seem to be the
+    # only place that *requires* a Mozilla/5 type UA.
+    # Including the MicrosoftAjax pair lets us check errors quickly. In reality
+    # we don't care about the output of this POST, just that it doesn't fail.
     report = client.post(run_report, data=form_data, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"})
 
     # Check error state
@@ -196,6 +197,11 @@ def _error_status(response: requests.Response, /, msg: str = "Request to Compass
 def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[str, str]:
     table = tree.get_element_by_id(element_id)[0][0]
     return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
+
+
+def _get_defaults_labels(form_data: dict[str, str], default_indices_key: str, labels_map: dict[str, str]) -> str:
+    indices = form_data.get(default_indices_key, "").split(",")
+    return ", ".join(labels_map[i] for i in indices)
 
 
 def _report_keep_alive(client: Client, report_page: str) -> str:
