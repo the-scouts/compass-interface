@@ -32,6 +32,7 @@ class Reports:
 
         self.current_role = session.current_role
         self.membership_number = session.membership_number
+        self.role_number = session.role_number
 
     def get_report(self, report_type: TYPES_REPORTS) -> bytes:
         """Exports report as CSV from Compass.
@@ -55,7 +56,6 @@ class Reports:
 
         Pitfalls to be aware of in this process include that:
         - Compass checks user-agent headers in some parts of the process
-            (TODO pinpoint which exactly)
         - There is a ten (10) minute default soft-timeout, which may run out
             before a report download has finished
         - If a requested report is too large, Compass can simply give up, often
@@ -84,17 +84,18 @@ class Reports:
         run_report_url = scraper.get_report_token(self.client, self.auth_ids, _report_types[report_type])
 
         # Get initial reports page, for export URL and config:
-        report_page = scraper.get_report_page(self.client, run_report_url)
+        logger.info("Generating report")
+        report_page = self.client.get(run_report_url).content
 
         # Update form data & set location selection:
-        scraper.update_form_data(self.client, report_page, f"{Settings.base_url}/{run_report_url}")
+        scraper.update_form_data(self.client, report_page, run_report_url)
 
         # Export the report:
         logger.info("Exporting report")
         export_url_path, export_url_params = scraper.get_report_export_url(report_page.decode("UTF-8"))
 
         time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
-        filename = f"{time_string} - {self.membership_number} ({' - '.join(self.current_role)}).csv"
+        filename = f"{time_string} - {self.role_number} ({' - '.join(self.current_role)}).csv"
 
         # start = time.time()
         # TODO TRAINING REPORT ETC.
