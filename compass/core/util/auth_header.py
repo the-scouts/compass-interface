@@ -28,9 +28,7 @@ def jk_hash(client: Client, membership_number: int, role_number: int, jk: str) -
 
 
 def auth_header_get(
-    membership_number: int,
-    role_number: int,
-    jk: str,
+    auth_ids: tuple[int, int, str],
     client: Client,
     url: str,
     *,
@@ -60,9 +58,9 @@ def auth_header_get(
         return True
 
     Args:
-        membership_number: Current authenticated user's membership number
-        role_number: Current authenticated user's active role number
-        jk: Current authenticated user's ??? (Ideas: Join Key??? SHA2-512)
+        auth_ids:
+            Three-tuple of Current authenticated user's membership number,
+            active role number, and 'jk' (Ideas: Join Key??? SHA2-512 like)
         client: HTTP client
         url: Request URL
         params: Mapping to be sent in the query string for the request
@@ -79,6 +77,7 @@ def auth_header_get(
     """
     # pylint: disable=too-many-arguments
     # pylint complains that we have more than 5 arguments.
+    membership_number, role_number, jk = auth_ids
     headers = dict(headers or {}) | {"Auth": jk_hash(client, membership_number, role_number, jk)}
 
     params = dict(params or {}) | {
