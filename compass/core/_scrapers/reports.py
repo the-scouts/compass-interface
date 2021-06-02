@@ -46,22 +46,22 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
 
         """
     # Get token for report type & role running said report:
-    run_report_url = get_report_token(client, auth_ids, report_number)
+    run_report_url = _get_report_token(client, auth_ids, report_number)
 
     # Get initial reports page, for export URL and config:
     logger.info("Generating report")
     report_page = client.get(run_report_url).content
 
     # Update form data & set location selection:
-    update_form_data(client, report_page, run_report_url)
+    _update_form_data(client, report_page, run_report_url)
 
     # Export the report:
     logger.info("Exporting report")
-    export_url = extract_report_export_url(report_page.decode("UTF-8"))
+    export_url = _extract_report_export_url(report_page.decode("UTF-8"))
 
     time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
     filename = f"Compass Report ID {report_number} - {time_string}.csv"
-    csv_export = download_report_normal(client, export_url, filename)
+    csv_export = _download_report_normal(client, export_url, filename)
 
     # start = time.time()
     # TODO TRAINING REPORT ETC.
@@ -82,7 +82,7 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
     return csv_export
 
 
-def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
+def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
     membership_number, role_number, jk = auth_ids
     params = {
         "pReportNumber": str(report_number),
@@ -109,13 +109,13 @@ def get_report_token(client: Client, auth_ids: tuple[int, int, str], report_numb
     raise ci.CompassReportError("Report aborted")
 
 
-def extract_report_export_url(report_page: str) -> str:
+def _extract_report_export_url(report_page: str) -> str:
     cut = report_page[report_page.index("ExportUrlBase"):].removeprefix('ExportUrlBase":"')
     full_url = cut[:cut.index('"')].encode().decode("unicode-escape")
     return f"{full_url}CSV"
 
 
-def update_form_data(client: Client, report_page: bytes, run_report: str, full_extract: bool = True) -> None:
+def _update_form_data(client: Client, report_page: bytes, run_report: str, full_extract: bool = True) -> None:
     tree = html.fromstring(report_page)
     # form_data = {"__VIEWSTATE": next((el.value for el in tree.forms[0].iter("input") if el.name == "__VIEWSTATE"), "")}
     form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}
@@ -179,7 +179,7 @@ def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[st
     return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
 
 
-def report_keep_alive(client: Client, report_page: str) -> str:
+def _report_keep_alive(client: Client, report_page: str) -> str:
     logger.info(f"Extending Report Session {datetime.datetime.now()}")
     keep_alive_encoded = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1)  # type: ignore[union-attr]
     keep_alive = keep_alive_encoded.encode().decode("unicode-escape")
@@ -188,7 +188,7 @@ def report_keep_alive(client: Client, report_page: str) -> str:
     return keep_alive  # response
 
 
-def download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
+def _download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
     with client.get(url, params=params, stream=True) as r:
         _error_status(r)
         with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
@@ -196,7 +196,7 @@ def download_report_streaming(client: Client, url: str, params: dict[str, str], 
                 f.write(chunk)
 
 
-def download_report_normal(client: Client, url: str, filename: str) -> bytes:
+def _download_report_normal(client: Client, url: str, filename: str) -> bytes:
     start = time.time()
     csv_export = client.get(f"{Settings.base_url}/{url}")
     logger.debug(f"Exporting took {time.time() - start:.2f}s")
