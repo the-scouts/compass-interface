@@ -6,8 +6,8 @@ import re
 import time
 from typing import TYPE_CHECKING
 
-import requests
 from lxml import html
+import requests
 
 import compass.core as ci
 from compass.core.logger import logger
@@ -17,13 +17,6 @@ from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from compass.core.util.client import Client
-
-
-def _error_status(response: requests.Response, /, msg: str = "Request to Compass failed!") -> None:
-    try:
-        response.raise_for_status()
-    except requests.HTTPError as err:
-        raise ci.CompassNetworkError(msg) from err
 
 
 def export_report(client: Client, auth_ids: tuple[int, int, str], report_number: int, stream: bool = False) -> bytes:
@@ -44,7 +37,7 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
             If there is an error in the transport layer, or if Compass
             reports a HTTP 5XX status code
 
-        """
+    """
     # Get token for report type & role running said report:
     run_report_url = _get_report_token(client, auth_ids, report_number)
 
@@ -109,12 +102,6 @@ def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_num
     raise ci.CompassReportError("Report aborted")
 
 
-def _extract_report_export_url(report_page: str) -> str:
-    cut = report_page[report_page.index("ExportUrlBase"):].removeprefix('ExportUrlBase":"')
-    full_url = cut[:cut.index('"')].encode().decode("unicode-escape")
-    return f"{full_url}CSV"
-
-
 def _update_form_data(client: Client, report_page: bytes, run_report: str, full_extract: bool = True) -> None:
     tree = html.fromstring(report_page)
     # form_data = {"__VIEWSTATE": next((el.value for el in tree.forms[0].iter("input") if el.name == "__VIEWSTATE"), "")}
@@ -127,7 +114,7 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, full_
         "__EVENTTARGET": "ReportViewer1$ctl04$ctl07",
         "__EVENTARGUMENT": None,
         "__LASTFOCUS": None,
-        "__ASYNCPOST": "true"
+        "__ASYNCPOST": "true",
     }  # TODO this may not be needed. Test.
 
     # Table Controls: table#ParametersGridReportViewer1_ctl04
@@ -174,26 +161,10 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, full_
         raise ci.CompassReportError("Compass Error!")
 
 
-def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[str, str]:
-    table = tree.get_element_by_id(element_id)[0][0]
-    return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
-
-
-def _report_keep_alive(client: Client, report_page: str) -> str:
-    logger.info(f"Extending Report Session {datetime.datetime.now()}")
-    keep_alive_encoded = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1)  # type: ignore[union-attr]
-    keep_alive = keep_alive_encoded.encode().decode("unicode-escape")
-    response = client.post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841 (unused variable)
-
-    return keep_alive  # response
-
-
-def _download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
-    with client.get(url, params=params, stream=True) as r:
-        _error_status(r)
-        with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
-                f.write(chunk)
+def _extract_report_export_url(report_page: str) -> str:
+    cut = report_page[report_page.index("ExportUrlBase"):].removeprefix('ExportUrlBase":"')
+    full_url = cut[:cut.index('"')].encode().decode("unicode-escape")
+    return f"{full_url}CSV"
 
 
 def _download_report_normal(client: Client, url: str, filename: str) -> bytes:
@@ -208,3 +179,32 @@ def _download_report_normal(client: Client, url: str, filename: str) -> bytes:
     logger.debug(len(csv_export.content))
 
     return csv_export.content
+
+
+def _download_report_streaming(client: Client, url: str, params: dict[str, str], filename: str) -> None:
+    with client.get(url, params=params, stream=True) as r:
+        _error_status(r)
+        with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
+            for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
+                f.write(chunk)
+
+
+def _error_status(response: requests.Response, /, msg: str = "Request to Compass failed!") -> None:
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as err:
+        raise ci.CompassNetworkError(msg) from err
+
+
+def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[str, str]:
+    table = tree.get_element_by_id(element_id)[0][0]
+    return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
+
+
+def _report_keep_alive(client: Client, report_page: str) -> str:
+    logger.info(f"Extending Report Session {datetime.datetime.now()}")
+    keep_alive_encoded = re.search(r'"KeepAliveUrl":"(.*?)"', report_page).group(1)  # type: ignore[union-attr]
+    keep_alive = keep_alive_encoded.encode().decode("unicode-escape")
+    response = client.post(f"{Settings.base_url}{keep_alive}")  # NoQA: F841 (unused variable)
+
+    return keep_alive  # response
