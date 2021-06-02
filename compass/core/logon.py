@@ -182,9 +182,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
         logger.debug(f"Extending session length {datetime.datetime.now()}")
         # TODO check STO.js etc for what happens when STO is None/undefined
         response = auth_header.auth_header_get(
-            self.membership_number,
-            self.role_number,
-            self._jk,
+            (self.membership_number, self.role_number, self._jk),
             self._client,
             f"{Settings.web_service_path}/STO_CHK",
             params={"pExtend": sto},

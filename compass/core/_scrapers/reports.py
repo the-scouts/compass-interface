@@ -76,16 +76,13 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_number:
 
 
 def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
-    membership_number, role_number, jk = auth_ids
     params = {
         "pReportNumber": str(report_number),
-        "pMemberRoleNumber": str(role_number),
+        "pMemberRoleNumber": str(auth_ids[1]),  # auth IDs are membership number, role number, 'jk'
     }
     logger.debug("Getting report token")
     response = auth_header.auth_header_get(
-        membership_number,
-        role_number,
-        jk,
+        auth_ids,
         client,
         f"{Settings.web_service_path}/ReportToken",
         params=params,
