@@ -1,10 +1,7 @@
-import datetime
 from typing import Literal
 
 import compass.core as ci
 from compass.core._scrapers import reports as scraper
-from compass.core.logger import logger
-from compass.core.settings import Settings
 
 TYPES_REPORTS = Literal[
     "Region Member Directory",
@@ -80,44 +77,7 @@ class Reports:
             types = [*_report_types.keys()]
             raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
 
-        # Get token for report type & role running said report:
-        run_report_url = scraper.get_report_token(self.client, self.auth_ids, _report_types[report_type])
-
-        # Get initial reports page, for export URL and config:
-        logger.info("Generating report")
-        report_page = self.client.get(run_report_url).content
-
-        # Update form data & set location selection:
-        scraper.update_form_data(self.client, report_page, run_report_url)
-
-        # Export the report:
-        logger.info("Exporting report")
-        export_url_path, export_url_params = scraper.get_report_export_url(report_page.decode("UTF-8"))
-
-        time_string = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
-        filename = f"{time_string} - {self.role_number} ({' - '.join(self.current_role)}).csv"
-
-        # start = time.time()
-        # TODO TRAINING REPORT ETC.
-        # # TODO REPORT BODY HAS KEEP ALIVE URL KeepAliveUrl
-        # p = PeriodicTimer(15, lambda: self.report_keep_alive(self.session, report_page.text))
-        # self.session.sto_thread.start()
-        # p.start()
-        # # ska_url = self.report_keep_alive(self.session, report_page.text)
-        # try:
-        #     self.download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
-        # except (ConnectionResetError, requests.ConnectionError):
-        #     logger.info(f"Stopped at {datetime.datetime.now()}")
-        #     p.cancel()
-        #     self.session.sto_thread.cancel()
-        #     raise
-        # logger.debug(f"Exporting took {time.time() -start}s")
-
-        csv_export = scraper.download_report_normal(
-            self.client,
-            f"{Settings.base_url}/{export_url_path}",
-            export_url_params,
-            filename,
-        )
+        # Export report
+        csv_export = scraper.export_report(self.client, self.auth_ids, _report_types[report_type], stream=False)
 
         return csv_export
