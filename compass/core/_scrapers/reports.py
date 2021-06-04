@@ -68,7 +68,7 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_type: T
     report_page = client.get(run_report_url).content
 
     # Update form data & set location selection:
-    _update_form_data(client, report_page, run_report_url)
+    _update_form_data(client, report_page, run_report_url, report_number)
 
     # Export the report:
     logger.info("Exporting report")
@@ -124,12 +124,14 @@ def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_num
     raise ci.CompassReportError("Report aborted")
 
 
-def _update_form_data(client: Client, report_page: bytes, run_report: str, full_extract: bool = True) -> None:
+def _update_form_data(client: Client, report_page: bytes, run_report: str, report_number: int, full_extract: bool = True) -> None:
     tree = html.fromstring(report_page)
     # form_data = {"__VIEWSTATE": next((el.value for el in tree.forms[0].iter("input") if el.name == "__VIEWSTATE"), "")}
     form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}  # TODO this may not be needed. Test.
 
-    form_data = _form_data_appointments(form_data, tree)
+    # Appointments Reports
+    if report_number == 52:
+        form_data = _form_data_appointments(form_data, tree)
 
     # Compass does user-agent sniffing in reports!!! This does seem to be the
     # only place that *requires* a Mozilla/5 type UA.
