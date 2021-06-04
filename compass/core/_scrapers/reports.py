@@ -127,7 +127,23 @@ def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_num
 def _update_form_data(client: Client, report_page: bytes, run_report: str, full_extract: bool = True) -> None:
     tree = html.fromstring(report_page)
     # form_data = {"__VIEWSTATE": next((el.value for el in tree.forms[0].iter("input") if el.name == "__VIEWSTATE"), "")}
-    form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}
+    form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}  # TODO this may not be needed. Test.
+
+    form_data = _form_data_appointments(form_data, tree)
+
+    # Compass does user-agent sniffing in reports!!! This does seem to be the
+    # only place that *requires* a Mozilla/5 type UA.
+    # Including the MicrosoftAjax pair lets us check errors quickly. In reality
+    # we don't care about the output of this POST, just that it doesn't fail.
+    report = client.post(run_report, data=form_data, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"})
+
+    # Check error state
+    _error_status(report, msg="Updating report locations failed!")
+    if "compass.scouts.org.uk%2fError.aspx|" in report.text:
+        raise ci.CompassReportError("Compass Error!")
+
+
+def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement):
     form_data |= {
         "ReportViewer1$ctl10": "ltr",
         "ReportViewer1$ctl11": "standards",
@@ -172,16 +188,7 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, full_
     form_data["ReportViewer1$ctl04$ctl09$txtValue"] = _get_defaults_labels(form_data, "ReportViewer1$ctl04$ctl09$divDropDown$ctl01$HiddenIndices", numbered_role_statuses)
     form_data["ReportViewer1$ctl04$ctl15$txtValue"] = _get_defaults_labels(form_data, "ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", numbered_column_names)
 
-    # Compass does user-agent sniffing in reports!!! This does seem to be the
-    # only place that *requires* a Mozilla/5 type UA.
-    # Including the MicrosoftAjax pair lets us check errors quickly. In reality
-    # we don't care about the output of this POST, just that it doesn't fail.
-    report = client.post(run_report, data=form_data, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"})
-
-    # Check error state
-    _error_status(report, msg="Updating report locations failed!")
-    if "compass.scouts.org.uk%2fError.aspx|" in report.text:
-        raise ci.CompassReportError("Compass Error!")
+    return form_data
 
 
 def _extract_report_export_url(report_page: str) -> str:
