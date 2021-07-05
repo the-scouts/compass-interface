@@ -198,6 +198,16 @@ TYPES_AWARD_TYPE = Literal[
     # ???
     "Medal of Merit",
     "Bar to the Medal of Merit",
+    # Meritorious Conduct Awards
+    "Chief Scout's Commendation for Meritorious Conduct",
+    "The Medal for Meritorious Conduct",
+    # Gallantry Awards
+    "The Gilt Cross",
+    "The Silver Cross",
+    "The Bronze Cross",
+    # Other Awards
+    "The Cornwell Scout Badge",
+    "The Chief Scout's Personal Award",
 ]
 TYPES_DISCLOSURE_PROVIDERS = Literal[
     "Access NI",
