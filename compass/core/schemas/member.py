@@ -205,7 +205,7 @@ TYPES_AWARD_TYPE = Literal[
     # Other Awards
     "The Cornwell Scout Badge",
     "The Chief Scout's Personal Award",
-    # non-current/past/defunct/etc awards
+    # Past Awards (not in the current awards scheme)
     "Medal of Merit",
     "Bar to the Medal of Merit",
 ]
