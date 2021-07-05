@@ -195,9 +195,6 @@ TYPES_AWARD_TYPE = Literal[
     # Formal awards process - higher good service
     "Bar to the Silver Acorn",
     "Silver Wolf",
-    # ???
-    "Medal of Merit",
-    "Bar to the Medal of Merit",
     # Meritorious Conduct Awards
     "Chief Scout's Commendation for Meritorious Conduct",
     "The Medal for Meritorious Conduct",
@@ -208,6 +205,9 @@ TYPES_AWARD_TYPE = Literal[
     # Other Awards
     "The Cornwell Scout Badge",
     "The Chief Scout's Personal Award",
+    # non-current/past/defunct/etc awards
+    "Medal of Merit",
+    "Bar to the Medal of Merit",
 ]
 TYPES_DISCLOSURE_PROVIDERS = Literal[
     "Access NI",
