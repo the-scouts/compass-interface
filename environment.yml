@@ -37,6 +37,8 @@ dependencies:
   - bandit
   - pyroma
   - mypy
+  - types-requests
+  - lxml-stubs
 
   # Build
   - build  # PyPA build package (not on conda 04/01/21)
