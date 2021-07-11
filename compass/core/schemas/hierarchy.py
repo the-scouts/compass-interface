@@ -43,8 +43,9 @@ class HierarchyLevel(HierarchyBase):
     level: TYPES_HIERARCHY_LEVELS
 
 
-class UnitData(HierarchyLevel):
+class UnitData(HierarchyBase):
     name: Literal[None] = None
+    level: TYPES_UNIT_LEVELS  # can't be a section
     child: Optional[list[DescendantData]]  # NOTE: deliberate recursive/forward reference here!
     sections: list[HierarchySection]
 

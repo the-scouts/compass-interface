@@ -2,6 +2,8 @@ import compass.core as ci
 from compass.core._scrapers.reports import export_report
 from compass.core._scrapers.reports import TYPES_REPORTS
 
+__all__ = ("Reports", "TYPES_REPORTS")  # only needed whilst still no schema file for reports
+
 
 class Reports:
     def __init__(self, session: ci.Logon):
