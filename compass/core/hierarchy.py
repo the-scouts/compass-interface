@@ -208,8 +208,8 @@ def _flatten(d: Union[ci.UnitData, ci.DescendantData], hierarchy_state: _Hierarc
     """Generator expresion to recursively flatten hierarchy."""
     unit_id = d.unit_id
     level_data = hierarchy_state | {d.level.lower(): unit_id}  # type: ignore[operator]
-    yield {"unit_id": unit_id, "name": d.name, "section": False} | level_data
+    yield {"unit_id": unit_id, "name": d.name, "section": False} | level_data  # type: ignore[misc]
     for child in d.child or []:
-        yield from _flatten(child, level_data)
+        yield from _flatten(child, level_data)  # type: ignore[arg-type]
     for section in d.sections:
-        yield {"unit_id": section.unit_id, "name": section.name, "section": True} | level_data
+        yield {"unit_id": section.unit_id, "name": section.name, "section": True} | level_data  # type: ignore[misc]
