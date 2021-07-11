@@ -89,10 +89,7 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_type: T
 
     time_string = time.strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
     filename = f"Compass Export - {report_type} - {time_string}.csv"
-    if not stream:
-        csv_export = _download_report_normal(client, export_url, filename)
-    else:
-        csv_export = _download_report_streaming(client, export_url, filename)
+    csv_export = _download_report(client, export_url, streaming=stream, filename=filename)
 
     # start = time.time()
     # TODO TRAINING REPORT ETC.
@@ -139,8 +136,10 @@ def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_num
 
 def _update_form_data(client: Client, report_page: bytes, run_report: str, report_number: int, full_extract: bool = True) -> None:
     tree = html.fromstring(report_page)
+
+    # get relevant form data. TODO - do we need all items or just __VIEWSTATE?
     # form_data = {"__VIEWSTATE": next((el.value for el in tree.forms[0].iter("input") if el.name == "__VIEWSTATE"), "")}
-    form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}  # TODO this may not be needed. Test.
+    form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}
 
     # Appointments Reports
     if report_number == 52:
@@ -170,23 +169,15 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement):
         "__ASYNCPOST": "true",
     }  # TODO this may not be needed. Test.
 
-    # Table Controls: table#ParametersGridReportViewer1_ctl04
-    # ReportViewer1$ctl04$ctl03$ddValue - Region/County(District) Label
     # ReportViewer1$ctl04$ctl05$txtValue - County Label
     # ReportViewer1$ctl04$ctl07$txtValue - District Label
     # ReportViewer1$ctl04$ctl09$txtValue - Role Statuses
     # ReportViewer1$ctl04$ctl15$txtValue - Columns Label
 
-    # ReportViewer1_ctl04_ctl07_divDropDown - Districts
-    # ReportViewer1_ctl04_ctl05_divDropDown - Counties
-    # ReportViewer1_ctl04_ctl09_divDropDown - Role Statuses
-    # ReportViewer1_ctl04_ctl15_divDropDown - Columns
-
-    numbered_counties = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")
-    numbered_districts = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl07_divDropDown")
-    numbered_role_statuses = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl09_divDropDown")
-    numbered_column_names = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl15_divDropDown")
-    # numbered_districts = ",".join(str(i) for i in range(len(tree.get_element_by_id("ReportViewer1_ctl04_ctl07_divDropDown")[0][0])-1))
+    numbered_counties = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")  # Counties
+    numbered_districts = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl07_divDropDown")  # Districts
+    numbered_role_statuses = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl09_divDropDown")  # Role Statuses
+    numbered_column_names = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl15_divDropDown")  # Report Fields
 
     # # Export regional roles only
     # form_data["ReportViewer1$ctl04$ctl05$txtValue"] = "Regional Roles"
@@ -212,28 +203,29 @@ def _extract_report_export_url(report_page: str) -> str:
     return f"{full_url}CSV"
 
 
-def _download_report_normal(client: Client, url: str, filename: str) -> bytes:
+def _download_report(client: Client, url_path: str, streaming: bool, filename: str | None = None) -> bytes:
     start = time.time()
-    csv_export = client.get(f"{Settings.base_url}/{url}")
-    logger.debug(f"Exporting took {time.time() - start:.2f}s")
-    logger.info("Saving report")
-    with context_managers.filesystem_guard("Unable to write report export"):
-        Path(filename).write_bytes(csv_export.content)
-    logger.info("Report Saved")
+    url = f"{Settings.base_url}/{url_path}"
 
-    logger.debug(len(csv_export.content))
-
-    return csv_export.content
-
-
-def _download_report_streaming(client: Client, url: str, filename: str) -> bytes:
-    csv_export = b""
-    with client.get(url, stream=True) as r:
-        _error_status(r)
-        with context_managers.filesystem_guard("Unable to write report export"), open(filename, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024 ** 2):  # Chunk size == 1MiB
-                f.write(chunk)
+    # actually do the download
+    if streaming:
+        csv_export = b""
+        with client.get(url, stream=True) as r:
+            _error_status(r)
+            for chunk in r.iter_content(chunk_size=None):  # Chunk size == 1MiB
                 csv_export += chunk
+    else:
+        csv_export = client.get(url).content
+
+    logger.debug(f"Exporting took {time.time() - start:.2f}s")
+
+    # maybe save to disk
+    if filename is not None:
+        logger.info("Saving report")
+        with context_managers.filesystem_guard("Unable to write report export"):
+            Path(filename).write_bytes(csv_export)
+        logger.info("Report Saved")
+
     return csv_export
 
 
