@@ -105,7 +105,7 @@ class TestLogon:
                     mrn=9000000,
                     on=10000001,
                     lvl="ORG",
-                    jk="9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15",  # NoQA: E501
+                    jk="9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15",
                 ),
                 const=CompassPropsMasterConst(wales=10000007, scotland=10000005, over_seas=10000002, hq=10000001),
                 sys=CompassPropsMasterSys(
@@ -148,7 +148,7 @@ class TestLogon:
             "mrn": 9000000,
             "on": 10000001,
             "lvl": "ORG",
-            "jk": "9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15",  # NoQA: E501
+            "jk": "9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15",
         }
         session_id = "d6c76537-1b6c-3910-c3d4-d21d4e6453a6"
         current_role = "Role", "Place"
