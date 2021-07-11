@@ -17,6 +17,8 @@ from compass.core.util import context_managers
 if TYPE_CHECKING:
     from compass.core.util.client import Client
 
+# TODO move to schema.reports if created
+# TODO remove location from start, to keep list small
 TYPES_REPORTS = Literal[
     "Region Member Directory",
     "Region Appointments Report",
@@ -24,8 +26,19 @@ TYPES_REPORTS = Literal[
     "Region Disclosure Report",
     "Region Training Report",
     "Region Disclosure Management Report",
-]  # TODO move to schema.reports if created
+]
 _report_types: dict[str, int] = {
+    # group reports
+    "Group Appointments Report": 59,
+    # district reports
+    "District Appointments Report": 50,
+    "District Member Directory Report": 51,
+    "District Permits Report": 70,
+    "District Disclosure Report": 78,
+    "District Training Report": 79,
+    "District Awards Report": 94,
+    "District Disclosure Management Report": 102,
+    # region reports
     "Region Member Directory": 37,
     "Region Appointments Report": 52,
     "Region Permit Report": 72,
