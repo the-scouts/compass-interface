@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
     from compass.core.util.client import Client  # pylint: disable=ungrouped-imports
 
+TYPE_AUTH_IDS = tuple[int, int, str]
+
 
 def jk_hash(client: Client, membership_number: int, role_number: int, jk: str) -> str:
     """Generate JK Hash needed by Compass."""
@@ -28,7 +30,7 @@ def jk_hash(client: Client, membership_number: int, role_number: int, jk: str) -
 
 
 def auth_header_get(
-    auth_ids: tuple[int, int, str],
+    auth_ids: TYPE_AUTH_IDS,
     client: Client,
     url: str,
     *,

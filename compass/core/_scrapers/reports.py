@@ -16,6 +16,7 @@ from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from compass.core.util.client import Client
+    from compass.core.util.auth_header import TYPE_AUTH_IDS
 
 # TODO move to schema.reports if created
 # TODO remove location from start, to keep list small
@@ -48,7 +49,7 @@ _report_types: dict[str, int] = {
 }
 
 
-def export_report(client: Client, auth_ids: tuple[int, int, str], report_type: TYPES_REPORTS, stream: bool = False) -> bytes:
+def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_REPORTS, stream: bool = False) -> bytes:
     """Exports report as CSV from Compass.
 
     See `Reports.get_report` for an overview of the export process
@@ -110,7 +111,7 @@ def export_report(client: Client, auth_ids: tuple[int, int, str], report_type: T
     return csv_export
 
 
-def _get_report_token(client: Client, auth_ids: tuple[int, int, str], report_number: int) -> str:
+def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
     params = {
         "pReportNumber": str(report_number),
         "pMemberRoleNumber": str(auth_ids[1]),  # auth IDs are membership number, role number, 'jk'
