@@ -361,7 +361,7 @@ def get_roles_tab(
             # location_id only visible if role is in hierarchy AND location still exists
             location_id=cells[2][0].get("data-ng_id"),
             location_name=cells[2].text_content().strip(),
-            role_start=parse_date(cells[3].text_content().strip()),  # type: ignore[arg-type]
+            role_start=parse_date(cells[3].text_content().strip()),  # type  ignore[arg-type]
             role_end=parse_date(cells[4].text_content().strip()),
             role_status=role_status,
             review_date=review_date,
@@ -728,7 +728,7 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[ci.MemberA
                     membership_number=membership_number,
                     type=award_props[0][1].text_content(),
                     location=award_props[1][1].text_content() or None,
-                    date=parse_date(award_props[2][1].text_content() or ""),  # type: ignore[arg-type]
+                    date=parse_date(award_props[2][1].text_content() or ""),  # type  ignore[arg-type]
                 )
             )
     return awards
