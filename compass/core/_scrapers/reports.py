@@ -163,8 +163,8 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, repor
         raise ci.CompassReportError("Compass Error!")
 
 
-def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement):
-    form_data |= {
+def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -> dict[str, str | None]:
+    additional_form_data = {
         "ReportViewer1$ctl10": "ltr",
         "ReportViewer1$ctl11": "standards",
         "ReportViewer1$ctl05$ctl00$CurrentPage": "1",
@@ -204,7 +204,7 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement):
         form_data, "ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", numbered_column_names
     )
 
-    return form_data
+    return form_data | additional_form_data
 
 
 def _extract_report_export_url(report_page: str) -> str:
