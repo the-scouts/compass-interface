@@ -17,6 +17,43 @@ skip_gitignore = true
 known_tests = ['tests']
 sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'FIRSTPARTY', "TESTS", 'LOCALFOLDER']
 
+# mypy configuration
+[tool.mypy]
+#plugins = ["pydantic.mypy"]  TODO re-enable (https://github.com/samuelcolvin/pydantic/issues/2895)
+# help finding errors
+show_error_codes = true
+show_error_context = true
+# suppress errors from imported modules
+follow_imports = "silent"
+# warn about config that doesn't hit files
+warn_unused_configs = true
+
+# mypy --strict config:
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+implicit_reexport = false
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["lxml", "phonenumbers"]
+ignore_missing_imports = true
+
+#[[tool.mypy.overrides]]
+#module = "pydantic"
+#init_forbid_extra = true
+#init_typed = true
+#warn_required_dynamic_aliases = true
+#warn_untyped_fields = true
+
 # pytest configuration
 [tool.pytest.ini_options]
 minversion = "6.2"
