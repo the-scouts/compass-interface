@@ -15,8 +15,8 @@ from compass.core.util import auth_header
 from compass.core.util import context_managers
 
 if TYPE_CHECKING:
-    from compass.core.util.client import Client
     from compass.core.util.auth_header import TYPE_AUTH_IDS
+    from compass.core.util.client import Client
 
 # TODO move to schema.reports if created
 # TODO remove location from start, to keep list small
@@ -98,15 +98,15 @@ def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_RE
     # p = PeriodicTimer(15, lambda: self.report_keep_alive(self.session, report_page.text))
     # self.session.sto_thread.start()
     # p.start()
-    # # ska_url = self.report_keep_alive(self.session, report_page.text)
+    # # ska_url = _report_keep_alive(self.session, report_page.text)
     # try:
-    #     self.download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
+    #     _download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
     # except (ConnectionResetError, requests.ConnectionError):
     #     logger.info(f"Stopped at {datetime.datetime.now()}")
     #     p.cancel()
     #     self.session.sto_thread.cancel()
     #     raise
-    # logger.debug(f"Exporting took {time.time() -start}s")
+    # logger.debug(f"Exporting took {time.time() - start}s")
 
     return csv_export
 
@@ -135,7 +135,8 @@ def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: in
     raise ci.CompassReportError("Report aborted")
 
 
-def _update_form_data(client: Client, report_page: bytes, run_report: str, report_number: int, full_extract: bool = True) -> None:
+def _update_form_data(client: Client, report_page: bytes, run_report: str, report_number: int) -> None:
+    # TODO add method to choose between exporting all data and just top-level
     tree = html.fromstring(report_page)
 
     # get relevant form data. TODO - do we need all items or just __VIEWSTATE?
@@ -150,7 +151,11 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, repor
     # only place that *requires* a Mozilla/5 type UA.
     # Including the MicrosoftAjax pair lets us check errors quickly. In reality
     # we don't care about the output of this POST, just that it doesn't fail.
-    report = client.post(run_report, data=form_data, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"})
+    report = client.post(
+        run_report,
+        data=form_data,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"},
+    )
 
     # Check error state
     _error_status(report, msg="Updating report locations failed!")
@@ -192,15 +197,21 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement):
 
     # TODO this may not be needed. Test.
     # update text values of role statuses and column names from default indices
-    form_data["ReportViewer1$ctl04$ctl09$txtValue"] = _get_defaults_labels(form_data, "ReportViewer1$ctl04$ctl09$divDropDown$ctl01$HiddenIndices", numbered_role_statuses)
-    form_data["ReportViewer1$ctl04$ctl15$txtValue"] = _get_defaults_labels(form_data, "ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", numbered_column_names)
+    form_data["ReportViewer1$ctl04$ctl09$txtValue"] = _get_defaults_labels(
+        form_data, "ReportViewer1$ctl04$ctl09$divDropDown$ctl01$HiddenIndices", numbered_role_statuses
+    )
+    form_data["ReportViewer1$ctl04$ctl15$txtValue"] = _get_defaults_labels(
+        form_data, "ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", numbered_column_names
+    )
 
     return form_data
 
 
 def _extract_report_export_url(report_page: str) -> str:
-    cut = report_page[report_page.index("ExportUrlBase"):].removeprefix('ExportUrlBase":"')
-    full_url = cut[:cut.index('"')].encode().decode("unicode-escape")
+    start = report_page.index("ExportUrlBase")
+    cut = report_page[start:].removeprefix('ExportUrlBase":"')
+    end = cut.index('"')
+    full_url = cut[:end].encode().decode("unicode-escape")
     return f"{full_url}CSV"
 
 
