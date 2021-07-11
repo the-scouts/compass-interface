@@ -1,6 +1,9 @@
 # core, testing
 -r ci/requirements-test.txt
 
+# type stubs
+-r ci/requirements-typing.txt
+
 # dev
 ipython
 
