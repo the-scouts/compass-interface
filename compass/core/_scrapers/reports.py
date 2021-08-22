@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
 import time
 from typing import Literal, TYPE_CHECKING
@@ -12,7 +11,6 @@ import compass.core as ci
 from compass.core.logger import logger
 from compass.core.settings import Settings
 from compass.core.util import auth_header
-from compass.core.util import context_managers
 
 if TYPE_CHECKING:
     from compass.core.util.auth_header import TYPE_AUTH_IDS
@@ -79,7 +77,7 @@ TYPES_REPORTS = Literal[
 ]
 
 
-def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_REPORTS, stream: bool = False) -> bytes:
+def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_REPORTS, stream: bool = False) -> str:
     """Exports report as CSV from Compass.
 
     See `Reports.get_report` for an overview of the export process
@@ -114,13 +112,14 @@ def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_RE
     # Update form data & set location selection:
     _update_form_data(client, report_page, run_report_url, report_number)
 
-    # Export the report:
+    # Get report export URL:
     logger.info("Exporting report")
     export_url = _extract_report_export_url(report_page.decode("UTF-8"))
 
-    time_string = time.strftime("%Y-%m-%d %H-%M-%S")  # colons are illegal on windows
-    filename = f"Compass Export - {report_type} - {time_string}.csv"
-    csv_export = _download_report(client, export_url, streaming=stream, filename=filename)
+    # Download report to CSV:
+    start = time.time()
+    csv_export = _download_report(client, export_url, streaming=stream)
+    logger.debug(f"Downloading took {time.time() - start:.2f}s")
 
     # start = time.time()
     # TODO TRAINING REPORT ETC.
@@ -242,33 +241,21 @@ def _extract_report_export_url(report_page: str) -> str:
     cut = report_page[start:].removeprefix('ExportUrlBase":"')
     end = cut.index('"')
     full_url = cut[:end].encode().decode("unicode-escape")
-    return f"{full_url}CSV"
+    return f"{Settings.base_url}/{full_url}CSV"
 
 
-def _download_report(client: Client, url_path: str, streaming: bool, filename: str | None = None) -> bytes:
-    start = time.time()
-    url = f"{Settings.base_url}/{url_path}"
+def _download_report(client: Client, url: str, streaming: bool) -> str:
+    # standard download
+    if not streaming:
+        return client.get(url).content.decode("utf-8-sig")  # report is returned with Byte Order Mark
 
-    # actually do the download
-    if streaming:
-        csv_export = b""
-        with client.get(url, stream=True) as r:
-            _error_status(r)
-            for chunk in r.iter_content(chunk_size=None):  # Chunk size == 1MiB
-                csv_export += chunk
-    else:
-        csv_export = client.get(url).content
-
-    logger.debug(f"Exporting took {time.time() - start:.2f}s")
-
-    # maybe save to disk
-    if filename is not None:
-        logger.info("Saving report")
-        with context_managers.filesystem_guard("Unable to write report export"):
-            Path(filename).write_bytes(csv_export)
-        logger.info("Report Saved")
-
-    return csv_export
+    # streaming download
+    csv_export = b""
+    with client.get(url, stream=True) as r:
+        _error_status(r)
+        for chunk in r.iter_content(chunk_size=None):  # Chunk size == 1MiB
+            csv_export += chunk
+    return csv_export.decode("utf-8-sig")  # report is returned with Byte Order Mark
 
 
 def _error_status(response: requests.Response, /, msg: str = "Request to Compass failed!") -> None:
