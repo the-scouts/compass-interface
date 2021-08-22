@@ -18,66 +18,73 @@ if TYPE_CHECKING:
 
 # TODO move to schema.reports if created
 # TODO remove location from start, to keep list small
-_report_types: dict[str, int] = {
-    # group reports
-    "Group Appointments Report": 59,
-    # district reports
-    "District Appointments Report": 50,
-    "District Member Directory Report": 51,
-    # "District Member Directory 18 To 25 Years": ,
-    "District Permits Report": 70,
-    "District Disclosure Report": 78,
-    "District Training Report": 79,
-    "District Awards Report": 94,
-    "District Disclosure Management Report": 102,
-    # county reports
-    "County/Area/Region Appointments Report": 48,
-    "County/Area/Region Member Directory Report": 49,
-    "County/Area/Region Member Directory 18 To 25 Years": 53,
-    "County/Area/Region Permits Report": 69,
-    "County/Area/Region Disclosure Report": 77,
-    "County/Area/Region Training Report": 80,
-    "County/Area/Region Awards Report": 95,
-    "County Disclosure Management Report": 101,
-    # region reports
-    "Region Member Directory": 37,
-    "Region Appointments Report": 52,
-    "Region Permit Report": 72,
-    "Region Disclosure Report": 76,
-    "Region Training Report": 84,
-    "Region Disclosure Management Report": 100,
+_report_ids_appointments: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "Group": 59,
+    "District": 50,
+    "County": 48,
+    "Region": 52,
+}
+_report_ids_member_directory: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "District": 51,
+    "County": 49,
+    "Region": 37,
+}
+_report_ids_18_25_member_directory: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "County": 53,
+}
+_report_ids_permits: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "District": 70,
+    "County": 69,
+    "Region": 72,
+}
+_report_ids_disclosure: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "District": 78,
+    "County": 77,
+    "Region": 76,
+}
+_report_ids_training: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "District": 79,
+    "County": 80,
+    "Region": 84,
+}
+_report_ids_awards: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "District": 94,
+    "County": 95,
+}
+_report_ids_disclosure_management: dict[ci.TYPES_UNIT_LEVELS, int] = {
+    "District": 102,
+    "County": 101,
+    "Region": 100,
 }
 TYPES_REPORTS = Literal[
-    # group
-    "Group Appointments Report",
-    # district
-    "District Appointments Report",
-    "District Member Directory Report",
-    "District Permits Report",
-    "District Disclosure Report",
-    "District Training Report",
-    "District Awards Report",
-    "District Disclosure Management Report",
-    # county
-    "County/Area/Region Appointments Report",
-    "County/Area/Region Member Directory Report",
-    "County/Area/Region Member Directory 18 To 25 Years",
-    "County/Area/Region Permits Report",
-    "County/Area/Region Disclosure Report",
-    "County/Area/Region Training Report",
-    "County/Area/Region Awards Report",
-    "County Disclosure Management Report",
-    # region
-    "Region Member Directory",
-    "Region Appointments Report",
-    "Region Permit Report",
-    "Region Disclosure Report",
-    "Region Training Report",
-    "Region Disclosure Management Report",
+    "Appointments Report",
+    "Member Directory Report",
+    "18-25 Member Directory Report",
+    "Permits Report",
+    "Disclosure Report",
+    "Training Report",
+    "Awards Report",
+    "Disclosure Management Report",
 ]
+_report_ids: dict[TYPES_REPORTS, dict[ci.TYPES_UNIT_LEVELS, int]] = {
+    "Appointments Report": _report_ids_appointments,
+    "Member Directory Report": _report_ids_member_directory,
+    "18-25 Member Directory Report": _report_ids_18_25_member_directory,
+    "Permits Report": _report_ids_permits,
+    "Disclosure Report": _report_ids_disclosure,
+    "Training Report": _report_ids_training,
+    "Awards Report": _report_ids_awards,
+    "Disclosure Management Report": _report_ids_disclosure_management,
+}
 
 
-def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_REPORTS, stream: bool = False) -> str:
+def export_report(
+    client: Client,
+    report_type: TYPES_REPORTS,
+    hierarchy_level: ci.TYPES_HIERARCHY_LEVELS,
+    auth_ids: TYPE_AUTH_IDS,
+    stream: bool = False
+) -> str:
     """Exports report as CSV from Compass.
 
     See `Reports.get_report` for an overview of the export process
@@ -97,10 +104,13 @@ def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_RE
             reports a HTTP 5XX status code
 
     """
-    if report_type not in _report_types:
-        types = [*_report_types.keys()]
+    if report_type not in _report_ids:
+        types = [*_report_ids]
         raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
-    report_number = _report_types[report_type]
+    report_level_map = _report_ids[report_type]
+    if hierarchy_level not in report_level_map:
+        raise ci.CompassReportError(f"Requested report does not exist for hierarchy level: {hierarchy_level}.")
+    report_number = report_level_map[hierarchy_level]
 
     # Get token for report type & role running said report:
     run_report_url = _get_report_token(client, auth_ids, report_number)
