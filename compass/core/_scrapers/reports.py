@@ -151,16 +151,15 @@ def export_report(
 
 
 def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
-    params = {
-        "pReportNumber": str(report_number),
-        "pMemberRoleNumber": str(auth_ids[1]),  # auth IDs are membership number, role number, 'jk'
-    }
     logger.debug("Getting report token")
     response = auth_header.auth_header_get(
         auth_ids,
         client,
         f"{Settings.web_service_path}/ReportToken",
-        params=params,
+        params={
+            "pReportNumber": str(report_number),
+            "pMemberRoleNumber": str(auth_ids[1]),  # auth IDs are membership number, role number, 'jk'
+        },
     )
     _error_status(response)
 
@@ -190,15 +189,15 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, repor
     # only place that *requires* a Mozilla/5 type UA.
     # Including the MicrosoftAjax pair lets us check errors quickly. In reality
     # we don't care about the output of this POST, just that it doesn't fail.
-    report = client.post(
+    updated_report_page = client.post(
         run_report,
         data=form_data,
         headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"},
     )
 
     # Check error state
-    _error_status(report, msg="Updating report locations failed!")
-    if "compass.scouts.org.uk%2fError.aspx|" in report.text:
+    _error_status(updated_report_page, msg="Updating report locations failed!")
+    if "compass.scouts.org.uk%2fError.aspx|" in updated_report_page.text:
         raise ci.CompassReportError("Compass Error!")
 
 
