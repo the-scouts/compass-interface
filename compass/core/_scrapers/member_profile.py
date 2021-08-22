@@ -45,7 +45,7 @@ from compass.core.util.type_coercion import maybe_int
 from compass.core.util.type_coercion import parse_date
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Collection
     from collections.abc import Iterator
 
     from compass.core.util.client import Client
@@ -106,6 +106,9 @@ NON_VOLUNTEER_TITLES = {
     "county scout network member",
     "bso scout network member",
 }
+
+# _reduce_date_list
+ADJACENT = datetime.timedelta(days=-1)
 
 # get_training_tab
 mogl_modules = {
@@ -404,7 +407,7 @@ def _extract_review_date(review_status: str) -> tuple[ci.TYPES_ROLE_STATUS, Opti
     raise ci.CompassError(f"Invalid value for review status '{review_status}'!")
 
 
-def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -> float:
+def _membership_duration(dates: Collection[tuple[datetime.date, datetime.date]]) -> float:
     """Calculate days of membership (inclusive), normalise to years."""
     if not dates:  # handle empty iterable
         return 0
@@ -412,61 +415,37 @@ def _membership_duration(dates: Iterable[tuple[datetime.date, datetime.date]]) -
     return round(membership_duration_days / 365.2425, 3)  # Leap year except thrice per 400 years.
 
 
-def _reduce_date_list(dates: Iterable[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
+def _reduce_date_list(dates: Collection[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
     """Reduce list of start and end dates to disjoint ranges.
 
-    Iterate through date pairs and get longest consecutive date ranges. For
-    disjoint ranges, call function recursively. Returns all found date pairs.
+    Iterate through date pairs and get longest consecutive date ranges. Returns
+    all found date pairs.
 
     Args:
         dates: list of start, end date pairs
 
     Returns:
-        list of start, end date pairs
+        list of reduced start, end date pairs
 
     """
-    unused_values = set()  # We init the date values with the first
-    # sdl = iter(dates)
-    # earliest_start, latest_end = next(sdl)
-    # for i, (start, end) in enumerate(sdl):
-    sdl = sorted(dates)
-    earliest_start, latest_end = sdl[0]
-    for start, end in sdl[1:]:
-        # If date range completely outwith, set both start and end
-        if start < earliest_start and end > latest_end:
-            earliest_start, latest_end = start, end
-        # If start and latest end overlap, and end is later than latest end, update latest end
-        elif start <= latest_end < end:
-            latest_end = end
-        # If end and earliest start overlap, and start is earlier than earliest start, update earliest start
-        elif end >= earliest_start > start:
-            earliest_start = start
-        # If date range completely within, do nothing
-        elif start >= earliest_start and end <= latest_end:
-            continue
-        # If adjacent
-        elif abs(latest_end - start).days == 1 or abs(earliest_start - end).days == 1:
-            latest_end = max(end, latest_end)
-            earliest_start = min(start, earliest_start)
-        # If none of these (date forms a disjoint set) note as unused
-        else:
-            unused_values.add((start, end))
-    yield earliest_start, latest_end
-    # If there are remaining items not used, pass recursively
-    if unused_values:
-        yield from _reduce_date_list(unused_values)
+    if len(dates) == 0:
+        return []  # bail
 
-    # unused_dates = []
-    # earliest_start, latest_end = sdl[0]
-    # for start, end in sdl[1:]:
-    #     if (start - latest_end).days > 1:
-    #         unused_dates.append((start, end))
-    #         continue
-    #     if end > latest_end:
-    #         latest_end = end
-    # yield earliest_start, latest_end
-    # if unused_dates:
-    #     yield from _reduce_date_list(unused_dates)
+    dates = sorted(dates)  # sort dates oldest first
+    reduced = [dates[0]]  # initialise reduced list with oldest start date
+    for start, end in dates[1:]:
+        range_start, range_end = reduced[-1]
+        # if the start date is more than one day apart from the previous end,
+        # start a new date range. This allow dates to be adjacent, for example
+        # leaving a role on the 31st and starting the next on the 1st
+        if (range_end - start) < ADJACENT:
+            reduced.append((start, end))
+        # if the potential end date is newer than the current end date, modify
+        # the current date range to use the new end date
+        elif end > range_end:
+            reduced[-1] = range_start, end
+
+    return reduced
 
 
 @cache_hooks.cache_result(key=("permits", 1))
