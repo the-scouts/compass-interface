@@ -173,7 +173,7 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, repor
     form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}
 
     # Appointments Reports
-    if report_number == 52:
+    if report_number in {48, 52}:  # County, Region
         form_data = _form_data_appointments(form_data, tree)
 
     # Compass does user-agent sniffing in reports!!! This does seem to be the
@@ -193,6 +193,7 @@ def _update_form_data(client: Client, report_page: bytes, run_report: str, repor
 
 
 def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -> dict[str, str | None]:
+    """Select all units/locations."""
     additional_form_data = {
         "ReportViewer1$ctl10": "ltr",
         "ReportViewer1$ctl11": "standards",
@@ -204,34 +205,15 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -
         "__ASYNCPOST": "true",
     }  # TODO this may not be needed. Test.
 
-    # ReportViewer1$ctl04$ctl05$txtValue - County Label
-    # ReportViewer1$ctl04$ctl07$txtValue - District Label
-    # ReportViewer1$ctl04$ctl09$txtValue - Role Statuses
-    # ReportViewer1$ctl04$ctl15$txtValue - Columns Label
+    # report level - 1 (e.g. county -> district)
+    numbered_levels_children = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")
+    form_data["ReportViewer1$ctl04$ctl05$txtValue"] = ", ".join(numbered_levels_children.values())
+    form_data["ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices"] = ",".join(numbered_levels_children.keys())
 
-    numbered_counties = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")  # Counties
-    numbered_districts = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl07_divDropDown")  # Districts
-    numbered_role_statuses = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl09_divDropDown")  # Role Statuses
-    numbered_column_names = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl15_divDropDown")  # Report Fields
-
-    # # Export regional roles only
-    # form_data["ReportViewer1$ctl04$ctl05$txtValue"] = "Regional Roles"
-    # form_data["ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices"] = "0"
-
-    # Export all districts
-    form_data["ReportViewer1$ctl04$ctl05$txtValue"] = ", ".join(numbered_counties.values())
-    form_data["ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices"] = ",".join(numbered_counties.keys())
-    form_data["ReportViewer1$ctl04$ctl07$txtValue"] = ", ".join(numbered_districts.values())
-    form_data["ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices"] = ",".join(numbered_districts.keys())
-
-    # TODO this may not be needed. Test.
-    # update text values of role statuses and column names from default indices
-    form_data["ReportViewer1$ctl04$ctl09$txtValue"] = _get_defaults_labels(
-        form_data, "ReportViewer1$ctl04$ctl09$divDropDown$ctl01$HiddenIndices", numbered_role_statuses
-    )
-    form_data["ReportViewer1$ctl04$ctl15$txtValue"] = _get_defaults_labels(
-        form_data, "ReportViewer1$ctl04$ctl15$divDropDown$ctl01$HiddenIndices", numbered_column_names
-    )
+    # report level - 2 (e.g. county -> group)
+    numbered_levels_grandchildren = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl07_divDropDown")
+    form_data["ReportViewer1$ctl04$ctl07$txtValue"] = ", ".join(numbered_levels_grandchildren.values())
+    form_data["ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices"] = ",".join(numbered_levels_grandchildren.keys())
 
     return form_data | additional_form_data
 
