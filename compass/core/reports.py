@@ -11,7 +11,7 @@ class Reports:
         self.auth_ids = session.membership_number, session.role_number, session._jk
         self.client = session._client
 
-    def get_report(self, report_type: TYPES_REPORTS) -> bytes:
+    def get_report(self, report_type: TYPES_REPORTS) -> str:
         """Exports report as CSV from Compass.
 
         Exporting a report is of course surprisingly complicated. The process
