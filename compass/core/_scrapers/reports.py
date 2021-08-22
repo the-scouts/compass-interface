@@ -20,25 +20,27 @@ if TYPE_CHECKING:
 
 # TODO move to schema.reports if created
 # TODO remove location from start, to keep list small
-TYPES_REPORTS = Literal[
-    "Region Member Directory",
-    "Region Appointments Report",
-    "Region Permit Report",
-    "Region Disclosure Report",
-    "Region Training Report",
-    "Region Disclosure Management Report",
-]
 _report_types: dict[str, int] = {
     # group reports
     "Group Appointments Report": 59,
     # district reports
     "District Appointments Report": 50,
     "District Member Directory Report": 51,
+    # "District Member Directory 18 To 25 Years": ,
     "District Permits Report": 70,
     "District Disclosure Report": 78,
     "District Training Report": 79,
     "District Awards Report": 94,
     "District Disclosure Management Report": 102,
+    # county reports
+    "County/Area/Region Appointments Report": 48,
+    "County/Area/Region Member Directory Report": 49,
+    "County/Area/Region Member Directory 18 To 25 Years": 53,
+    "County/Area/Region Permits Report": 69,
+    "County/Area/Region Disclosure Report": 77,
+    "County/Area/Region Training Report": 80,
+    "County/Area/Region Awards Report": 95,
+    "County Disclosure Management Report": 101,
     # region reports
     "Region Member Directory": 37,
     "Region Appointments Report": 52,
@@ -47,6 +49,34 @@ _report_types: dict[str, int] = {
     "Region Training Report": 84,
     "Region Disclosure Management Report": 100,
 }
+TYPES_REPORTS = Literal[
+    # group
+    "Group Appointments Report",
+    # district
+    "District Appointments Report",
+    "District Member Directory Report",
+    "District Permits Report",
+    "District Disclosure Report",
+    "District Training Report",
+    "District Awards Report",
+    "District Disclosure Management Report",
+    # county
+    "County/Area/Region Appointments Report",
+    "County/Area/Region Member Directory Report",
+    "County/Area/Region Member Directory 18 To 25 Years",
+    "County/Area/Region Permits Report",
+    "County/Area/Region Disclosure Report",
+    "County/Area/Region Training Report",
+    "County/Area/Region Awards Report",
+    "County Disclosure Management Report",
+    # region
+    "Region Member Directory",
+    "Region Appointments Report",
+    "Region Permit Report",
+    "Region Disclosure Report",
+    "Region Training Report",
+    "Region Disclosure Management Report",
+]
 
 
 def export_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_type: TYPES_REPORTS, stream: bool = False) -> bytes:
