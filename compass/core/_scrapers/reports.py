@@ -135,35 +135,6 @@ def _prepare_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int)
     return report_page.decode("utf-8")
 
 
-def _export_report(client: Client, report_page: str, format_code: TYPES_FORMAT_CODES) -> bytes:
-    # Get report export URL:
-    logger.info("Exporting report")
-    export_url = _extract_report_export_url(report_page, format_code)
-
-    # Download report to CSV:
-    start = time.time()
-    export_content = client.get(export_url, timeout=30).content
-    logger.debug(f"Downloading took {time.time() - start:.2f}s")
-
-    # start = time.time()
-    # TODO TRAINING REPORT ETC.
-    # # TODO REPORT BODY HAS KEEP ALIVE URL KeepAliveUrl
-    # p = PeriodicTimer(15, lambda: self.report_keep_alive(self.session, report_page.text))
-    # self.session.sto_thread.start()
-    # p.start()
-    # # ska_url = _report_keep_alive(self.session, report_page.text)
-    # try:
-    #     _download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
-    # except (ConnectionResetError, httpx.ConnectError):
-    #     logger.info(f"Stopped at {datetime.datetime.now()}")
-    #     p.cancel()
-    #     self.session.sto_thread.cancel()
-    #     raise
-    # logger.debug(f"Exporting took {time.time() - start}s")
-
-    return export_content
-
-
 def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
     logger.debug("Getting report token")
     response = auth_header.auth_header_get(
@@ -241,6 +212,45 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -
     return form_data | additional_form_data
 
 
+def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[str, str]:
+    table = tree.get_element_by_id(element_id)[0][0]
+    return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
+
+
+def _get_defaults_labels(form_data: dict[str, str], default_indices_key: str, labels_map: dict[str, str]) -> str:
+    indices = form_data.get(default_indices_key, "").split(",")
+    return ", ".join(labels_map[i] for i in indices)
+
+
+def _export_report(client: Client, report_page: str, format_code: TYPES_FORMAT_CODES) -> bytes:
+    # Get report export URL:
+    logger.info("Exporting report")
+    export_url = _extract_report_export_url(report_page, format_code)
+
+    # Download report to CSV:
+    start = time.time()
+    export_content = client.get(export_url, timeout=30).content
+    logger.debug(f"Downloading took {time.time() - start:.2f}s")
+
+    # start = time.time()
+    # TODO TRAINING REPORT ETC.
+    # # TODO REPORT BODY HAS KEEP ALIVE URL KeepAliveUrl
+    # p = PeriodicTimer(15, lambda: self.report_keep_alive(self.session, report_page.text))
+    # self.session.sto_thread.start()
+    # p.start()
+    # # ska_url = _report_keep_alive(self.session, report_page.text)
+    # try:
+    #     _download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
+    # except (ConnectionResetError, httpx.ConnectError):
+    #     logger.info(f"Stopped at {datetime.datetime.now()}")
+    #     p.cancel()
+    #     self.session.sto_thread.cancel()
+    #     raise
+    # logger.debug(f"Exporting took {time.time() - start}s")
+
+    return export_content
+
+
 def _extract_report_export_url(report_page: str, format_code: TYPES_FORMAT_CODES) -> str:
     start = report_page.index("ExportUrlBase")
     cut = report_page[start:].removeprefix('ExportUrlBase":"')
@@ -254,16 +264,6 @@ def _error_status(response: httpx.Response, /, msg: str = "Request to Compass fa
         response.raise_for_status()
     except httpx.HTTPError as err:
         raise ci.CompassNetworkError(msg) from err
-
-
-def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[str, str]:
-    table = tree.get_element_by_id(element_id)[0][0]
-    return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
-
-
-def _get_defaults_labels(form_data: dict[str, str], default_indices_key: str, labels_map: dict[str, str]) -> str:
-    indices = form_data.get(default_indices_key, "").split(",")
-    return ", ".join(labels_map[i] for i in indices)
 
 
 def _report_keep_alive(client: Client, report_page: str) -> str:
