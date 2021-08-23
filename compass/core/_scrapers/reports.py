@@ -227,7 +227,7 @@ def _export_report(client: Client, report_page: str, format_code: TYPES_FORMAT_C
     logger.info("Exporting report")
     export_url = _extract_report_export_url(report_page, format_code)
 
-    # Download report to CSV:
+    # Download report:
     start = time.time()
     export_content = client.get(export_url, timeout=30).content
     logger.debug(f"Downloading took {time.time() - start:.2f}s")
