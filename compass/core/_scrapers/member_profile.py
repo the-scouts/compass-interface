@@ -46,7 +46,7 @@ from compass.core.util.type_coercion import parse_date
 
 if TYPE_CHECKING:
     from collections.abc import Collection
-    from collections.abc import Iterator
+    from collections.abc import Iterable
 
     from compass.core.util.client import Client
 
@@ -192,7 +192,7 @@ def get_personal_tab(client: Client, membership_number: int, /) -> ci.MemberDeta
 
     """
     tree = _get_member_profile_tab(client, membership_number, "Personal")
-    details: dict[str, Union[None, int, str, datetime.date, ci.AddressData, dict[str, str]]] = dict()
+    details: dict[str, Union[None, int, str, datetime.date, ci.AddressData, dict[str, str]]] = {}
 
     # ### Extractors
     # ## Core:
@@ -415,7 +415,7 @@ def _membership_duration(dates: Collection[tuple[datetime.date, datetime.date]])
     return round(membership_duration_days / 365.2425, 3)  # Leap year except thrice per 400 years.
 
 
-def _reduce_date_list(dates: Collection[tuple[datetime.date, datetime.date]]) -> Iterator[tuple[datetime.date, datetime.date]]:
+def _reduce_date_list(dates: Collection[tuple[datetime.date, datetime.date]]) -> Iterable[tuple[datetime.date, datetime.date]]:
     """Reduce list of start and end dates to disjoint ranges.
 
     Iterate through date pairs and get longest consecutive date ranges. Returns
@@ -599,7 +599,7 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     """Parses a personal learning plan from a LXML row element containing data."""
     child_nodes = list(role)
 
-    role_data: dict[str, Union[None, str, int, datetime.date]] = dict()
+    role_data: dict[str, Union[None, str, int, datetime.date]] = {}
     role_number = int(role.get("data-ng_mrn"))
     role_data["role_number"] = role_number
     role_data["role_title"] = child_nodes[0].text_content()
@@ -648,8 +648,8 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
 
     """
     # Handle GDPR (Get latest GDPR date)
-    training_ogl: TYPES_TRAINING_OGL = dict()
-    gdpr_generator: Iterator[datetime.date] = (
+    training_ogl: TYPES_TRAINING_OGL = {}
+    gdpr_generator = (
         module["validated_date"]
         for plp in training_plps.values()
         for module in plp
