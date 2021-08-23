@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Literal, TYPE_CHECKING
+from typing import cast, Literal, TYPE_CHECKING
 
 from lxml import html
 import requests
@@ -83,7 +83,7 @@ def export_report(
     report_type: TYPES_REPORTS,
     hierarchy_level: ci.TYPES_HIERARCHY_LEVELS,
     auth_ids: TYPE_AUTH_IDS,
-    stream: bool = False
+    stream: bool = False,
 ) -> str:
     """Exports report as CSV from Compass.
 
@@ -110,6 +110,7 @@ def export_report(
     report_level_map = _report_ids[report_type]
     if hierarchy_level not in report_level_map:
         raise ci.CompassReportError(f"Requested report does not exist for hierarchy level: {hierarchy_level}.")
+    hierarchy_level = cast(ci.TYPES_UNIT_LEVELS, hierarchy_level)
     report_number = report_level_map[hierarchy_level]
 
     # Get token for report type & role running said report:
