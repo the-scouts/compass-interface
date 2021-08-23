@@ -15,25 +15,23 @@ class Reports:
     1. Get a token for generating the report from the Compass backend. This
         also validates that the report exists and that the user is
         authenticated to access it.
-    2. If successful in obtaining a report token, get the initial report
-        page. The token is the (relative) URL here, and the report page
-        contains further needed information, such as the export URL and
-        location data for a full export.
-        (Compass does not include all organisational units in reports by
-        default, and to export all data for a given unit and downwards, we
-        need to add in these missing/unset levels manually).
-    3. We update report configuration data (sent as form data), and check
-        that we are not in an error state.
-    4. We extract the export URL, download the content and save to disk.
+    2. Get the export URL from the report page, using the report token
+        as a relative URL.
+    3. Update report configuration data (sent as form data), and check that we
+        are not in an error state. (Compass does not include all organisational
+        units in reports by default, and we need to add in these missing/unset
+        levels manually to export all data for a given unit and downwards).
+    4. We export the prepared report in the specified format.
 
     Pitfalls to be aware of in this process include that:
-    - Compass checks user-agent headers in some parts of the process
+    - Compass checks user-agent headers when updating form data
     - There is a ten (10) minute default soft-timeout, which may run out
         before a report download has finished
     - If a requested report is too large, Compass can simply give up, often
         with an `OutOfMemory` error or similar
 
     """
+
     def __init__(self, session: ci.Logon):
         """Constructor for Reports."""
         self.auth_ids = session.membership_number, session.role_number, session._jk
@@ -43,32 +41,8 @@ class Reports:
     def get_report(self, report_type: TYPES_REPORTS, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
         """Exports report as CSV from Compass.
 
-        Exporting a report is of course surprisingly complicated. The process
-        has four major steps, as follows:
-
-        1. Get a token for generating the report from the Compass backend. This
-            also validates that the report exists and that the user is
-            authenticated to access it.
-        2. If successful in obtaining a report token, get the initial report
-            page. The token is the (relative) URL here, and the report page
-            contains further needed information, such as the export URL and
-            location data for a full export.
-            (Compass does not include all organisational units in reports by
-            default, and to export all data for a given unit and downwards, we
-            need to add in these missing/unset levels manually).
-        3. We update report configuration data (sent as form data), and check
-            that we are not in an error state.
-        4. We extract the export URL, download the content and save to disk.
-
-        Pitfalls to be aware of in this process include that:
-        - Compass checks user-agent headers in some parts of the process
-        - There is a ten (10) minute default soft-timeout, which may run out
-            before a report download has finished
-        - If a requested report is too large, Compass can simply give up, often
-            with an `OutOfMemory` error or similar
-
         Returns:
-            Report output, as a bytes-encoded object.
+            Report exported content as bytes
 
         Raises:
             CompassReportError:
