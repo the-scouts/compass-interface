@@ -105,6 +105,12 @@ def export_report(
             reports a HTTP 5XX status code
 
     """
+    report_number = _report_number(report_type, hierarchy_level)
+    report_page = _prepare_report(client, auth_ids, report_number)
+    return _export_report(client, report_page, format_code)
+
+
+def _report_number(report_type: TYPES_REPORTS, hierarchy_level: ci.TYPES_HIERARCHY_LEVELS) -> int:
     if report_type not in _report_ids:
         types = [*_report_ids]
         raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
@@ -112,8 +118,10 @@ def export_report(
     if hierarchy_level not in report_level_map:
         raise ci.CompassReportError(f"Requested report does not exist for hierarchy level: {hierarchy_level}.")
     hierarchy_level = cast(ci.TYPES_UNIT_LEVELS, hierarchy_level)
-    report_number = report_level_map[hierarchy_level]
+    return report_level_map[hierarchy_level]
 
+
+def _prepare_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
     # Get token for report type & role running said report:
     run_report_url = _get_report_token(client, auth_ids, report_number)
 
@@ -124,9 +132,13 @@ def export_report(
     # Update form data & set location selection:
     _update_form_data(client, report_page, run_report_url, report_number)
 
+    return report_page.decode("utf-8")
+
+
+def _export_report(client: Client, report_page: str, format_code: TYPES_FORMAT_CODES) -> bytes:
     # Get report export URL:
     logger.info("Exporting report")
-    export_url = _extract_report_export_url(report_page.decode("UTF-8"), format_code)
+    export_url = _extract_report_export_url(report_page, format_code)
 
     # Download report to CSV:
     start = time.time()
