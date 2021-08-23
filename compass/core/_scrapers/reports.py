@@ -4,8 +4,8 @@ import re
 import time
 from typing import cast, Literal, TYPE_CHECKING
 
-from lxml import html
 import httpx
+from lxml import html
 
 import compass.core as ci
 from compass.core.logger import logger
