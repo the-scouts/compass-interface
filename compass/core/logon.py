@@ -233,7 +233,7 @@ def _create_session() -> Client:
     """Create a session and get ASP.Net Session ID cookie from the compass server."""
     client = Client()
 
-    client.head(f"{Settings.base_url}/")  # use .head() as only headers needed to grab session cookie
+    client.head(f"{Settings.base_url}/", allow_redirects=False)  # use .head() as only headers needed to grab session cookie
     Settings.total_requests += 1
 
     if not client.cookies:
@@ -342,13 +342,6 @@ def _roles_iterator(form_tree: html.FormElement) -> Iterator[tuple[int, ci.TYPES
             yield int(row.get("data-pk")), (row[0].text_content().strip(), row[2].text_content().strip())
 
 
-def _update_auth_headers(
-    client: Client,
-    membership_number: int,
-    role_number: int,
-    session_id: str,
-) -> None:
-    client.headers.update(
-        Authorization=f"{membership_number}~{role_number}",
-        SID=session_id,  # Session ID
-    )
+def _update_auth_headers(client: Client, membership_number: int, role_number: int, session_id: str) -> None:
+    client.headers["Authorization"] = f"{membership_number}~{role_number}"
+    client.headers["SID"] = session_id  # Session ID

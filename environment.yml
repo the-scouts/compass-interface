@@ -7,7 +7,7 @@ dependencies:
   - pip
 
   # For web requests
-  - requests
+  - httpx
 
   # For parsing results
   - lxml
@@ -37,7 +37,6 @@ dependencies:
   - bandit
   - pyroma
   - mypy
-  - types-requests
   - lxml-stubs
 
   # Build

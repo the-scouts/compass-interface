@@ -2,7 +2,7 @@ import datetime
 
 import pydantic
 import pytest
-import requests
+import httpx
 
 from compass.core import logon
 import compass.core as ci
@@ -35,7 +35,7 @@ class TestLogon:
         client = logon._create_session()
 
         # Then
-        assert isinstance(client, requests.Session)
+        assert isinstance(client, httpx.Client)
         assert isinstance(client, Client)
         assert client.cookies["ASP.NET_SessionId"] == asp_net_id
 

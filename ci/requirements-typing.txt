@@ -1,5 +1,4 @@
 -r requirements-run.txt
 
 # type stubs
-types-requests
 lxml-stubs
