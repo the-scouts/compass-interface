@@ -1,8 +1,8 @@
 import datetime
 
+import httpx
 import pydantic
 import pytest
-import httpx
 
 from compass.core import logon
 import compass.core as ci
