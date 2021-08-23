@@ -76,6 +76,7 @@ _report_ids: dict[TYPES_REPORTS, dict[ci.TYPES_UNIT_LEVELS, int]] = {
     "Awards Report": _report_ids_awards,
     "Disclosure Management Report": _report_ids_disclosure_management,
 }
+TYPES_FORMAT_CODES = Literal["CSV", "EXCEL", "XML"]
 
 
 def export_report(
@@ -83,8 +84,8 @@ def export_report(
     report_type: TYPES_REPORTS,
     hierarchy_level: ci.TYPES_HIERARCHY_LEVELS,
     auth_ids: TYPE_AUTH_IDS,
-    stream: bool = False,
-) -> str:
+    format_code: TYPES_FORMAT_CODES = "CSV",
+) -> bytes:
     """Exports report as CSV from Compass.
 
     See `Reports.get_report` for an overview of the export process
@@ -125,11 +126,11 @@ def export_report(
 
     # Get report export URL:
     logger.info("Exporting report")
-    export_url = _extract_report_export_url(report_page.decode("UTF-8"))
+    export_url = _extract_report_export_url(report_page.decode("UTF-8"), format_code)
 
     # Download report to CSV:
     start = time.time()
-    csv_export = _download_report(client, export_url, streaming=stream)
+    export_content = client.get(export_url, timeout=30).content
     logger.debug(f"Downloading took {time.time() - start:.2f}s")
 
     # start = time.time()
@@ -148,7 +149,7 @@ def export_report(
     #     raise
     # logger.debug(f"Exporting took {time.time() - start}s")
 
-    return csv_export
+    return export_content
 
 
 def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
@@ -228,26 +229,12 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -
     return form_data | additional_form_data
 
 
-def _extract_report_export_url(report_page: str) -> str:
+def _extract_report_export_url(report_page: str, format_code: TYPES_FORMAT_CODES) -> str:
     start = report_page.index("ExportUrlBase")
     cut = report_page[start:].removeprefix('ExportUrlBase":"')
     end = cut.index('"')
     full_url = cut[:end].encode().decode("unicode-escape")
-    return f"{Settings.base_url}/{full_url}CSV"
-
-
-def _download_report(client: Client, url: str, streaming: bool) -> str:
-    # standard download
-    if not streaming:
-        return client.get(url).content.decode("utf-8-sig")  # report is returned with Byte Order Mark
-
-    # streaming download
-    csv_export = b""
-    with client.stream("GET", url) as response:
-        _error_status(response)
-        for chunk in response.iter_bytes():  # Chunk size == 1MiB
-            csv_export += chunk
-    return csv_export.decode("utf-8-sig")  # report is returned with Byte Order Mark
+    return f"{Settings.base_url}/{full_url}{format_code}"
 
 
 def _error_status(response: httpx.Response, /, msg: str = "Request to Compass failed!") -> None:

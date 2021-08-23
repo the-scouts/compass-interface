@@ -1,6 +1,7 @@
 import compass.core as ci
 from compass.core._scrapers.reports import export_report
 from compass.core._scrapers.reports import TYPES_REPORTS
+from compass.core._scrapers.reports import TYPES_FORMAT_CODES
 
 __all__ = ("Reports", "TYPES_REPORTS")  # only needed whilst still no schema file for reports
 
@@ -12,7 +13,7 @@ class Reports:
         self.client = session._client
         self.hierarchy_level = session.hierarchy.level
 
-    def get_report(self, report_type: TYPES_REPORTS) -> str:
+    def get_report(self, report_type: TYPES_REPORTS, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
         """Exports report as CSV from Compass.
 
         Exporting a report is of course surprisingly complicated. The process
@@ -54,4 +55,4 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return export_report(self.client, report_type, self.hierarchy_level, self.auth_ids, stream=False)
+        return export_report(self.client, report_type, self.hierarchy_level, self.auth_ids, format_code)
