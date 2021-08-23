@@ -1,17 +1,17 @@
 from typing import Any
 
-import requests
+import httpx
 
 import compass.core as ci
 from compass.core.settings import Settings
 
 
-class Client(requests.Session):
+class Client(httpx.Client):
     """Counts the number of requests sent."""
 
-    def request(self, *args: Any, **kwargs: Any) -> requests.Response:
+    def request(self, *args: Any, **kwargs: Any) -> httpx.Response:
         Settings.total_requests += 1
         try:
             return super().request(*args, **kwargs)
-        except requests.RequestException as err:
+        except httpx.RequestError as err:
             raise ci.CompassNetworkError("Network Error!") from err

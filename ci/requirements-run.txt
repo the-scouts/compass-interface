@@ -1,5 +1,5 @@
 # core
-requests
+httpx
 lxml
 # core-typing
 pydantic>=1.8.2

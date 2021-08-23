@@ -11,7 +11,7 @@ from compass.core.util.compass_helpers import compass_restify
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    import requests
+    import httpx
 
     from compass.core.util.client import Client  # pylint: disable=ungrouped-imports
 
@@ -36,12 +36,11 @@ def auth_header_get(
     *,
     params: Optional[Mapping[str, Optional[str]]] = None,
     headers: Optional[Mapping[str, str]] = None,
-    stream: Optional[bool] = None,
     **kwargs: Any,
-) -> requests.Response:
+) -> httpx.Response:
     """Sends a HTTP GET request.
 
-    Pass-through method to requests.sessions.Session.get, also adding to
+    Pass-through method to httpx.Client.get, also adding to
     the counter of total requests sent by `compass.core`.
 
     Adds custom auth_header.py logic for certain Compass requests
@@ -67,11 +66,10 @@ def auth_header_get(
         url: Request URL
         params: Mapping to be sent in the query string for the request
         headers: Mapping of HTTP Headers
-        stream: Whether to stream download the response content.
         kwargs: Optional arguments to session.get
 
     Returns:
-        requests.Response object from executing the request
+        httpx.Response object from executing the request
 
     Raises:
         CompassNetworkError
@@ -88,4 +86,4 @@ def auth_header_get(
         "x3": f"{role_number}",
     }
 
-    return client.get(url, params=params, headers=headers, stream=stream, **kwargs)
+    return client.get(url, params=params, headers=headers, **kwargs)

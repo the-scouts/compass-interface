@@ -5,7 +5,7 @@ import time
 from typing import cast, Literal, TYPE_CHECKING
 
 from lxml import html
-import requests
+import httpx
 
 import compass.core as ci
 from compass.core.logger import logger
@@ -141,7 +141,7 @@ def export_report(
     # # ska_url = _report_keep_alive(self.session, report_page.text)
     # try:
     #     _download_report(self.session, f"{Settings.base_url}/{export_url_path}", export_url_params, filename, )  # ska_url
-    # except (ConnectionResetError, requests.ConnectionError):
+    # except (ConnectionResetError, httpx.ConnectError):
     #     logger.info(f"Stopped at {datetime.datetime.now()}")
     #     p.cancel()
     #     self.session.sto_thread.cancel()
@@ -243,17 +243,17 @@ def _download_report(client: Client, url: str, streaming: bool) -> str:
 
     # streaming download
     csv_export = b""
-    with client.get(url, stream=True) as r:
-        _error_status(r)
-        for chunk in r.iter_content(chunk_size=None):  # Chunk size == 1MiB
+    with client.stream("GET", url) as response:
+        _error_status(response)
+        for chunk in response.iter_bytes(chunk_size=None):  # Chunk size == 1MiB
             csv_export += chunk
     return csv_export.decode("utf-8-sig")  # report is returned with Byte Order Mark
 
 
-def _error_status(response: requests.Response, /, msg: str = "Request to Compass failed!") -> None:
+def _error_status(response: httpx.Response, /, msg: str = "Request to Compass failed!") -> None:
     try:
         response.raise_for_status()
-    except requests.HTTPError as err:
+    except httpx.HTTPError as err:
         raise ci.CompassNetworkError(msg) from err
 
 
