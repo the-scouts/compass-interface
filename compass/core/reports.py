@@ -38,11 +38,11 @@ class Reports:
         self.client = session._client
         self.hierarchy_level = session.hierarchy.level
 
-    def get_report(self, report_type: TYPES_REPORTS, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
-        """Exports report as CSV from Compass.
+    def _get_report(self, report_type: TYPES_REPORTS, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports report from Compass.
 
         Returns:
-            Report exported content as bytes
+            Exported report content
 
         Raises:
             CompassReportError:
@@ -57,3 +57,155 @@ class Reports:
 
         """
         return export_report(self.client, report_type, self.hierarchy_level, self.auth_ids, format_code)
+
+    def appointments(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports appointments reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Appointments Report", format_code)
+
+    def member_directory(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports member directory reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Member Directory Report", format_code)
+
+    def member_directory_18_25(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports member directory (18-25) reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("18-25 Member Directory Report", format_code)
+
+    def permits(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports permits reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Permits Report", format_code)
+
+    def disclosure(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports disclosure reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Disclosure Report", format_code)
+
+    def training(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports training reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Training Report", format_code)
+
+    def awards(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports awards reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Awards Report", format_code)
+
+    def disclosure_management(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+        """Exports disclosure management reports from Compass.
+
+        Returns:
+            Exported report content
+
+        Raises:
+            CompassReportError:
+                - If Compass returns a JSON error
+                - If there is an error updating the form data
+            CompassReportPermissionError:
+                If the user does not have permission to run the report
+            CompassNetworkError:
+                If there is an error in the transport layer, or if Compass
+                reports a HTTP 5XX status code
+
+        """
+        return self._get_report("Disclosure Management Report", format_code)
