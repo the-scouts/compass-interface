@@ -245,7 +245,7 @@ def _download_report(client: Client, url: str, streaming: bool) -> str:
     csv_export = b""
     with client.stream("GET", url) as response:
         _error_status(response)
-        for chunk in response.iter_bytes(chunk_size=None):  # Chunk size == 1MiB
+        for chunk in response.iter_bytes():  # Chunk size == 1MiB
             csv_export += chunk
     return csv_export.decode("utf-8-sig")  # report is returned with Byte Order Mark
 

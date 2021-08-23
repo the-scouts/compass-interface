@@ -161,7 +161,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
         """
         client = Client()
-        client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)  # type: ignore[no-untyped-call]
+        client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
 
         logon = cls(
             client=client,
@@ -185,7 +185,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             (self.membership_number, self.role_number, self._jk),
             self._client,
             f"{Settings.web_service_path}/STO_CHK",
-            params={"pExtend": sto},
+            params={"pExtend": sto},  # type: ignore[dict-item]
         )
         return response.content.decode("utf-8")
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 import time
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from compass.core.logger import logger
 from compass.core.settings import Settings
@@ -34,9 +34,8 @@ def auth_header_get(
     client: Client,
     url: str,
     *,
-    params: Optional[Mapping[str, Optional[str]]] = None,
-    headers: Optional[Mapping[str, str]] = None,
-    **kwargs: Any,
+    params: dict[str, str],
+    headers: Mapping[str, str] | None = None,
 ) -> httpx.Response:
     """Sends a HTTP GET request.
 
@@ -66,7 +65,6 @@ def auth_header_get(
         url: Request URL
         params: Mapping to be sent in the query string for the request
         headers: Mapping of HTTP Headers
-        kwargs: Optional arguments to session.get
 
     Returns:
         httpx.Response object from executing the request
@@ -79,11 +77,10 @@ def auth_header_get(
     # pylint complains that we have more than 5 arguments.
     membership_number, role_number, jk = auth_ids
     headers = dict(headers or {}) | {"Auth": jk_hash(client, membership_number, role_number, jk)}
-
-    params = dict(params or {}) | {
+    params |= {
         "x1": f"{membership_number}",
         "x2": f"{jk}",
         "x3": f"{role_number}",
     }
 
-    return client.get(url, params=params, headers=headers, **kwargs)
+    return client.get(url, params=params, headers=headers)
