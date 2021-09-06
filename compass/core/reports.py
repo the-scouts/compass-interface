@@ -1,9 +1,7 @@
 import compass.core as ci
 from compass.core._scrapers.reports import export_report
-from compass.core._scrapers.reports import TYPES_FORMAT_CODES
-from compass.core._scrapers.reports import TYPES_REPORTS
 
-__all__ = ("Reports", "TYPES_REPORTS")  # only needed whilst still no schema file for reports
+__all__ = ("Reports", )
 
 
 class Reports:
@@ -38,7 +36,7 @@ class Reports:
         self.client = session._client
         self.hierarchy_level = session.hierarchy.level
 
-    def _get_report(self, report_type: TYPES_REPORTS, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def _get_report(self, report_type: ci.TYPES_REPORTS, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports report from Compass.
 
         Returns:
@@ -56,9 +54,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return export_report(self.client, report_type, self.hierarchy_level, self.auth_ids, format_code)
+        return export_report(self.client, report_type, self.hierarchy_level, self.auth_ids, formats)
 
-    def appointments(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def appointments(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports appointments reports from Compass.
 
         Returns:
@@ -75,9 +73,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Appointments Report", format_code)
+        return self._get_report("Appointments Report", formats)
 
-    def member_directory(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def member_directory(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports member directory reports from Compass.
 
         Returns:
@@ -94,9 +92,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Member Directory Report", format_code)
+        return self._get_report("Member Directory Report", formats)
 
-    def member_directory_18_25(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def member_directory_18_25(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports member directory (18-25) reports from Compass.
 
         Returns:
@@ -113,9 +111,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("18-25 Member Directory Report", format_code)
+        return self._get_report("18-25 Member Directory Report", formats)
 
-    def permits(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def permits(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports permits reports from Compass.
 
         Returns:
@@ -132,9 +130,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Permits Report", format_code)
+        return self._get_report("Permits Report", formats)
 
-    def disclosure(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def disclosure(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports disclosure reports from Compass.
 
         Returns:
@@ -151,9 +149,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Disclosure Report", format_code)
+        return self._get_report("Disclosure Report", formats)
 
-    def training(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def training(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports training reports from Compass.
 
         Returns:
@@ -170,9 +168,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Training Report", format_code)
+        return self._get_report("Training Report", formats)
 
-    def awards(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def awards(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports awards reports from Compass.
 
         Returns:
@@ -189,9 +187,9 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Awards Report", format_code)
+        return self._get_report("Awards Report", formats)
 
-    def disclosure_management(self, format_code: TYPES_FORMAT_CODES = "CSV") -> bytes:
+    def disclosure_management(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports disclosure management reports from Compass.
 
         Returns:
@@ -208,4 +206,4 @@ class Reports:
                 reports a HTTP 5XX status code
 
         """
-        return self._get_report("Disclosure Management Report", format_code)
+        return self._get_report("Disclosure Management Report", formats)

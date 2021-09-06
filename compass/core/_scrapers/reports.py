@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import time
-from typing import cast, Literal, TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 import httpx
 from lxml import html
@@ -56,17 +56,7 @@ _report_ids_disclosure_management: dict[ci.TYPES_UNIT_LEVELS, int] = {
     "County": 101,
     "Region": 100,
 }
-TYPES_REPORTS = Literal[
-    "Appointments Report",
-    "Member Directory Report",
-    "18-25 Member Directory Report",
-    "Permits Report",
-    "Disclosure Report",
-    "Training Report",
-    "Awards Report",
-    "Disclosure Management Report",
-]
-_report_ids: dict[TYPES_REPORTS, dict[ci.TYPES_UNIT_LEVELS, int]] = {
+_report_ids: dict[ci.TYPES_REPORTS, dict[ci.TYPES_UNIT_LEVELS, int]] = {
     "Appointments Report": _report_ids_appointments,
     "Member Directory Report": _report_ids_member_directory,
     "18-25 Member Directory Report": _report_ids_18_25_member_directory,
@@ -76,16 +66,15 @@ _report_ids: dict[TYPES_REPORTS, dict[ci.TYPES_UNIT_LEVELS, int]] = {
     "Awards Report": _report_ids_awards,
     "Disclosure Management Report": _report_ids_disclosure_management,
 }
-TYPES_FORMAT_CODES = Literal["CSV", "EXCEL", "XML"]
 
 
 def export_report(
     client: Client,
-    report_type: TYPES_REPORTS,
+    report_type: ci.TYPES_REPORTS,
     hierarchy_level: ci.TYPES_HIERARCHY_LEVELS,
     auth_ids: TYPE_AUTH_IDS,
-    format_code: TYPES_FORMAT_CODES = "CSV",
-) -> bytes:
+    formats: ci.TYPES_FORMAT_CODES = ("CSV",),
+) -> ci.TYPES_EXPORTED_REPORTS:
     """Exports report as CSV from Compass.
 
     See `Reports.get_report` for an overview of the export process
@@ -106,11 +95,12 @@ def export_report(
 
     """
     report_number = _report_number(report_type, hierarchy_level)
+    logger.info(f"Generating {report_type.lower()}")
     report_page = _prepare_report(client, auth_ids, report_number)
-    return _export_report(client, report_page, format_code)
+    return _export_report(client, report_page, formats)
 
 
-def _report_number(report_type: TYPES_REPORTS, hierarchy_level: ci.TYPES_HIERARCHY_LEVELS) -> int:
+def _report_number(report_type: ci.TYPES_REPORTS, hierarchy_level: ci.TYPES_HIERARCHY_LEVELS) -> int:
     if report_type not in _report_ids:
         types = [*_report_ids]
         raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
@@ -126,7 +116,6 @@ def _prepare_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int)
     run_report_url = _get_report_token(client, auth_ids, report_number)
 
     # Get initial reports page, for export URL and config:
-    logger.info("Generating report")
     report_page = client.get(run_report_url).content
 
     # Update form data & set location selection:
@@ -222,15 +211,19 @@ def _get_defaults_labels(form_data: dict[str, str], default_indices_key: str, la
     return ", ".join(labels_map[i] for i in indices)
 
 
-def _export_report(client: Client, report_page: str, format_code: TYPES_FORMAT_CODES) -> bytes:
+def _export_report(client: Client, report_page: str, formats: ci.TYPES_FORMAT_CODES) -> ci.TYPES_EXPORTED_REPORTS:
     # Get report export URL:
-    logger.info("Exporting report")
-    export_url = _extract_report_export_url(report_page, format_code)
+    export_url_base = _extract_report_export_url_base(report_page)
 
-    # Download report:
-    start = time.time()
-    export_content = client.get(export_url, timeout=30).content
-    logger.debug(f"Downloading took {time.time() - start:.2f}s")
+    # Exported reports storage
+    exported = {}
+    for format_code in set(formats):
+        # Download report:
+        logger.info(f"Exporting report to {format_code.lower()}")
+        start = time.time()
+        export_code = "EXCELOPENXML" if format_code == "EXCEL" else format_code  # correct excel exports
+        exported[format_code] = client.get(export_url_base + export_code, timeout=300).content  # excel takes **ages**
+        logger.debug(f"Downloading took {time.time() - start:.2f}s")
 
     # start = time.time()
     # TODO TRAINING REPORT ETC.
@@ -248,15 +241,15 @@ def _export_report(client: Client, report_page: str, format_code: TYPES_FORMAT_C
     #     raise
     # logger.debug(f"Exporting took {time.time() - start}s")
 
-    return export_content
+    return exported
 
 
-def _extract_report_export_url(report_page: str, format_code: TYPES_FORMAT_CODES) -> str:
+def _extract_report_export_url_base(report_page: str) -> str:
     start = report_page.index("ExportUrlBase")
     cut = report_page[start:].removeprefix('ExportUrlBase":"')
     end = cut.index('"')
     full_url = cut[:end].encode().decode("unicode-escape")
-    return f"{Settings.base_url}/{full_url}{format_code}"
+    return f"{Settings.base_url}/{full_url}"
 
 
 def _error_status(response: httpx.Response, /, msg: str = "Request to Compass failed!") -> None:
