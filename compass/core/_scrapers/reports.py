@@ -105,6 +105,11 @@ def export_report(
     report_number = _report_number(report_type, hierarchy_level)
     logger.info(f"Generating {report_type.lower()}")
     report_page, run_report_url = _initialise_report(client, auth_ids, report_number)
+
+    # Training Reports -- for regional reports, we want to run each county individually, as compass can't handle bigger
+    if report_number == 84:
+        return _training_report_region(client, report_page, run_report_url)
+
     _update_form_data(client, report_page, run_report_url, report_number)
     return _export_report(client, report_page, formats)
 
@@ -153,12 +158,61 @@ def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: in
     raise ci.CompassReportError("Report aborted")
 
 
+def _training_report_region(client: Client, report_page: str, run_report_url: str) -> ci.TYPES_EXPORTED_REPORTS:
+    tree, form_data = _extract_form_data(report_page)
+    numbered_counties = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")
+
+    county_reports = []
+    for level, county in numbered_counties.items():
+        logger.info(f"Starting training report export for {county}")
+        # Update report for current county
+        cty_form_data = form_data | {
+            "ReportViewer1$ctl04$ctl05$txtValue": county,
+            "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": level,
+            "ReportViewer1$ctl04$ctl07$txtValue": "Selected Level Only",  # set the defaults
+        } | _ADDITIONAL_FORM_DATA | {"__EVENTTARGET": "ReportViewer1$ctl04$ctl05"}
+        county_report_page = client.post(
+            run_report_url,
+            data=cty_form_data,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+        )
+
+        if county != "Region Level":
+            # get current county's districts
+            cty_tree, cty_form_data = _extract_form_data(county_report_page.content.decode("utf-8"))
+            table = cty_tree.get_element_by_id("ReportViewer1_ctl04_ctl07_divDropDown")[0]
+            numbered_districts = {str(i): row[0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
+
+            # Update report for current county's districts
+            cty_form_data["ReportViewer1$ctl04$ctl07$txtValue"] = ", ".join(numbered_districts.values())
+            cty_form_data["ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices"] = ",".join(numbered_districts.keys())
+            _update_report_with_form_data(client, run_report_url, cty_form_data)
+
+        try:
+            # hardcode CSV, there's enough complexity as it is
+            county_reports.append(_export_report(client, report_page, {"CSV"})["CSV"])
+        except ci.CompassNetworkError:
+            logger.error(f"Failed to export training report for {county.title()} county!")
+
+    # Normalise the reports. This assumes a lot about the structure & prefix of the reports...
+    prefix = b"\xef\xbb\xbfMember_Training_Report\r\nDate : " + time.strftime("%d/%m/%Y").encode() + b"\r\n\r\n"
+    out = prefix
+    for report in county_reports:
+        if report.startswith(prefix):
+            out += report[48:]  # 48 == len(prefix)
+        else:
+            logger.error(f"Training report does not start with common prefix! First 50 chars are {report[:50]}")
+
+    return {"CSV": out}
+
+
 def _update_form_data(client: Client, report_page: str, run_report: str, report_number: int) -> None:
     """Update form data & set location selection."""
     # TODO add method to choose between exporting all data and just top-level
     tree, form_data = _extract_form_data(report_page)
 
     # Appointments Reports
+    # TODO county training should probably be added to this list
     if report_number in {48, 52}:  # County, Region
         form_data = _form_data_appointments(form_data, tree)
 
