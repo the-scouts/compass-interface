@@ -95,7 +95,8 @@ def export_report(
     """
     report_number = _report_number(report_type, hierarchy_level)
     logger.info(f"Generating {report_type.lower()}")
-    report_page = _prepare_report(client, auth_ids, report_number)
+    report_page, run_report_url = _initialise_report(client, auth_ids, report_number)
+    _update_form_data(client, report_page, run_report_url, report_number)
     return _export_report(client, report_page, formats)
 
 
@@ -110,17 +111,14 @@ def _report_number(report_type: ci.TYPES_REPORTS, hierarchy_level: ci.TYPES_HIER
     return report_level_map[hierarchy_level]
 
 
-def _prepare_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
+def _initialise_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> tuple[str, str]:
     # Get token for report type & role running said report:
     run_report_url = _get_report_token(client, auth_ids, report_number)
 
     # Get initial reports page, for export URL and config:
     report_page = client.get(run_report_url).content
 
-    # Update form data & set location selection:
-    _update_form_data(client, report_page, run_report_url, report_number)
-
-    return report_page.decode("utf-8")
+    return report_page.decode("utf-8"), run_report_url
 
 
 def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> str:
@@ -146,7 +144,8 @@ def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: in
     raise ci.CompassReportError("Report aborted")
 
 
-def _update_form_data(client: Client, report_page: bytes, run_report: str, report_number: int) -> None:
+def _update_form_data(client: Client, report_page: str, run_report: str, report_number: int) -> None:
+    """Update form data & set location selection."""
     # TODO add method to choose between exporting all data and just top-level
     tree = html.fromstring(report_page)
 
