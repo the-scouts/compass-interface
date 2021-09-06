@@ -13,50 +13,49 @@ from compass.core.settings import Settings
 from compass.core.util import auth_header
 
 if TYPE_CHECKING:
+    from compass.core.schemas.reports import TYPES_REPORT_IDS_MAP
     from compass.core.util.auth_header import TYPE_AUTH_IDS
     from compass.core.util.client import Client
 
-# TODO move to schema.reports if created
-# TODO remove location from start, to keep list small
-_report_ids_appointments: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_appointments: TYPES_REPORT_IDS_MAP = {
     "Group": 59,
     "District": 50,
     "County": 48,
     "Region": 52,
 }
-_report_ids_member_directory: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_member_directory: TYPES_REPORT_IDS_MAP = {
     "District": 51,
     "County": 49,
     "Region": 37,
 }
-_report_ids_18_25_member_directory: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_18_25_member_directory: TYPES_REPORT_IDS_MAP = {
     "County": 53,
 }
-_report_ids_permits: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_permits: TYPES_REPORT_IDS_MAP = {
     "District": 70,
     "County": 69,
     "Region": 72,
 }
-_report_ids_disclosure: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_disclosure: TYPES_REPORT_IDS_MAP = {
     "District": 78,
     "County": 77,
     "Region": 76,
 }
-_report_ids_training: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_training: TYPES_REPORT_IDS_MAP = {
     "District": 79,
     "County": 80,
     "Region": 84,
 }
-_report_ids_awards: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_awards: TYPES_REPORT_IDS_MAP = {
     "District": 94,
     "County": 95,
 }
-_report_ids_disclosure_management: dict[ci.TYPES_UNIT_LEVELS, int] = {
+_report_ids_disclosure_management: TYPES_REPORT_IDS_MAP = {
     "District": 102,
     "County": 101,
     "Region": 100,
 }
-_report_ids: dict[ci.TYPES_REPORTS, dict[ci.TYPES_UNIT_LEVELS, int]] = {
+_report_ids: dict[ci.TYPES_REPORTS, TYPES_REPORT_IDS_MAP] = {
     "Appointments Report": _report_ids_appointments,
     "Member Directory Report": _report_ids_member_directory,
     "18-25 Member Directory Report": _report_ids_18_25_member_directory,
