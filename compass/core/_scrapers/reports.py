@@ -147,22 +147,32 @@ def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: in
 def _update_form_data(client: Client, report_page: str, run_report: str, report_number: int) -> None:
     """Update form data & set location selection."""
     # TODO add method to choose between exporting all data and just top-level
+    tree, form_data = _extract_form_data(report_page)
+
+    # Appointments Reports
+    if report_number in {48, 52}:  # County, Region
+        form_data = _form_data_appointments(form_data, tree)
+
+    _update_report_with_form_data(client, run_report, form_data)
+
+
+def _extract_form_data(report_page: str) -> tuple[html.HtmlElement, dict[str, str]]:
     tree = html.fromstring(report_page)
 
     # get relevant form data. TODO - do we need all items or just __VIEWSTATE?
     # form_data = {"__VIEWSTATE": next((el.value for el in tree.forms[0].iter("input") if el.name == "__VIEWSTATE"), "")}
     form_data = {el.name: el.value for el in tree.forms[0].inputs if el.get("type") not in {"checkbox", "image"}}
 
-    # Appointments Reports
-    if report_number in {48, 52}:  # County, Region
-        form_data = _form_data_appointments(form_data, tree)
+    return tree, form_data
 
+
+def _update_report_with_form_data(client: Client, run_report_url: str, form_data: dict[str, str | None]) -> None:
     # Compass does user-agent sniffing in reports!!! This does seem to be the
     # only place that *requires* a Mozilla/5 type UA.
     # Including the MicrosoftAjax pair lets us check errors quickly. In reality
     # we don't care about the output of this POST, just that it doesn't fail.
     updated_report_page = client.post(
-        run_report,
+        run_report_url,
         data=form_data,
         headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "X-MicrosoftAjax": "Delta=true"},
     )
