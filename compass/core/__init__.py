@@ -38,11 +38,11 @@ from compass.core.schemas.member import MemberRolePopup
 from compass.core.schemas.member import MemberRolesCollection
 from compass.core.schemas.member import MemberTrainingTab
 from compass.core.schemas.member import TYPES_ROLE_STATUS
-from compass.core.schemas.reports import TYPES_EXPORTED_REPORTS
-from compass.core.schemas.reports import TYPES_FORMAT_CODE
-from compass.core.schemas.reports import TYPES_FORMAT_CODES
-from compass.core.schemas.reports import TYPES_REPORTS
 from compass.core.settings import Settings
+from compass.core.types.reports import TYPES_EXPORTED_REPORTS
+from compass.core.types.reports import TYPES_FORMAT_CODE
+from compass.core.types.reports import TYPES_FORMAT_CODES
+from compass.core.types.reports import TYPES_REPORTS
 
 
 class CompassInterface:
