@@ -1,6 +1,6 @@
 from typing import Iterable, Literal
 
-from compass.core.schemas.hierarchy import TYPES_UNIT_LEVELS
+from compass.core.types.hierarchy import TYPES_UNIT_LEVELS
 
 TYPES_REPORTS = Literal[
     "Appointments Report",
