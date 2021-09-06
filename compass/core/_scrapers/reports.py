@@ -13,7 +13,7 @@ from compass.core.settings import Settings
 from compass.core.util import auth_header
 
 if TYPE_CHECKING:
-    from compass.core.schemas.reports import TYPES_REPORT_IDS_MAP
+    from compass.core.types.reports import TYPES_REPORT_IDS_MAP
     from compass.core.util.auth_header import TYPE_AUTH_IDS
     from compass.core.util.client import Client
 
