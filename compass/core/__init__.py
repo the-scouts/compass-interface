@@ -15,7 +15,6 @@ from compass.core.hierarchy import Hierarchy
 from compass.core.logon import Logon
 from compass.core.people import People
 from compass.core.reports import Reports
-from compass.core.reports import TYPES_REPORTS
 from compass.core.schemas.hierarchy import DescendantData
 from compass.core.schemas.hierarchy import HierarchyLevel
 from compass.core.schemas.hierarchy import HierarchyMember
@@ -39,6 +38,10 @@ from compass.core.schemas.member import MemberRolePopup
 from compass.core.schemas.member import MemberRolesCollection
 from compass.core.schemas.member import MemberTrainingTab
 from compass.core.schemas.member import TYPES_ROLE_STATUS
+from compass.core.schemas.reports import TYPES_EXPORTED_REPORTS
+from compass.core.schemas.reports import TYPES_FORMAT_CODE
+from compass.core.schemas.reports import TYPES_FORMAT_CODES
+from compass.core.schemas.reports import TYPES_REPORTS
 from compass.core.settings import Settings
 
 
@@ -79,6 +82,9 @@ __all__ = (
     # public functions
     "login",
     # public types
+    "TYPES_EXPORTED_REPORTS",
+    "TYPES_FORMAT_CODE",
+    "TYPES_FORMAT_CODES",
     "TYPES_HIERARCHY_LEVELS",
     "TYPES_ORG_LEVELS",
     "TYPES_REPORTS",
