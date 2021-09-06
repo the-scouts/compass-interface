@@ -65,6 +65,15 @@ _report_ids: dict[ci.TYPES_REPORTS, TYPES_REPORT_IDS_MAP] = {
     "Awards Report": _report_ids_awards,
     "Disclosure Management Report": _report_ids_disclosure_management,
 }
+_ADDITIONAL_FORM_DATA = {
+    "ReportViewer1$ctl10": "ltr",
+    "ReportViewer1$ctl11": "standards",
+    "ReportViewer1$ctl05$ctl00$CurrentPage": "1",
+    "ReportViewer1$ctl09$VisibilityState$ctl00": "ReportPage",
+    "__EVENTTARGET": "ReportViewer1$ctl04$ctl07",
+    "__EVENTARGUMENT": None,
+    "__LASTFOCUS": None,
+}
 
 
 def export_report(
@@ -185,17 +194,6 @@ def _update_report_with_form_data(client: Client, run_report_url: str, form_data
 
 def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -> dict[str, str | None]:
     """Select all units/locations."""
-    additional_form_data = {
-        "ReportViewer1$ctl10": "ltr",
-        "ReportViewer1$ctl11": "standards",
-        "ReportViewer1$ctl05$ctl00$CurrentPage": "1",
-        "ReportViewer1$ctl09$VisibilityState$ctl00": "ReportPage",
-        "__EVENTTARGET": "ReportViewer1$ctl04$ctl07",
-        "__EVENTARGUMENT": None,
-        "__LASTFOCUS": None,
-        "__ASYNCPOST": "true",
-    }  # TODO this may not be needed. Test.
-
     # report level - 1 (e.g. county -> district)
     numbered_levels_children = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")
     form_data["ReportViewer1$ctl04$ctl05$txtValue"] = ", ".join(numbered_levels_children.values())
@@ -206,7 +204,8 @@ def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -
     form_data["ReportViewer1$ctl04$ctl07$txtValue"] = ", ".join(numbered_levels_grandchildren.values())
     form_data["ReportViewer1$ctl04$ctl07$divDropDown$ctl01$HiddenIndices"] = ",".join(numbered_levels_grandchildren.keys())
 
-    return form_data | additional_form_data
+    # TODO the additional form data may not be needed. Test.
+    return form_data | _ADDITIONAL_FORM_DATA | {"__ASYNCPOST": "true"}
 
 
 def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[str, str]:
