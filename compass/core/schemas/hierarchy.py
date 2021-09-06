@@ -1,29 +1,12 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import pydantic
 
-TYPES_SECTION = Literal[
-    "EY Pilot",
-    "Beavers",
-    "Cubs",
-    "Scouts",
-    "Explorers",
-    "Network",
-    "ASU",
-    "Other",
-]
-TYPES_UNIT_LEVELS = Literal["Group", "District", "County", "Region", "Country", "Organisation"]
-TYPES_SECTION_LEVELS = Literal[
-    "Group Section",
-    "District Section",
-    "County Section",
-    "Regional Section",
-    "Country Section",
-    "Organisation Section",
-]
-TYPES_HIERARCHY_LEVELS = Union[TYPES_UNIT_LEVELS, TYPES_SECTION_LEVELS]
+from compass.core.types.hierarchy import TYPES_HIERARCHY_LEVELS
+from compass.core.types.hierarchy import TYPES_SECTION
+from compass.core.types.hierarchy import TYPES_UNIT_LEVELS
 
 
 class HierarchyBase(pydantic.BaseModel):
