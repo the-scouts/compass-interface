@@ -5,9 +5,9 @@ from typing import Literal, Optional
 
 import pydantic
 
-TYPES_CRUD_STRING = pydantic.constr(regex=r"^[CRUD]{0,4}$")
-TYPES_ORG_LEVELS = Literal["ORG", "ORST", "CNTR", "CNST", "REG", "RGST", "CNTY", "CTST", "DIST", "DTST", "SGRP", "SGST"]
-TYPES_ROLE = tuple[str, str]
+from compass.core.types.logon import TYPES_ORG_LEVELS
+
+_CRUD_STRING = pydantic.constr(regex=r"^[CRUD]{0,4}$")
 
 
 class CompassPropsBase(pydantic.BaseModel):
@@ -32,13 +32,13 @@ class CompassPropsPage(CompassPropsBase):
 
 
 class CompassPropsCRUD(CompassPropsBase):
-    mdis: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MDIS")  # type: ignore[valid-type]
-    roles: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="ROLES")  # type: ignore[valid-type]
-    pemd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PEMD")  # type: ignore[valid-type]
-    mmmd: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MMMD")  # type: ignore[valid-type]
-    mvid: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="MVID")  # type: ignore[valid-type]
-    perm: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="PERM")  # type: ignore[valid-type]
-    trn: Optional[TYPES_CRUD_STRING] = pydantic.Field(None, alias="TRN")  # type: ignore[valid-type]
+    mdis: Optional[_CRUD_STRING] = pydantic.Field(None, alias="MDIS")  # type: ignore[valid-type]
+    roles: Optional[_CRUD_STRING] = pydantic.Field(None, alias="ROLES")  # type: ignore[valid-type]
+    pemd: Optional[_CRUD_STRING] = pydantic.Field(None, alias="PEMD")  # type: ignore[valid-type]
+    mmmd: Optional[_CRUD_STRING] = pydantic.Field(None, alias="MMMD")  # type: ignore[valid-type]
+    mvid: Optional[_CRUD_STRING] = pydantic.Field(None, alias="MVID")  # type: ignore[valid-type]
+    perm: Optional[_CRUD_STRING] = pydantic.Field(None, alias="PERM")  # type: ignore[valid-type]
+    trn: Optional[_CRUD_STRING] = pydantic.Field(None, alias="TRN")  # type: ignore[valid-type]
 
 
 class CompassPropsUser(CompassPropsBase):
