@@ -104,3 +104,13 @@ disable = [
    # isort duplication
    "wrong-import-order",
 ]
+
+[tool.coverage.report]
+exclude_lines = [
+   # re-enable the standard pragma
+   "pragma: no cover",
+
+   # don't complain about non-runnable blocks
+   "if TYPE_CHECKING:",
+   "if __name__ == .__main__.:"
+]
