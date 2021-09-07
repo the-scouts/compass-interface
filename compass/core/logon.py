@@ -175,7 +175,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
 
     def __repr__(self) -> str:
         """String representation of the Logon class."""
-        return f"{self.__class__} Compass ID: {self.membership_number} ({' - '.join(self.current_role)})"
+        return f"<{self.__class__.__name__}> Compass ID: {self.membership_number} ({' - '.join(self.current_role)})"
 
     def _extend_session_timeout(self, sto: _TYPES_STO = "0") -> str:
         # Session time out. 4 values: None (normal), 0 (STO prompt) 5 (Extension, arbitrary constant) X (Hard limit)
