@@ -172,6 +172,11 @@ class TestLogon:
             # When
             logon.Logon.from_logon(credentials)
 
+    @pytest.mark.skip("Changing roles is not implemented yet in fake_compass.")
+    def test_login_from_logon_role_to_use(self, server):
+        # TODO add change role functionality in fake_compass
+        pass
+
     def test_login_from_session(self):
         # Given
         Settings.base_url = base_url
