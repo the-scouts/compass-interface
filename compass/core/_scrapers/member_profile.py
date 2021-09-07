@@ -39,7 +39,6 @@ from lxml import html
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.settings import Settings
-from compass.core.util import cache_hooks
 from compass.core.util.context_managers import validation_errors_logging
 from compass.core.util.type_coercion import maybe_int
 from compass.core.util.type_coercion import parse_date
@@ -150,7 +149,6 @@ def _get_member_profile_tab(client: Client, membership_number: int, profile_tab:
     return tree
 
 
-@cache_hooks.cache_result(key=("personal", 1))
 def get_personal_tab(client: Client, membership_number: int, /) -> ci.MemberDetails:
     """Returns data from Personal Details tab for a given member.
 
@@ -277,7 +275,6 @@ def _process_misc_sections(section_table: html.HtmlElement, section_type: TYPES_
     return out
 
 
-@cache_hooks.cache_result(key=("roles", 1))
 def get_roles_tab(
     client: Client,
     membership_number: int,
@@ -448,7 +445,6 @@ def _reduce_date_list(dates: Collection[tuple[datetime.date, datetime.date]]) ->
     return reduced
 
 
-@cache_hooks.cache_result(key=("permits", 1))
 def get_permits_tab(client: Client, membership_number: int, /) -> list[ci.MemberPermit]:
     """Returns data from Permits tab for a given member.
 
@@ -490,7 +486,6 @@ def get_permits_tab(client: Client, membership_number: int, /) -> list[ci.Member
     return permits
 
 
-@cache_hooks.cache_result(key=("training", 1))
 def get_training_tab(client: Client, membership_number: int, /) -> ci.MemberTrainingTab:
     """Returns data from Training tab for a given member.
 
@@ -671,7 +666,6 @@ def _compile_ongoing_learning(training_plps: TYPES_TRAINING_PLPS, tree: html.Htm
     return {mogl_type: training_ogl.get(mogl_type, blank_module) for mogl_type in mogl_modules.values()}
 
 
-@cache_hooks.cache_result(key=("awards", 1))
 def get_awards_tab(client: Client, membership_number: int, /) -> list[ci.MemberAward]:
     """Returns data from Awards tab for a given member.
 
@@ -713,7 +707,6 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[ci.MemberA
     return awards
 
 
-@cache_hooks.cache_result(key=("disclosures", 1))
 def get_disclosures_tab(client: Client, membership_number: int, /) -> list[ci.MemberDisclosure]:
     """Returns data from Disclosures tab for a given member.
 
