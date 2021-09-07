@@ -21,11 +21,13 @@ from compass.core.settings import Settings
 from compass.core.util.client import Client
 
 from tests.util.fake_compass import asp_net_id
+from tests.util.fake_compass import id_map
+from tests.util.fake_compass import session_id_default
+from tests.util.fake_compass import username_map
 
 base_domain = "127.0.0.1"
 base_url = "http://127.0.0.1:4200"
 jk_value = "9b65d68f4aca0138b5bae4492e7cdfae220a834e3e69731d996be1ddbb496d32fd29497d4f9729525c9fbc77666bb520ea214c0802ea22b958e6ae525224fd15"
-session_id_value = "d6c76537-1b6c-3910-c3d4-d21d4e6453a6"
 
 
 class TestLogon:
@@ -35,7 +37,7 @@ class TestLogon:
         client = Client()
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
         user_props = {"cn": 10000000, "mrn": 9000000, "on": 10000001, "lvl": "ORG", "jk": jk_value}
-        session_id = session_id_value
+        session_id = session_id_default
         compass_props = ci.CompassProps.parse_obj({"master": {"user": user_props, "sys": {"session_id": session_id}}})
         current_role = "Role", "Place"
 
@@ -54,7 +56,7 @@ class TestLogon:
         assert session.role_number == 9000000
         assert session._jk == user_props["jk"]
         assert session._asp_net_id == asp_net_id
-        assert session._session_id == session_id_value
+        assert session._session_id == session_id_default
 
     def test_login_init_no_unit_number(self):
         # Given
@@ -142,11 +144,14 @@ class TestLogon:
         session = logon.Logon.from_logon(credentials)
 
         # Then
-        assert session._client.cookies["ASP.NET_SessionId"] == asp_net_id
-        assert session._asp_net_id == asp_net_id
+        assert isinstance(session._asp_net_id, str)
+        assert session._asp_net_id.islower()
+        assert session._asp_net_id.isalnum()
+        assert len(session._asp_net_id) == 24
+        assert session._asp_net_id == session._client.cookies["ASP.NET_SessionId"]
 
-        assert session._session_id == session_id_value
-        assert session._client.headers["SID"] == session_id_value
+        assert session._session_id == id_map[session._asp_net_id]
+        assert session._client.headers["SID"] == id_map[session._asp_net_id]
 
         assert session._client.headers["Authorization"] == "10000000~9000000"
 
@@ -156,6 +161,16 @@ class TestLogon:
         assert session.membership_number == 10000000
         assert session.role_number == 9000000
         assert session._jk == jk_value
+
+    def test_login_from_logon_no_member_number(self, server):
+        # Given
+        Settings.base_url = base_url
+        credentials = "no_role_number", "password"
+
+        # Then
+        with pytest.raises(ci.CompassError):
+            # When
+            logon.Logon.from_logon(credentials)
 
     def test_login_from_session(self):
         # Given
@@ -167,7 +182,7 @@ class TestLogon:
             "lvl": "ORG",
             "jk": jk_value,
         }
-        session_id = session_id_value
+        session_id = session_id_default
         current_role = "Role", "Place"
 
         # When
@@ -193,7 +208,7 @@ class TestLogon:
         client = Client()
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
         user_props = {"cn": 10000000, "mrn": 9000000, "on": 10000001, "lvl": "ORG", "jk": jk_value}
-        session_id = session_id_value
+        session_id = session_id_default
         compass_props = ci.CompassProps.parse_obj({"master": {"user": user_props, "sys": {"session_id": session_id}}})
         current_role = "Role", "Place"
 
@@ -213,7 +228,10 @@ class TestLogon:
         # Then
         assert isinstance(client, httpx.Client)
         assert isinstance(client, Client)
-        assert client.cookies["ASP.NET_SessionId"] == asp_net_id
+        assert isinstance(client.cookies["ASP.NET_SessionId"], str)
+        assert client.cookies["ASP.NET_SessionId"].islower()
+        assert client.cookies["ASP.NET_SessionId"].isalnum()
+        assert len(client.cookies["ASP.NET_SessionId"]) == 24
 
     def test_login_no_cookie(self, server):
         # Given
@@ -257,6 +275,8 @@ class TestLogon:
         Settings.base_url = base_url
         client = Client()
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=base_domain)
+        id_map[asp_net_id] = session_id_default
+        username_map[asp_net_id] = "username"
 
         # When
         props, roles = logon._check_login(client)
@@ -285,7 +305,7 @@ class TestLogon:
                 ),
                 const=CompassPropsMasterConst(wales=10000007, scotland=10000005, over_seas=10000002, hq=10000001),
                 sys=CompassPropsMasterSys(
-                    session_id=session_id_value,
+                    session_id=session_id_default,
                     safe_json=True,
                     web_path=pydantic.HttpUrl(
                         "https://compass.scouts.org.uk/JSon.svc/",
