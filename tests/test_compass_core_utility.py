@@ -5,14 +5,30 @@ from typing import TYPE_CHECKING
 
 import hypothesis
 import hypothesis.strategies as st
+import pydantic
 import pytest
 
+import compass.core as ci
+from compass.core.settings import Settings
+from compass.core.util import client
 from compass.core.util import compass_helpers
 from compass.core.util import context_managers
 from compass.core.util import type_coercion
 
 if TYPE_CHECKING:
     import pathlib
+
+
+class TestClient:
+    def test_custom_error(self):
+        # assume underlying client is tested by library -- only test what we add
+        # Given
+        session = client.Client()
+
+        # Then
+        with pytest.raises(ci.CompassNetworkError):
+            # When
+            session.get("https://httpbin.org/delay/5", timeout=0.5)
 
 
 class TestCompassHelpers:
@@ -98,6 +114,37 @@ class TestContextManagers:
 
         # Then check filesystem_guard hasn't mutated the text
         assert test_text == out
+
+    def test_validation_errors_logging_raise(self, caplog: pytest.LogCaptureFixture):
+        # Given
+        Settings.validation_errors = True
+
+        class TestModel(pydantic.BaseModel):
+            val: int
+
+        # Then
+        with pytest.raises(pydantic.ValidationError, match="1 validation error"):
+            # When
+            with context_managers.validation_errors_logging(28_980, name="ID Number Type"):
+                TestModel(val="not an integer")  # type: ignore[arg-type]
+
+        assert caplog.messages[0] == "Parsing Error! ID Number Type: 28980"
+
+    def test_validation_errors_logging_swallow(self, caplog: pytest.LogCaptureFixture):
+        # Given
+        Settings.validation_errors = False
+
+        class TestModel(pydantic.BaseModel):
+            val: int
+
+        # When
+        with context_managers.validation_errors_logging(28_980, name="ID Number Type"):
+            TestModel(val="not an integer")  # type: ignore[arg-type]
+
+        # Then
+        assert caplog.messages[0] == "Parsing Error! ID Number Type: 28980"
+        err_type, err_value, traceback = caplog.records[0].exc_info
+        assert err_type is pydantic.ValidationError
 
 
 class TestTypeCoercion:
