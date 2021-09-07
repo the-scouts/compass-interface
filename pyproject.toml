@@ -116,5 +116,6 @@ exclude_lines = [
 
    # don't complain about non-runnable blocks
    "if TYPE_CHECKING:",
-   "if __name__ == .__main__.:"
+   "if __name__ == .__main__.:",
+   "if Settings.debug:",
 ]
