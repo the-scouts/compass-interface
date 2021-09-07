@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     import pathlib
 
 
-class TestUtility:
+class TestCompassHelpers:
     def test_hash_code(self):
         # Given
         data = "testing"
@@ -60,6 +60,47 @@ class TestUtility:
         if expected is not None:
             assert result == expected
 
+
+class TestContextManagers:
+    def test_filesystem_guard_file(self, tmp_path: pathlib.Path):
+        # Given some file (with text)
+        filename = tmp_path / "existent.txt"
+        test_text = "test-text"
+        filename.write_text(test_text, encoding="utf-8")
+
+        # When we read the file with filesystem_guard
+        with context_managers.filesystem_guard("message (test_filesystem_guard_file)"):
+            out = filename.read_text(encoding="utf-8")
+
+        # Then check filesystem_guard hasn't mutated the text
+        assert test_text == out
+
+    def test_filesystem_guard_no_file(self, tmp_path: pathlib.Path, caplog: pytest.LogCaptureFixture):
+        # Given some file (doesn't exist)
+        filename = tmp_path / "non-existent.txt"
+
+        # When we read the file with filesystem_guard
+        with context_managers.filesystem_guard("message (test_filesystem_guard_no_file)"):
+            filename.read_text(encoding="utf-8")
+
+        # Then check filesystem_guard hasn't logged the error with the custom message
+        assert "message (test_filesystem_guard_no_file)" in caplog.text
+
+    def test_filesystem_guard_chained(self, tmp_path: pathlib.Path):
+        # Given some file (with text)
+        filename = tmp_path / "chained-with-statements.txt"
+        test_text = "test-text"
+        filename.write_text(test_text, encoding="utf-8")
+
+        # When we read the file with filesystem_guard with chained `with` statements
+        with context_managers.filesystem_guard("message (test_filesystem_guard_file)"), open(filename, "r", encoding="utf-8") as f:
+            out = f.read()
+
+        # Then check filesystem_guard hasn't mutated the text
+        assert test_text == out
+
+
+class TestTypeCoercion:
     def test_maybe_int_int(self):
         # Given
         data = 123
@@ -122,40 +163,3 @@ class TestUtility:
 
         # Then
         assert result is None
-
-    def test_filesystem_guard_file(self, tmp_path: pathlib.Path):
-        # Given some file (with text)
-        filename = tmp_path / "existent.txt"
-        test_text = "test-text"
-        filename.write_text(test_text, encoding="utf-8")
-
-        # When we read the file with filesystem_guard
-        with context_managers.filesystem_guard("message (test_filesystem_guard_file)"):
-            out = filename.read_text(encoding="utf-8")
-
-        # Then check filesystem_guard hasn't mutated the text
-        assert test_text == out
-
-    def test_filesystem_guard_no_file(self, tmp_path: pathlib.Path, caplog: pytest.LogCaptureFixture):
-        # Given some file (doesn't exist)
-        filename = tmp_path / "non-existent.txt"
-
-        # When we read the file with filesystem_guard
-        with context_managers.filesystem_guard("message (test_filesystem_guard_no_file)"):
-            filename.read_text(encoding="utf-8")
-
-        # Then check filesystem_guard hasn't logged the error with the custom message
-        assert "message (test_filesystem_guard_no_file)" in caplog.text
-
-    def test_filesystem_guard_chained(self, tmp_path: pathlib.Path):
-        # Given some file (with text)
-        filename = tmp_path / "chained-with-statements.txt"
-        test_text = "test-text"
-        filename.write_text(test_text, encoding="utf-8")
-
-        # When we read the file with filesystem_guard with chained `with` statements
-        with context_managers.filesystem_guard("message (test_filesystem_guard_file)"), open(filename, "r", encoding="utf-8") as f:
-            out = f.read()
-
-        # Then check filesystem_guard hasn't mutated the text
-        assert test_text == out
