@@ -38,7 +38,7 @@ class TestInit:
         # Given
         Settings.base_url = base_url
         username = "username"
-        password = "password"
+        password = "password"  # nosec (false positive B105; it is a hardcoded password, but a fake one)
 
         # When
         api = ci.login(username, password)
@@ -51,7 +51,7 @@ class TestInit:
         # Given
         Settings.base_url = base_url
         username = "username"
-        password = "password"
+        password = "password"  # nosec (false positive B105; it is a hardcoded password, but a fake one)
 
         # When
         api = ci.login(username, password, role="")
@@ -64,7 +64,7 @@ class TestInit:
         # Given
         Settings.base_url = base_url
         username = "username"
-        password = "password"
+        password = "password"  # nosec (false positive B105; it is a hardcoded password, but a fake one)
 
         # When
         api = ci.login(username, password, location="")
@@ -77,7 +77,7 @@ class TestInit:
         # Given
         Settings.base_url = base_url
         username = "username"
-        password = "password"
+        password = "password"  # nosec (false positive B105; it is a hardcoded password, but a fake one)
 
         # When
         api = ci.login(username, password, role="", location="")
