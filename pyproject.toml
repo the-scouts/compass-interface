@@ -61,6 +61,10 @@ norecursedirs = "tests/util"
 testpaths = [
     "tests",
 ]
+# -rxXs -- show extra test summary info for skipped, xfailed, xpassed
+addopts = "-rxXs --strict-config --strict-markers"
+# use strict xfail (https://docs.pytest.org/en/latest/how-to/skipping.html#strict-parameter)
+xfail_strict = true
 
 # pylint configuration
 [tool.pylint]
