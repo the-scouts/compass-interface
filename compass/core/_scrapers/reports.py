@@ -71,8 +71,8 @@ _ADDITIONAL_FORM_DATA = {
     "ReportViewer1$ctl05$ctl00$CurrentPage": "1",
     "ReportViewer1$ctl09$VisibilityState$ctl00": "ReportPage",
     "__EVENTTARGET": "ReportViewer1$ctl04$ctl07",
-    "__EVENTARGUMENT": None,
-    "__LASTFOCUS": None,
+    "__EVENTARGUMENT": "",
+    "__LASTFOCUS": "",
 }
 
 
@@ -81,7 +81,7 @@ def export_report(
     report_type: ci.TYPES_REPORTS,
     hierarchy_level: ci.TYPES_HIERARCHY_LEVELS,
     auth_ids: TYPE_AUTH_IDS,
-    formats: ci.TYPES_FORMAT_CODES = ("CSV",),
+    formats: ci.TYPES_FORMAT_CODES,
 ) -> ci.TYPES_EXPORTED_REPORTS:
     """Exports report as CSV from Compass.
 
@@ -203,7 +203,7 @@ def _training_report_region(client: Client, report_page: str, run_report_url: st
         if report.startswith(prefix):
             out += report[48:]  # 48 == len(prefix)
         else:
-            logger.error(f"Training report does not start with common prefix! First 50 chars are {report[:50]}")
+            logger.error(f"Training report does not start with common prefix! First 50 chars are {repr(report[:50])}")
 
     return {"CSV": out}
 
@@ -231,7 +231,7 @@ def _extract_form_data(report_page: str) -> tuple[html.HtmlElement, dict[str, st
     return tree, form_data
 
 
-def _update_report_with_form_data(client: Client, run_report_url: str, form_data: dict[str, str | None]) -> None:
+def _update_report_with_form_data(client: Client, run_report_url: str, form_data: dict[str, str]) -> None:
     # Compass does user-agent sniffing in reports!!! This does seem to be the
     # only place that *requires* a Mozilla/5 type UA.
     # Including the MicrosoftAjax pair lets us check errors quickly. In reality
@@ -248,7 +248,7 @@ def _update_report_with_form_data(client: Client, run_report_url: str, form_data
         raise ci.CompassReportError("Compass Error!")
 
 
-def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -> dict[str, str | None]:
+def _form_data_appointments(form_data: dict[str, str], tree: html.HtmlElement) -> dict[str, str]:
     """Select all units/locations."""
     # report level - 1 (e.g. county -> district)
     numbered_levels_children = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")

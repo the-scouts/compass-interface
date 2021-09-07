@@ -44,7 +44,7 @@ implicit_reexport = false
 strict_equality = true
 
 [[tool.mypy.overrides]]
-module = ["lxml", "phonenumbers"]
+module = ["lxml", "phonenumbers", "dotenv"]
 ignore_missing_imports = true
 
 #[[tool.mypy.overrides]]
