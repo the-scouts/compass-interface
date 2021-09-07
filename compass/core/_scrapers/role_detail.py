@@ -8,7 +8,6 @@ from lxml import html
 import compass.core as ci
 from compass.core.logger import logger
 from compass.core.settings import Settings
-from compass.core.util import cache_hooks
 from compass.core.util.context_managers import validation_errors_logging
 from compass.core.util.type_coercion import maybe_int
 from compass.core.util.type_coercion import parse_date
@@ -51,7 +50,6 @@ references_codes = {
 
 
 # See getAppointment in PGS\Needle
-@cache_hooks.cache_result(key=("role_detail", 1))
 def get_roles_detail(client: Client, role_number: int, /) -> ci.MemberRolePopup:
     """Returns detailed data from a given role number.
 

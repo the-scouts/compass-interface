@@ -5,8 +5,6 @@ from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
 import compass.core as ci
 from compass.core._scrapers import hierarchy as scraper
 from compass.core.logger import logger
-from compass.core.schemas import hierarchy as schema
-from compass.core.util import cache_hooks
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -48,7 +46,6 @@ class Hierarchy:
         self.default_hierarchy: ci.HierarchyLevel = session.hierarchy
 
     # See recurseRetrieve in PGS\Needle
-    @cache_hooks.cache_result(key=("hierarchy", 1), model_type=schema.UnitData)
     def unit_data(
         self,
         unit_id: Optional[int] = None,
