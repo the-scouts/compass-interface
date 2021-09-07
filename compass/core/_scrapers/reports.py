@@ -269,11 +269,6 @@ def _parse_drop_down_list(tree: html.HtmlElement, element_id: str, /) -> dict[st
     return {str(i): row[0][0][0][1].text.replace("\xa0", " ") for i, row in enumerate(table[1:])}
 
 
-def _get_defaults_labels(form_data: dict[str, str], default_indices_key: str, labels_map: dict[str, str]) -> str:
-    indices = form_data.get(default_indices_key, "").split(",")
-    return ", ".join(labels_map[i] for i in indices)
-
-
 def _export_report(client: Client, report_page: str, formats: ci.TYPES_FORMAT_CODES) -> ci.TYPES_EXPORTED_REPORTS:
     # Get report export URL:
     export_url_base = _extract_report_export_url_base(report_page)
