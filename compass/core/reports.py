@@ -3,7 +3,7 @@ from __future__ import annotations
 import compass.core as ci
 from compass.core._scrapers.reports import export_report
 
-__all__ = ("Reports", )
+__all__ = ("Reports",)
 
 
 class Reports:

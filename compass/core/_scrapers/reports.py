@@ -159,6 +159,7 @@ def _get_report_token(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: in
 
 
 def _training_report_region(client: Client, report_page: str, run_report_url: str) -> ci.TYPES_EXPORTED_REPORTS:
+    # pylint: disable=too-many-locals
     tree, form_data = _extract_form_data(report_page)
     numbered_counties = _parse_drop_down_list(tree, "ReportViewer1_ctl04_ctl05_divDropDown")
 
@@ -170,7 +171,8 @@ def _training_report_region(client: Client, report_page: str, run_report_url: st
             "ReportViewer1$ctl04$ctl05$txtValue": county,
             "ReportViewer1$ctl04$ctl05$divDropDown$ctl01$HiddenIndices": level,
             "ReportViewer1$ctl04$ctl07$txtValue": "Selected Level Only",  # set the defaults
-        } | _ADDITIONAL_FORM_DATA | {"__EVENTTARGET": "ReportViewer1$ctl04$ctl05"}
+        }
+        cty_form_data |= _ADDITIONAL_FORM_DATA | {"__EVENTTARGET": "ReportViewer1$ctl04$ctl05"}
         county_report_page = client.post(
             run_report_url,
             data=cty_form_data,
