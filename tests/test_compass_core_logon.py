@@ -187,6 +187,22 @@ class TestLogon:
         assert session.role_number == user_props["mrn"]
         assert session._jk == user_props["jk"]
 
+    def test_login_repr(self):
+        # Given
+        Settings.base_url = base_url
+        client = Client()
+        client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
+        user_props = {"cn": 10000000, "mrn": 9000000, "on": 10000001, "lvl": "ORG", "jk": jk_value}
+        session_id = session_id_value
+        compass_props = ci.CompassProps.parse_obj({"master": {"user": user_props, "sys": {"session_id": session_id}}})
+        current_role = "Role", "Place"
+
+        # When
+        session = logon.Logon(client=client, compass_props=compass_props, current_role=current_role)
+
+        # Then
+        assert repr(session) == "<Logon> Compass ID: 10000000 (Role - Place)"
+
     def test_login_get_cookie(self, server):
         # Given
         Settings.base_url = base_url
