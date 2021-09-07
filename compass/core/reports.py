@@ -4,6 +4,7 @@ import compass.core as ci
 from compass.core._scrapers.reports import export_report
 
 __all__ = ("Reports",)
+CSV: ci.TYPES_FORMAT_CODES = frozenset({"CSV"})
 
 
 class Reports:
@@ -38,7 +39,7 @@ class Reports:
         self.client = session._client
         self.hierarchy_level = session.hierarchy.level
 
-    def _get_report(self, report_type: ci.TYPES_REPORTS, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def _get_report(self, report_type: ci.TYPES_REPORTS, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports report from Compass.
 
         Returns:
@@ -58,7 +59,7 @@ class Reports:
         """
         return export_report(self.client, report_type, self.hierarchy_level, self.auth_ids, formats)
 
-    def appointments(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def appointments(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports appointments reports from Compass.
 
         Returns:
@@ -77,7 +78,7 @@ class Reports:
         """
         return self._get_report("Appointments Report", formats)
 
-    def member_directory(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def member_directory(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports member directory reports from Compass.
 
         Returns:
@@ -96,7 +97,7 @@ class Reports:
         """
         return self._get_report("Member Directory Report", formats)
 
-    def member_directory_18_25(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def member_directory_18_25(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports member directory (18-25) reports from Compass.
 
         Returns:
@@ -115,7 +116,7 @@ class Reports:
         """
         return self._get_report("18-25 Member Directory Report", formats)
 
-    def permits(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def permits(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports permits reports from Compass.
 
         Returns:
@@ -134,7 +135,7 @@ class Reports:
         """
         return self._get_report("Permits Report", formats)
 
-    def disclosure(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def disclosure(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports disclosure reports from Compass.
 
         Returns:
@@ -153,7 +154,7 @@ class Reports:
         """
         return self._get_report("Disclosure Report", formats)
 
-    def training(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def training(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports training reports from Compass.
 
         Returns:
@@ -172,7 +173,7 @@ class Reports:
         """
         return self._get_report("Training Report", formats)
 
-    def awards(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def awards(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports awards reports from Compass.
 
         Returns:
@@ -191,7 +192,7 @@ class Reports:
         """
         return self._get_report("Awards Report", formats)
 
-    def disclosure_management(self, formats: ci.TYPES_FORMAT_CODES = ("CSV",)) -> ci.TYPES_EXPORTED_REPORTS:
+    def disclosure_management(self, formats: ci.TYPES_FORMAT_CODES = CSV) -> ci.TYPES_EXPORTED_REPORTS:
         """Exports disclosure management reports from Compass.
 
         Returns:
