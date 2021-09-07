@@ -36,18 +36,12 @@ class TestUtility:
         assert isinstance(result, int)
         assert -2_147_483_648 <= result <= 2_147_483_647  # -2**31 to 2**31-1
 
-    def test_compass_restify(self):
-        # Given
-        data = {"a": 1, "b": 2, "c": 3}
-
-        # When
-        result = compass_helpers.compass_restify(data)
-
-        # Then
-        assert result == [{"Key": "a", "Value": "1"}, {"Key": "b", "Value": "2"}, {"Key": "c", "Value": "3"}]
-
-    @hypothesis.given(st.dictionaries(st.text(), (st.none() | st.booleans() | st.floats() | st.integers() | st.text())))
-    def test_compass_restify2(self, data):
+    @hypothesis.given(st.dictionaries(st.text(), st.none() | st.booleans() | st.floats() | st.integers() | st.text()), st.none())
+    @hypothesis.example(
+        data={"a": 1, "b": 2, "c": 3},
+        expected=[{"Key": "a", "Value": "1"}, {"Key": "b", "Value": "2"}, {"Key": "c", "Value": "3"}],
+    )
+    def test_compass_restify(self, data, expected):
         # Given data from hypothesis
         size = len(data)
 
@@ -63,6 +57,8 @@ class TestUtility:
             assert pair.keys() == {"Key", "Value"}
             for val in pair.values():
                 assert isinstance(val, str)
+        if expected is not None:
+            assert result == expected
 
     def test_maybe_int_int(self):
         # Given
