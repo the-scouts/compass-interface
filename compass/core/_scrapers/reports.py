@@ -115,14 +115,14 @@ def export_report(
 
 
 def _report_number(report_type: ci.TYPES_REPORTS, hierarchy_level: ci.TYPES_HIERARCHY_LEVELS) -> int:
-    if report_type not in _report_ids:
-        types = [*_report_ids]
-        raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {types}") from None
-    report_level_map = _report_ids[report_type]
-    if hierarchy_level not in report_level_map:
-        raise ci.CompassReportError(f"Requested report does not exist for hierarchy level: {hierarchy_level}.")
-    hierarchy_level = cast(ci.TYPES_UNIT_LEVELS, hierarchy_level)
-    return report_level_map[hierarchy_level]
+    try:
+        report_level_map = _report_ids[report_type]
+    except KeyError:
+        raise ci.CompassReportError(f"{report_type} is not a valid report type. Valid report types are {[*_report_ids]}") from None
+    try:
+        return report_level_map[cast(ci.TYPES_UNIT_LEVELS, hierarchy_level)]
+    except KeyError:
+        raise ci.CompassReportError(f"Requested report does not exist for hierarchy level: {hierarchy_level}.") from None
 
 
 def _initialise_report(client: Client, auth_ids: TYPE_AUTH_IDS, report_number: int) -> tuple[str, str]:
