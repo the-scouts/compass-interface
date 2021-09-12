@@ -3,6 +3,9 @@ import pytest
 
 import compass.core as ci
 from compass.core._scrapers import reports
+from compass.core.settings import Settings
+
+base_url = "http://127.0.0.1:4200"
 
 
 class TestReports:
@@ -36,6 +39,17 @@ class TestReports:
         with pytest.raises(ci.CompassReportError, match="Requested report does not exist for hierarchy level: Group."):
             # When
             reports._report_number(report_type, hierarchy_level)
+
+    def test_extract_report_export_url_base(self):
+        # Given
+        Settings.base_url = base_url
+        haystack = """Lorem ipsum dolor sit amet, "ExportUrlBase":"run-report-export" consectetur adipiscing elit. Phasellus """
+
+        # When
+        out = reports._extract_report_export_url_base(haystack)
+
+        # Then
+        assert out == "http://127.0.0.1:4200/run-report-export"
 
     def test_error_status(self):
         # Given
