@@ -51,6 +51,8 @@ class TestReports:
         # Then
         assert out == "http://127.0.0.1:4200/run-report-export"
 
+        # TODO test unhappy path, unicode escape stuff
+
     def test_error_status(self):
         # Given
         transport = httpx.MockTransport(lambda _: httpx.Response(500))
