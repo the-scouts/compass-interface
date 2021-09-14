@@ -4,6 +4,63 @@ from compass.core._scrapers import contact
 
 
 class TestContact:
+    def test_process_address(self):
+        # Given
+        addresses = [
+            {
+                "Line1": "Registry",
+                "Line2": "Old College",
+                "Line3": "City of Edinburgh",
+                "Town": "EDINBURGH",
+                "County": "Midlothian",
+                "Postcode": "EH1 1AA",
+                "Country": "UK",
+                "ValidFrom": None,
+                "IsMain": True,
+                "Historical": False,
+                "AddressNumber": 123456,
+                "Address": "Registry, Old College, City of Edinburgh, EDINBURGH, Midlothian. EH1 1AA UK",
+            }
+        ]
+
+        # When
+        result = contact._process_address(addresses)
+
+        # Then
+        assert isinstance(result, dict)
+        assert all(key.__class__ is str for key in result.keys())
+        assert all(value.__class__ is str for value in result.values())
+        assert [*result.keys()] == ["unparsed_address", "country", "postcode", "county", "town", "street"]
+        assert result == {
+            "unparsed_address": "Registry, Old College, City of Edinburgh, EDINBURGH, Midlothian. EH1 1AA UK",
+            "country": "UK",
+            "postcode": "EH1 1AA",
+            "county": "Midlothian",
+            "town": "EDINBURGH",
+            "street": "Registry, Old College, City of Edinburgh",
+        }
+
+    def test_process_address_empty(self):
+        # Given
+        addresses = []
+
+        # When
+        result = contact._process_address(addresses)
+
+        # Then
+        assert isinstance(result, dict)
+        assert all(key.__class__ is str for key in result.keys())
+        assert all(value is None for value in result.values())
+        assert [*result.keys()] == ["unparsed_address", "country", "postcode", "county", "town", "street"]
+        assert result == {
+            "unparsed_address": None,
+            "country": None,
+            "postcode": None,
+            "county": None,
+            "town": None,
+            "street": None,
+        }
+
     def test_process_phone_numbers(self):
         # Given
         numbers = [
