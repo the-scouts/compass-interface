@@ -92,6 +92,39 @@ class TestContact:
         # Then
         assert result == ""
 
+    def test_process_misc_sections(self):
+        # Given
+        sections = [
+            "A - 1",
+            "B - 2",
+            "C - 3",
+            "D",
+        ]
+
+        # When
+        result = contact._process_misc_sections(sections)
+
+        # Then
+        assert isinstance(result, dict)
+        assert all(key.__class__ is str for key in result.keys())
+        assert all(value.__class__ is str for value in result.values())
+        assert [*result.keys()] == ["A", "B", "C", "D"]
+        assert [*result.values()] == ["1", "2", "3", ""]
+        assert result == {"A": "1", "B": "2", "C": "3", "D": ""}
+
+    def test_process_misc_sections_empty(self):
+        # Given
+        sections = []
+
+        # When
+        result = contact._process_misc_sections(sections)
+
+        # Then
+        assert isinstance(result, dict)
+        assert [*result.keys()] == []
+        assert [*result.values()] == []
+        assert result == {}
+
     def test_parse_iso_date(self):
         # Given
         date = "2000-01-01"
