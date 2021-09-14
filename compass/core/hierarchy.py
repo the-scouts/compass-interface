@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional, TYPE_CHECKING, TypedDict, Union
+from typing import Iterable, Optional, TYPE_CHECKING, Union
 
 import compass.core as ci
 from compass.core._scrapers import hierarchy as scraper
@@ -9,20 +9,9 @@ from compass.core.logger import logger
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from compass.core.types.hierarchy import _HierarchyState
+    from compass.core.types.hierarchy import _TYPES_LEVEL
     from compass.core.util.client import Client
-
-    class _HierarchyState(TypedDict, total=False):
-        unit_id: int
-        name: Optional[str]
-        # organisation: int  # Always 10000001; mildly redundant
-        country: int
-        region: int
-        county: int
-        district: int
-        group: int
-
-    _TYPES_LEVEL = tuple[Optional[ci.TYPES_UNIT_LEVELS], Optional[scraper.TYPES_ENDPOINT_LEVELS], scraper.TYPES_ENDPOINT_LEVELS]
-
 
 # Holds unit level metadata. Keys are from `schema.TYPES_UNIT_LEVELS`, values
 # are a three-tuple of child level, unit level endpoint, and unit  level
@@ -30,7 +19,7 @@ if TYPE_CHECKING:
 # Suppress PyCharm inspection (not great at literals)
 # noinspection PyTypeChecker
 _levels: dict[ci.TYPES_UNIT_LEVELS, _TYPES_LEVEL] = {
-    # "Group": (None, None, "group_sections"),
+    "Group": (None, None, "group_sections"),
     "District": ("Group", "groups", "district_sections"),
     "County": ("District", "districts", "county_sections"),
     "Region": ("County", "counties", "region_sections"),

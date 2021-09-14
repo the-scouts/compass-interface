@@ -1,31 +1,18 @@
 from __future__ import annotations
 
 import json
-from typing import get_args, Literal, TYPE_CHECKING
+from typing import get_args, TYPE_CHECKING
 
 from lxml import html
 
 import compass.core as ci
 from compass.core.settings import Settings
+from compass.core.types.hierarchy import TYPES_ENDPOINT_LEVELS
 from compass.core.util.compass_helpers import compass_restify
 
 if TYPE_CHECKING:
     from compass.core.util.client import Client
 
-# TYPES_ENDPOINT_LEVELS values are meaningful values as they become the API endpoint paths
-TYPES_ENDPOINT_LEVELS = Literal[
-    "countries",
-    "hq_sections",
-    "regions",
-    "country_sections",
-    "counties",
-    "region_sections",
-    "districts",
-    "county_sections",
-    "groups",
-    "district_sections",
-    "group_sections",
-]
 endpoints = {i: f"/{i.replace('_', '/')}" for i in get_args(TYPES_ENDPOINT_LEVELS)}
 section_type_map = {
     "Early Years Pilot": "EY Pilot",
