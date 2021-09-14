@@ -115,6 +115,36 @@ class TestMemberProfile:
             # When
             member_profile._extract_review_date(review)
 
+    def test_membership_duration(self):
+        # Given
+        data = [
+            (datetime.date(2016, 4, 5), datetime.date(2020, 2, 7)),
+            (datetime.date(2015, 1, 1), datetime.date(2021, 1, 1)),
+            (datetime.date(2017, 1, 1), datetime.date(2021, 6, 1)),
+            (datetime.date(2014, 7, 22), datetime.date(2015, 6, 10)),
+            (datetime.date(2015, 1, 1), datetime.date(2015, 1, 1)),
+            (datetime.date(2004, 5, 13), datetime.date(2007, 11, 1)),
+            (datetime.date(1997, 7, 2), datetime.date(2007, 11, 1)),
+            (datetime.date(1993, 2, 18), datetime.date(1997, 7, 2)),
+            (datetime.date(1983, 11, 17), datetime.date(1985, 3, 23)),
+        ]
+
+        # When
+        result = member_profile._membership_duration(data)
+
+        # Then
+        assert result == 22.916
+
+    def test_membership_duration_empty(self):
+        # Given
+        data = []
+
+        # When
+        result = member_profile._membership_duration(data)
+
+        # Then
+        assert result == 0
+
 
 class TestScrapersMemberReduceDateList:
     def test_empty(self):
