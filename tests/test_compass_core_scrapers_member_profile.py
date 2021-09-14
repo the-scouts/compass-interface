@@ -1,5 +1,8 @@
 import datetime
 
+import pytest
+
+import compass.core as ci
 from compass.core._scrapers import member_profile
 
 
@@ -68,6 +71,49 @@ class TestMemberProfile:
         # Then
         assert result_role == 99999999
         assert result_title == "some unchanged words"
+
+    def test_extract_review_date(self):
+        # Given
+        review = "Full Review Due 01 Jan 2000"
+
+        # When
+        result_role_status, result_review_date = member_profile._extract_review_date(review)
+
+        # Then
+        assert result_role_status == "Full"
+        assert result_review_date == datetime.date(2000, 1, 1)
+
+    def test_extract_review_date_ending(self):
+        # Given
+        review = "Full Ending 01 Jan 2000"
+
+        # When
+        result_role_status, result_review_date = member_profile._extract_review_date(review)
+
+        # Then
+        assert result_role_status == "Full"
+        assert result_review_date == datetime.date(2000, 1, 1)
+
+    @pytest.mark.parametrize("status", ["Cancelled", "Closed", "Full", "Pre provisional", "Provisional"])
+    def test_extract_review_date_statuses(self, status):
+        # Given
+        review = status
+
+        # When
+        result_role_status, result_review_date = member_profile._extract_review_date(review)
+
+        # Then
+        assert result_role_status == status
+        assert result_review_date is None
+
+    def test_extract_review_date_invalid(self):
+        # Given
+        review = "invalid status"
+
+        # Then
+        with pytest.raises(ci.CompassError, match="Invalid value for review status 'invalid status'!"):
+            # When
+            member_profile._extract_review_date(review)
 
 
 class TestScrapersMemberReduceDateList:
