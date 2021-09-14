@@ -1,3 +1,5 @@
+import datetime
+
 from compass.core._scrapers import contact
 
 
@@ -89,3 +91,23 @@ class TestContact:
 
         # Then
         assert result == ""
+
+    def test_parse_iso_date(self):
+        # Given
+        date = "2000-01-01"
+
+        # When
+        result = contact._parse_iso_date(date)
+
+        # Then
+        assert result == datetime.date(2000, 1, 1)
+
+    def test_parse_iso_date_none(self):
+        # Given
+        date = None
+
+        # When
+        result = contact._parse_iso_date(date)
+
+        # Then
+        assert result is None
