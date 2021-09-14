@@ -48,6 +48,10 @@ class TestMemberProfile:
         # Then
         assert result == ("D", None)
 
+    def test_process_misc_sections(self):
+        # TODO - lxml
+        pass
+
     def test_extract_primary_role(self):
         # Given
         primary_role = None
@@ -144,6 +148,18 @@ class TestMemberProfile:
 
         # Then
         assert result == 0
+
+    def test_process_personal_learning_plan(self):
+        # TODO - lxml
+        pass
+
+    def test_process_role_data(self):
+        # TODO - lxml
+        pass
+
+    def test_compile_ongoing_learning(self):
+        # TODO - lxml
+        pass
 
 
 class TestScrapersMemberReduceDateList:

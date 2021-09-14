@@ -7,6 +7,7 @@ import uvicorn
 
 
 # https://github.com/encode/uvicorn/issues/742#issuecomment-674411676
+# TODO use https://github.com/encode/uvicorn/pull/917
 class Server(uvicorn.Server):
     def install_signal_handlers(self):
         pass

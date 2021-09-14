@@ -4,6 +4,10 @@ from compass.core._scrapers import role_detail
 
 
 class TestRoleDetail:
+    def test_extract_line_manager(self):
+        # TODO -- lxml
+        pass
+
     def test_extract_disclosure_date(self):
         # Given
         haystack = "Disclosure Issued : 01 Jan 2000"
@@ -43,3 +47,11 @@ class TestRoleDetail:
 
         # Then
         assert result == (None, None)
+
+    def test_process_hierarchy(self):
+        # TODO -- lxml
+        pass
+
+    def test_process_getting_started(self):
+        # TODO -- lxml
+        pass
