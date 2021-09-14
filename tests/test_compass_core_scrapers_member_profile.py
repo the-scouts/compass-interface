@@ -25,6 +25,26 @@ class TestMemberProfile:
             "street": "Registry, Old College, City of Edinburgh",
         }
 
+    def test_process_extra(self):
+        # Given
+        extra = "A - 1"
+
+        # When
+        result = member_profile._process_extra(extra)
+
+        # Then
+        assert result == ("A", "1")
+
+    def test_process_extra_blank_detail(self):
+        # Given
+        extra = "D"
+
+        # When
+        result = member_profile._process_extra(extra)
+
+        # Then
+        assert result == ("D", None)
+
 
 class TestScrapersMemberReduceDateList:
     def test_empty(self):
