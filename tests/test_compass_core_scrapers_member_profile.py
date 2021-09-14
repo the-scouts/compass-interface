@@ -45,6 +45,30 @@ class TestMemberProfile:
         # Then
         assert result == ("D", None)
 
+    def test_extract_primary_role(self):
+        # Given
+        primary_role = None
+        role_title = "Section Leader [Primary]"
+
+        # When
+        result_title, result_role = member_profile._extract_primary_role(role_title, primary_role)
+
+        # Then
+        assert result_role is True
+        assert result_title == "Section Leader"
+
+    def test_extract_primary_role_already_found(self):
+        # Given
+        primary_role = 99999999
+        role_title = "some unchanged words"
+
+        # When
+        result_title, result_role = member_profile._extract_primary_role(role_title, primary_role)
+
+        # Then
+        assert result_role == 99999999
+        assert result_title == "some unchanged words"
+
 
 class TestScrapersMemberReduceDateList:
     def test_empty(self):
