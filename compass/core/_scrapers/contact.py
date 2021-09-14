@@ -144,12 +144,13 @@ def _process_phone_numbers(phone_numbers: list[dict[str, str]]) -> str:
     Returns: main phone number
 
     """
-    numbers = [""]
     for number_props in phone_numbers:
         if number_props["IsMain"]:
             return number_props["Number"]
-        numbers.append(number_props["Number"])
-    return numbers[0]
+    try:
+        return phone_numbers[0]["Number"]
+    except IndexError:
+        return ""
 
 
 def _process_email(email_properties: list[dict[str, str]]) -> str:
