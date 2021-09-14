@@ -45,3 +45,47 @@ class TestContact:
 
         # Then
         assert result == ""
+
+    def test_process_email(self):
+        # Given
+        emails = [
+            {"EmailAddress": "egg@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "bacon@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "sausage@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "spam@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "spamspam@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "lobsterthermidor@GreenMidget.cafe", "IsMain": True},
+        ]
+
+        # When
+        result = contact._process_email(emails)
+
+        # Then
+        assert result == "lobsterthermidor@GreenMidget.cafe"
+
+    def test_process_email_no_main(self):
+        # Given
+        emails = [
+            {"EmailAddress": "egg@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "bacon@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "sausage@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "spam@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "spamspam@GreenMidget.cafe", "IsMain": False},
+            {"EmailAddress": "lobsterthermidor@GreenMidget.cafe", "IsMain": False},
+        ]
+
+        # When
+        result = contact._process_email(emails)
+
+        # Then
+        assert result == "egg@GreenMidget.cafe"
+
+    def test_process_email_empty(self):
+        # Given
+        emails = []
+
+        # When
+        result = contact._process_email(emails)
+
+        # Then
+        assert result == ""
