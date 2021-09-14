@@ -40,6 +40,18 @@ class TestReports:
             # When
             reports._report_number(report_type, hierarchy_level)
 
+    def test_extract_form_data(self):
+        # TODO -- lxml
+        pass
+
+    def test_form_data_appointments(self):
+        # TODO -- lxml
+        pass
+
+    def test_parse_drop_down_list(self):
+        # TODO -- lxml
+        pass
+
     def test_extract_report_export_url_base(self):
         # Given
         Settings.base_url = base_url
