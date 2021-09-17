@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 from types import TracebackType
 from typing import NoReturn
 
@@ -19,9 +18,13 @@ def auth_error(error_code: str, message: str, /, status_code: int = status.HTTP_
     raise http_error(status_code, error_code, message, headers={"WWW-Authenticate": "Bearer"})
 
 
-class ErrorHandling(contextlib.AbstractAsyncContextManager):
+class ErrorHandling:
     def __init__(self, overrides: dict[type[errors.CompassError], tuple[int, str, str]] | None = None, /):
         self.overrides = overrides or {}
+
+    async def __aenter__(self):
+        """Return `self` upon entering the runtime context."""
+        return self
 
     async def __aexit__(self, exc_type: type[BaseException] | None, _val: BaseException | None, _tb: TracebackType | None):
         if not exc_type:
