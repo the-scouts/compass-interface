@@ -6,16 +6,16 @@ dependencies:
   - pip
 
   # Compass-Interface Core
-  - compass-interface-core>=0.14.1
+  - compass-interface-core>=0.15.1
 
   # Compass-Interface Utilities
-  - pydantic  # cache
+  - pydantic>=1.8.2  # cache
   - numba>0.52  # JIT compilation
   - pandas  # data transformation
   - pyarrow   # .feather format
 
   # API
-  - fastapi  # API framework
+  - fastapi>=0.65.1  # API framework
   - aioredis  # (Async) Redis
 
   # API - Auth
