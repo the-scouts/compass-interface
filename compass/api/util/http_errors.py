@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from starlette import exceptions
 from starlette import status
 
-from compass.core import errors
+import compass.core as ci
 
 
 def http_error(status_code: int, error_code: str, message: str, /, headers: dict[str, str] | None = None) -> NoReturn:
@@ -19,7 +19,7 @@ def auth_error(error_code: str, message: str, /, status_code: int = status.HTTP_
 
 
 class ErrorHandling:
-    def __init__(self, overrides: dict[type[errors.CompassError], tuple[int, str, str]] | None = None, /):
+    def __init__(self, overrides: dict[type[ci.CompassError], tuple[int, str, str]] | None = None, /):
         self.overrides = overrides or {}
 
     async def __aenter__(self):
@@ -39,11 +39,11 @@ class ErrorHandling:
             raise
 
         # fallback
-        if exc_type == errors.CompassPermissionError:
+        if exc_type == ci.CompassPermissionError:
             raise http_error(status.HTTP_403_FORBIDDEN, "A30", "Your current role does not have permission to do this!")
-        if exc_type == errors.CompassNetworkError:
+        if exc_type == ci.CompassNetworkError:
             raise http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "R1", "The request to the Compass server failed!")
-        if exc_type == errors.CompassError:
+        if exc_type == ci.CompassError:
             raise http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Z1", "API Error (Core)! Please contact Adam.")
         if issubclass(exc_type, Exception):
             raise http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Z0", "Server panic (Interpreter)! Please contact Adam.")
