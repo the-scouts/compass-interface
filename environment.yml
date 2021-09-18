@@ -16,7 +16,6 @@ dependencies:
 
   # API
   - fastapi>=0.65.1  # API framework
-  - aioredis  # (Async) Redis
 
   # API - Auth
   - python-jose  # JSON Web Tokens
