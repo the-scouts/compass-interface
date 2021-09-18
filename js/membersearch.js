@@ -262,10 +262,10 @@ function FormReady() {
         //*****
 
         //#endregion
-
+                
         $("#ctl00_workarea_cbo_p3_Activity").change(function () {
             if ($("#ctl00_workarea_cbo_p3_Activity option:selected").val()) {
-                $.ajax({
+                $.ajax({                  
                     url: WebServicePath() + "PermitCategories?pActivity=" + $("#ctl00_workarea_cbo_p3_Activity option:selected").val() + "&pIncludeArchived=Y", async: false, success: function (result) {
                         PopulateCBO("#ctl00_workarea_cbo_p3_Category", result, true, "--- No Items Available ---", true, "", "--- Select Permit Category ---");
                         $('#ctl00_workarea_cbo_p3_Category').removeAttr("disabled");
@@ -307,7 +307,7 @@ function FormReady() {
 
         $("#ctl00_workarea_txt_p1_CN").keypress(function (e) { return NumberOnly_KeyPress(e || event, GotoCN); }).blur(function () { NumberOnly_Blur(this, true, 8); });
         $("#bn_p1_CN").click(function () { SearchButtonClick('ctl00_workarea_txt_p1_CN'); });
-
+       
         $("#ctl00_workarea_txt_p2_CN").keypress(function (e) { return NumberOnly_KeyPress(e || event, GotoCN); }).blur(function () { NumberOnly_Blur(this, true, 8); });
         $("#bn_p2_CN").click(function () { SearchButtonClick('ctl00_workarea_txt_p2_CN'); });
 
@@ -407,7 +407,7 @@ function FormReady() {
             SetEnabled();
         });
 
-        //*****
+        //*****        
 
         $("#ctl00_workarea_cbo_p1_RoleLevel,#ctl00_workarea_cbo_p2_RoleLevels").trigger("change");
         if (pk_val("Page.PrePopulate.Role")) $('#ctl00_workarea_cbo_p1_Role, #ctl00_workarea_cbo_p2_Role').val(pk_val("Page.PrePopulate.Role").replace("¬", "~")).data("db", pk_val("Page.PrePopulate.Role").replace("¬", "~"));
@@ -417,8 +417,8 @@ function FormReady() {
 
         if (pk_val("Page.PrePopulate.AssNo")) $('#txt_p3_AssNo').val(pk_val("Page.PrePopulate.AssNo"));
         if (pk_val("Page.PrePopulate.GrantComm")) $('#txt_p3_GrantComm').val(pk_val("Page.PrePopulate.GrantComm"));
-
-
+        
+        
         if (pk_val("Page.PrePopulate.Cat")) $('#ctl00_workarea_cbo_p3_Category, #ctl00_workarea_cbo_p4_Category').val(pk_val("Page.PrePopulate.Cat"));
         if (pk_val("Page.PrePopulate.RegRadio")) $('input:radio[name =\"REG\"]').filter('[value="' + pk_val("Page.PrePopulate.RegRadio") + '"]').attr('checked', true);
 
@@ -428,7 +428,7 @@ function FormReady() {
     catch (e) {
         MakePageVisible(1);
     }
-
+    
     SetEnabled();
     HasChanges = false;
 }
@@ -448,9 +448,9 @@ function Reset() {
     $("select", ".mpage").each(function () { if ($(this).attr("disabled") !== "disabled") $(this).val(""); });
 
     $('#ctl00_workarea_cbo_p2_Region,#ctl00_workarea_cbo_p2_County,#ctl00_workarea_cbo_p2_District,#ctl00_workarea_cbo_p2_Group,#ctl00_workarea_cbo_p3_Region,#ctl00_workarea_cbo_p3_County,#ctl00_workarea_cbo_p3_District,#ctl00_workarea_cbo_p4_Region,#ctl00_workarea_cbo_p4_County').each(function () {
-        if ($(this).attr("disabled") !== "disabled") $(this).empty().append('<option selected="selected" value="">--- No Items Available ---</option>');
+        if ($(this).attr("disabled") !== "disabled") $(this).empty().append('<option selected="selected" value="">--- No Items Available ---</option>'); 
     });
-
+    
     if ($("#ctl00_workarea_cbo_p2_Region").attr("disabled") !== "disabled") $("#ctl00_workarea_cbo_p2_Country").trigger("change");
     if ($("#ctl00_workarea_cbo_p2_County").attr("disabled") !== "disabled") $("#ctl00_workarea_cbo_p2_Region").trigger("change");
     if ($("#ctl00_workarea_cbo_p2_District").attr("disabled") !== "disabled") $("#ctl00_workarea_cbo_p2_County").trigger("change");
@@ -636,12 +636,12 @@ function ValidateDoB(self) {
     return Date_TextBox_Blur(self, 'Must be over 5¾ years old');
 }
 
-function SearchASSClick() {
+function SearchASSClick() {    
     $.member_search("MS_PASS",
         ASS_Populate,
         "Find An Assessor",
         pk_val("Master.User.ON"),
-        -1);
+        -1);    
     return false;
 }
 
@@ -653,16 +653,16 @@ function ASS_Populate(CN, Name) {
 function CheckASSno() {
     if (!$("#txt_p3_AssNo").val())
         ASS_Populate("", "");
-    else
+    else 
         $.validate_member("MS_PASS",
             ASS_Populate,
             function () { $.system_alert("This is not a current valid Assessor number."); },
             $("#txt_p3_AssNo").val(),
             pk_val("Master.User.ON"),
-            -1);
+            -1);    
 }
 
-function SearchPERCOMClick() {
+function SearchPERCOMClick() {    
     $.member_search("PERCOM",
         PERCOM_Populate,
         "Find A Permit Commissioner",
@@ -679,7 +679,7 @@ function PERCOM_Populate(CN, Name) {
 function CheckPERCOMno() {
     if (!$("#txt_p3_GrantComm").val())
         PERCOM_Populate("", "");
-    else
+    else 
         $.validate_member("PERCOM",
             PERCOM_Populate,
             function () { $.system_alert("This is not a current valid permit commissioner number."); },

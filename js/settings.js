@@ -325,4 +325,3 @@ function login() {
         $("form").attr("action", "Login.ashx").submit();
     }
 }
-

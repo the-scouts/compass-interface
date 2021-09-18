@@ -4,9 +4,9 @@ var vLoadingCN = false;
 
 function FormReady() {
     SetUpPage(pk_val("Page.IsReadonly"), IsInsertMode());
-
+    
     ValidateType("#ctl00_workarea_cbo_p1_type");
-    setAddressPrimarys();
+    setAddressPrimarys();    
 
     if (pk_val("Page.NG_ID")) {
         $("#LBTN1").click(function () { ChangePage(vCurrentPageNo, 1, true); });
@@ -23,7 +23,7 @@ function FormReady() {
     $("#bnPrev3").click(function () { return PrevPageClick(vCurrentPageNo, 2, ValidatePage, MakePageVisible, ResetPage); });
     $("#bnPrev4").click(function () { return MakePageVisible(3); });
 
-    //#region Optimisations
+    //#region Optimisations 
 
     // countries
     Opt_GetCBO("#ctl00_workarea_h_cbo_p1_maddrcountry", "--- Select Country ---", "#ctl00_workarea_cbo_p1_maddrcountry,#ctl00_workarea_cbo_p1_caddrcountry", 4);
@@ -88,7 +88,7 @@ function FormReady() {
                 $("#LBTN2").css({ "display": "none" });
         });
 
-        // page 2
+        // page 2 
         if (HasAccess(pk_val("CRUD.RS"), "U")) {
             $("#ctl00_workarea_txt_p2_date_registered").blur(function () { Date_TextBox_Blur(this); });
             $("#bn_p2_date_registered").click(function () { PopupDateSelect(this, 'ctl00_workarea_txt_p2_date_registered'); });
@@ -127,8 +127,8 @@ function FormReady() {
 
         $("#bnAddressBack").click(function () { AddressBack(); return false; });
 
-        ResetRequired('#mpage3');
-    }
+        ResetRequired('#mpage3');        
+    }    
 
     if ($("#ctl00_workarea_txt_p3_memberno").val())
         $("#ctl00_workarea_txt_p3_membername").show();
@@ -164,7 +164,7 @@ function FormReady() {
     $("#ctl00_workarea_txt_p4_times").autosize(20);
 
     ResetRequired('#mpage1');
-    SetEnabled();
+    SetEnabled();    
     setTimeout(function () { MakePageVisible(1); },600);
     HasChanges = false;
 
@@ -330,9 +330,9 @@ function ValidatePage(PageNo) {
 function ValidateType(self) {
     if ($("option:selected", $(self)).attr("value") === "ES" && $("#ctl00_workarea_cbo_p1_linkedgroup option").size() > 1)
         $("#ctl00_workarea_cbo_p1_linkedgroup").removeAttr("disabled");
-    else
+    else 
         $("#ctl00_workarea_cbo_p1_linkedgroup").val("").attr("disabled", "disabled");
-
+    
     SetEnabled();
 }
 
@@ -387,7 +387,7 @@ function ResetPage(PageNo) {
     if (PageNo === 3) {
         setAddressPrimarys();
         if (!$("#ctl00_workarea_txt_p3_memberno").val())
-            $("#ctl00_workarea_txt_p3_membername").hide();
+            $("#ctl00_workarea_txt_p3_membername").hide();        
     }
     return false;
 }
@@ -433,7 +433,7 @@ function LookupMemberNo() {
         Con_Populate,
         "Find A Member",
         pk_val("Page.NG_ID"),
-        -1);
+        -1);    
 }
 
 //#endregion

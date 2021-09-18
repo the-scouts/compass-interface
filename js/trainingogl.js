@@ -3,8 +3,8 @@ $(document).ready(FormReady);
 function FormReady() {
     SetUpPage(false, false);
     $("input,select").change(CheckReq);
-    ResetRequired('#mpage1');
-
+    ResetRequired('#mpage1');    
+    
     $("#bnReset").click(ResetPage);
     $("#ctl00_footer_bnSave1").attr("href", "#").click(ClientSave);
 
@@ -91,7 +91,7 @@ function AddTrainingDateOnlyFilter() {
 
     calPopup.addDisabledDates(formatDate(dd, DisplayDateFormat), null);
     calPopup.addDisabledDates(null, formatDate(d, DisplayDateFormat));
-
+    
     calPopup.setYearStartEnd(d.getFullYear(), dd.getFullYear());
 }
 
@@ -104,7 +104,7 @@ function PopupTrainingDateOnlySelect(thisControl, FromDate_Ctrl) {
 }
 
 function TrainingDate_TextBox_Blur(self)
-{
+{    
     if (Date_TextBox_Blur(self, 'Only dates today or up to 3 years in the past can be entered for training.'))
     {
         //TSA-459: Don't call PrePoulate here, this is handled by the change event on the training date box.
@@ -128,7 +128,7 @@ function PrePopulateRenewal(self) {
 
         //TSA-459: Need to format the date unambiguously via the blur function before working out the +5y value, as otherwise
         //         a manually input date (rather than selected from the date picker) that is ambiguous (e.g. 10/06/15) will
-        //         be interpreted as a US-formatted date, i.e. 6th Oct and the resulting calculation will be outside the
+        //         be interpreted as a US-formatted date, i.e. 6th Oct and the resulting calculation will be outside the 
         //         allowable bounds.
         TrainingDate_TextBox_Blur($("#ctl00_workarea_txt_p1_training_date"));
 
