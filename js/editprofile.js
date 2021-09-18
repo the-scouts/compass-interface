@@ -44,7 +44,7 @@ function FormReady() {
                 $("#ctl00_workarea_cbo_p9_Training").val($("#ctl00_workarea_cbo_p9_hlevel").val());
                 PopulateCBO("#ctl00_workarea_cbo_p9_Permits", result, true, "--- not visible ---", true);
                 $("#ctl00_workarea_cbo_p9_Permits").val($("#ctl00_workarea_cbo_p9_hlevel").val());
-
+                
                 if ($("#ctl00_workarea_cbo_p9_Address option").size() > 1) {
                     $("#ctl00_workarea_cbo_p9_Address option[value='']").remove();
                     $("#ctl00_workarea_cbo_p9_Phone option[value='']").remove();
@@ -66,12 +66,12 @@ function FormReady() {
                 SetEnabled();
             }, error: ServiceFailed
         });
-    });
+    });    
     $('#radio_p9_sohY').prop('checked', ($("#ctl00_workarea_h_txt_p9_sohy").val() === "Y"));
     $('#radio_p9_vulY').prop('checked', ($("#ctl00_workarea_h_txt_p9_vuly").val() === "Y"));
-    setAddressPrimarys();
+    setAddressPrimarys();    
 
-    $("input,select, textarea").change(CheckReq);
+    $("input,select, textarea").change(CheckReq);    
 
     if (!pk_val("Page.IsMe") || pk_val("Page.RemoveAccount"))
         $(".SECURE, #reqDivAv").remove();
@@ -79,12 +79,12 @@ function FormReady() {
         SetAccountDetailsRequired(false);
 
     $("#popup_container .navbutton").click(function () { ChangePage(vCurrentPage, $(this).attr("id").replace("LBTN", "")); });
-
+    
     $("#bn_p10_pwv").click(function () { checkPW(true); });
 
     $("#ctl00_workarea_txt_p2_email1,#ctl00_workarea_txt_p2_email2,#ctl00_workarea_txt_p2_email3").blur(function () { validateEmail(this); });
     $("#ctl00_workarea_txt_p2_tel1,#ctl00_workarea_txt_p2_tel2,#ctl00_workarea_txt_p2_tel3,#ctl00_workarea_txt_p6_tel1,#ctl00_workarea_txt_p6_tel2,#ctl00_workarea_txt_p6_tel3,#ctl00_workarea_txt_p7_doctel1,#ctl00_workarea_txt_p7_doctel2").keypress(function (e) { return NumberOnly_KeyPress(e || event, null); }).blur(function () { validatePhone(this); });
-    //$("#ctl00_workarea_txt_p2_socmed1,#ctl00_workarea_txt_p2_socmed2,#ctl00_workarea_txt_p2_socmed3").keypress(function () { return validateWebAddress(this); });
+    //$("#ctl00_workarea_txt_p2_socmed1,#ctl00_workarea_txt_p2_socmed2,#ctl00_workarea_txt_p2_socmed3").keypress(function () { return validateWebAddress(this); });    
 
     $("#bn_p2_QASLookup").click(function () {
         GetPAF('ctl00_workarea_txt_p2_addressline1¬ctl00_workarea_txt_p2_addressline2¬ctl00_workarea_txt_p2_addressline3¬ctl00_workarea_txt_p2_town¬ctl00_workarea_txt_p2_county¬ctl00_workarea_txt_p2_postcode¬ctl00_workarea_cbo_p2_country', 'ctl00_workarea_txt_p2_postcode', 11, 2);
@@ -99,7 +99,7 @@ function FormReady() {
         $("#ctl00_workarea_txt_p2_addressline1,#ctl00_workarea_txt_p2_email1, #ctl00_workarea_txt_p2_tel1").makeNotRequired(true);
     }
     else if (pk_val("Page.IsYouth")) { // make youth details non required
-        $("#ctl00_workarea_txt_p2_addressline1,#ctl00_workarea_txt_p2_email1, #ctl00_workarea_txt_p2_tel1").makeNotRequired(true);
+        $("#ctl00_workarea_txt_p2_addressline1,#ctl00_workarea_txt_p2_email1, #ctl00_workarea_txt_p2_tel1").makeNotRequired(true);        
     }
 
     if (pk_val("Page.HideSocialMedia")) { // remove social media details
@@ -116,10 +116,10 @@ function FormReady() {
         SOHCHANGE('#radio_p9_sohY');
     }
 
-    if (pk_val("Page.HasVulnerableOptions")) {
+    if (pk_val("Page.HasVulnerableOptions")) {        
         $("#radio_p9_vulY,#radio_p9_vulN").change(vulCHANGE);
         vulCHANGE();
-    }
+    }    
 
     $("#bnReset1,#bnReset3,#bnReset4,#bnReset5,#bnReset6,#bnReset7,#bnReset8,#bnReset9,#bnReset10").click(function () {
         var vPageNo = parseInt($(this).attr("ID").replace("bnReset",""),10);
@@ -154,13 +154,13 @@ function FormReady() {
     $("#bnPrev10").click(function () { return PrevPageClick(vCurrentPage, 9, ValidatePage, MakePageVisible, ResetPage); });  //ChangePage(vCurrentPage, 9); });
 
     $("#bnAddrBK").click(function () { AddressBack(); return false; });
-
+    
     $("#ctl00_footer_bnSave1,#bnSave2,#bnSave3,#bnSave4,#bnSave5,#bnSave6,#bnSave7,#bnSave8,#bnSave9,#bnSave10").click(function () {
         var vPageNo = $(this).attr("ID").replace("ctl00_footer_", "").replace("bnSave", "");
         SaveForm(vPageNo);
         return false;
     });
-
+        
     if (pk_val("Page.DoBChange")) {
         $("#bn_p1_dob").click(function () { PopupDoBSelect(this, 'ctl00_workarea_txt_p1_dob'); });
         $("#ctl00_workarea_txt_p1_dob").blur(function () { AddDoBFilter(); Date_TextBox_Blur(this, 'Must be over 5¾ years old'); });
@@ -183,13 +183,13 @@ function FormReady() {
     });
 
     $("#ctl00_workarea_txt_p2_postcode").on("blur", function () { return validatePostCode($("#ctl00_workarea_txt_p2_postcode"), $('#ctl00_workarea_cbo_p2_country option:selected').attr("value") !== 'UK'); });
-    $("#ctl00_workarea_cbo_p2_country").on("change", function () { return validatePostCode($("#ctl00_workarea_txt_p2_postcode"), $('#ctl00_workarea_cbo_p2_country option:selected').attr("value") !== 'UK'); });
+    $("#ctl00_workarea_cbo_p2_country").on("change", function () { return validatePostCode($("#ctl00_workarea_txt_p2_postcode"), $('#ctl00_workarea_cbo_p2_country option:selected').attr("value") !== 'UK'); });       
 
     $("#ctl00_workarea_txt_p1_occdetail").autosize(10);
     $("#ctl00_workarea_txt_p7_dietary").autosize(10);
-    $("#ctl00_workarea_txt_p7_medical").autosize(10);
-
-    //#region Optimisations
+    $("#ctl00_workarea_txt_p7_medical").autosize(10);       
+    
+    //#region Optimisations 
 
     // countries
     Opt_GetCBO("#ctl00_workarea_h_cbo_p2_country", "--- Select Country ---", "#ctl00_workarea_cbo_p2_country,#ctl00_workarea_cbo_p7_country", 4);
@@ -233,9 +233,9 @@ function FormReady() {
     PopulateGridQualCBO();
     PopulateGridHobbyCBO();
 
-    PopulateDisabilities();
+    PopulateDisabilities(); 
     PopulateQualifications();
-    PopulateHobbies();
+    PopulateHobbies(); 
 
     $.AttrToData("db");
 
@@ -326,9 +326,23 @@ function SaveForm(PageNo) {
         $("#ctl00_workarea_h_lst_p8_hiddenmktg").val(MyData);
 
         MyData = "";
+        $(".Marketing_I").each(function () {
+          if (MyData) MyData += "¬";
+          MyData += $(this).data("grp") + "~" + $(this).data("code");
+          //add them all, whether selected or not, so we get a complete list of all the marketing activities in use
+          if ($(this).prop("checked")) {
+            MyData += "~Y";
+          }
+          else {
+            MyData += "~N";
+          }
+        });
+        $("#ctl00_workarea_h_lst_p8_invisiblemktg").val(MyData);
+
+        MyData = "";
         $("#ctl00_workarea_tbl_p9_options .optionlevel").each(function () {
-            if ($(":selected", this).val())
-                MyData += ($("input[type='checkbox']", $(this).closest("tr")).is(":checked") ? "Y":"N") + "~" + $(this).attr("id").replace("ctl00_workarea_cbo_p9_", "") + "~" + $(":selected", this).val() + "¬";
+            if ($(":selected", this).val()) 
+                MyData += ($("input[type='checkbox']", $(this).closest("tr")).is(":checked") ? "Y":"N") + "~" + $(this).attr("id").replace("ctl00_workarea_cbo_p9_", "") + "~" + $(":selected", this).val() + "¬";            
         });
         $("#ctl00_workarea_h_lst_p9_hiddencbos").val(MyData);
 
@@ -541,7 +555,7 @@ function ChangePage(FromPageNo, ToPageNo, AlreadyValidated) {
 
             ChangePage(FromPageNo, ToPageNo, true);
         }
-        else
+        else 
             MakePageVisible(ToPageNo);
     }
     return false;
@@ -695,8 +709,8 @@ function InitialiseDisability(plookup, pdetail) {
 
 function AddDisability() {
     $(".DisDBN").css({ "visibility": "visible" });
-    $("#tbl_p3_disabilities").append("<tr>" + $("#tbl_p3_disabilities tr").last().html() + "</tr>");
-    PopulateGridDiscCBO();
+    $("#tbl_p3_disabilities").append("<tr>" + $("#tbl_p3_disabilities tr").last().html() + "</tr>");    
+    PopulateGridDiscCBO();    
 }
 
 function DisCHANGE() {
@@ -743,15 +757,15 @@ function SetPage4Events() {
     $(".QualDBN").last().click(RemoveQualification).css({ "visibility": "hidden" });
 }
 
-function InitialiseQualifications(plookup, pdetail) {
+function InitialiseQualifications(plookup, pdetail) {    
     $('.QualTXT').last().val(pdetail.replace("&#39;", "'"));
     $('.QualCBO').last().val(plookup).trigger("change");
 }
 
-function AddQualification() {
+function AddQualification() {    
     $(".QualDBN").css({ "visibility": "visible" });
-    $("#tbl_p4_qualifications").append("<tr>" + $("#tbl_p4_qualifications tr").last().html() + "</tr>");
-    PopulateGridQualCBO();
+    $("#tbl_p4_qualifications").append("<tr>" + $("#tbl_p4_qualifications tr").last().html() + "</tr>");    
+    PopulateGridQualCBO();    
 }
 
 function QualCHANGE() {
@@ -805,8 +819,8 @@ function InitialiseHobbies(plookup, pdetail) {
 
 function AddHobby() {
     $(".HobbyDBN").css({ "visibility": "visible" });
-    $("#tbl_p5_hobbies").append("<tr>" + $("#tbl_p5_hobbies tr").last().html() + "</tr>");
-    PopulateGridHobbyCBO();
+    $("#tbl_p5_hobbies").append("<tr>" + $("#tbl_p5_hobbies tr").last().html() + "</tr>");    
+    PopulateGridHobbyCBO();    
 }
 
 function HobbyCHANGE() {
@@ -876,7 +890,7 @@ function checkPW(pFromClick) {
         SetControlError("#ctl00_workarea_txt_p10_PW", true);
         return;
     }
-
+    
     //if (pk_val("Page.IsMe") && vValid && ($("#ctl00_workarea_txt_p10_PW").val() || $("#ctl00_workarea_txt_p10_PW_New1").val())) {
     if (pk_val("Page.IsMe") && ($("#ctl00_workarea_txt_p10_PW").val() && $("#ctl00_workarea_txt_p10_PW_New1").val())) {
         var vData = {}; //var vData = new FormData();

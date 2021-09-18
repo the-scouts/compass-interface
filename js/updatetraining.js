@@ -3,7 +3,7 @@ $.ajaxSetup({ cache: false });
 var vLoadingVC = false;
 var vLoading = true;
 
-function FormReady() {
+function FormReady() {    
     SetUpPage(pk_val("Page.IsReadonly"), !pk_val("Page.MTMN"));
 
     $("input,select").change(CheckReq);
@@ -24,7 +24,7 @@ function FormReady() {
         $("#ctl00_workarea_cbo_p1_modules").change(function () {
             $(".LM_Remove").not(":last").each(function () { RemoveLM(this); });
             $(".VC_Remove").not(":last").each(function () { RemoveVC(this); });
-            $('.LM_DPL_TXT, .LMPL_D, .LM_DAC_TXT, .LMAC_D, .LM_Remove, .VC_DPL_TXT, .VCPL_D, .VC_DAC_TXT, .VCAC_D, .VC_Remove').css("display", "none");
+            $('.LM_DPL_TXT, .LMPL_D, .LM_DAC_TXT, .LMAC_D, .LM_Remove, .VC_DPL_TXT, .VCPL_D, .VC_DAC_TXT, .VCAC_D, .VC_Remove').css("display", "none");            
             $('select[id$="ctl00_workarea_cb_p1_learningreq"]').trigger("change");
             $(".VMTR").remove();
             $(".VMTRHDR").css("display", "none");
@@ -35,7 +35,7 @@ function FormReady() {
                     $.system_alert("This training module is already setup against this PLP for this role.", "#ctl00_workarea_cbo_p1_modules");
                     $("#ctl00_workarea_cbo_p1_modules").val("");
                 }
-                else PopulateModuleData($("option:selected", $("#ctl00_workarea_cbo_p1_modules")).val());
+                else PopulateModuleData($("option:selected", $("#ctl00_workarea_cbo_p1_modules")).val());      
             }
 
             if (pk_val("Master.Sys.REST")) {
@@ -78,7 +78,7 @@ function FormReady() {
         $("#ctl00_workarea_txt_p1_TAname,#ctl00_workarea_txt_p1_VBname").css({ "width": "430px" }).show();
         $("#ctl00_workarea_txt_p1_VBno,#ctl00_workarea_txt_p1_TAno").css({ "display": "none" });
     }
-
+    
     CheckVALBY();
 
     ResetRequired('#mpage1');
@@ -104,9 +104,9 @@ function FormReady() {
         $("#ctl00_footer_bnSave1").attr("href", "#").click(ClientSave);
         // Old code removed - TSA-588 (KK): trigger change event to ensure readonly state correctly set
         $('select[id$="ctl00_workarea_cb_p1_learningreq"]').change(CheckVALBY);
-
+        
         CheckVALBY(true);
-
+            
 
         $("#bn_p1_TAname").click(TA_SearchClick);
         $("#ctl00_workarea_txt_p1_TAno").blur(CheckTAno).keypress(function (e) { return NumberOnly_KeyPress(e || event, function (e) { $('#ctl00_workarea_txt_p1_TAno').trigger('blur'); });});
@@ -127,7 +127,7 @@ function FormReady() {
             $("#ctl00_workarea_txt_p1_VBno").blur(CheckVBno).keypress(function(e){
                 return NumberOnly_KeyPress(e || event, function (e) { $('#ctl00_workarea_txt_p1_VBno').trigger('blur'); });
             });
-        }
+        }        
     }
 
     // alternative small screen size (for inline use only)
@@ -138,7 +138,7 @@ function FormReady() {
         UseMinWidth = "750px";
         UseMinHeight = "350px";
     }
-
+    
     SetEnabled();
     setTimeout(function () {
         MakePageVisible(1);
@@ -177,7 +177,7 @@ function ValidatePage() {
         });
 
         if (ItemsComplete === 0)
-        {
+        {            
             $.system_alert("You cannot save validated training with :<br/>learning required set to yes, and have no learning methods with an actual completion date set.");
             if (vValid)
                 SetControlError("#ctl00_workarea_txt_p1_VBno", true);
@@ -203,7 +203,7 @@ function ResetPage() {
         $(".LMCBO").attr("disabled", "disabled");
         $(".VCCBO").attr("disabled", "disabled");
         $(".VMTR").remove();
-        $(".VMTRHDR").css("display","none");
+        $(".VMTRHDR").css("display","none");        
     }
 
     $(".LM_Remove").not(":last").each(function () { RemoveLM(this); });
@@ -215,8 +215,8 @@ function ResetPage() {
     PopulateData();
 
     AddMandatoryVC(true);
-
-    CheckVALBY();
+    
+    CheckVALBY();    
 
     ResetRequired('#mpage1');
     SetControlError("#ctl00_workarea_txt_p1_VBno", false);
@@ -233,9 +233,9 @@ function ResetPage() {
 
 function ClientSave() {
     if (SaveHasBeenPressed || !ValidatePage())
-        return false;
+        return false;    
 
-    if ($("#ctl00_workarea_txt_p1_VBno").data("db")) // was validated at the start of this
+    if ($("#ctl00_workarea_txt_p1_VBno").data("db")) // was validated at the start of this    
         if ($("#ctl00_workarea_txt_p1_VBno").data("db") != $("#ctl00_workarea_txt_p1_VBno").val() || $("#ctl00_workarea_txt_p1_validateddate").data("db") != $("#ctl00_workarea_txt_p1_validateddate").val())
         {
             var html =
@@ -249,7 +249,7 @@ function ClientSave() {
             $.system_window(html,"<h2>System Warning</h2>",Buttons,2);
             $("#bnAWOK").click(function () { CloseHintPopup(); DoSave(); });
             return false;
-        }
+        }    
 
     DoSave();
     return false;
@@ -259,7 +259,7 @@ function DoSave() {
     if (!SaveFormCheck("#ctl00_footer_bnSave1")) // not the error page save button (but all the rest)
         return false;
 
-    // Validation Methods
+    // Validation Methods   
     var vVM = "";
     $(".VMCB").each(function () {
         if ($(this).is(":checked")) {
@@ -269,7 +269,7 @@ function DoSave() {
     });
     $("#ctl00_head_lst_p1_VM").val(vVM);
 
-    // Learning Methods
+    // Learning Methods   
     var vLM = "";
     $("#tbl_p1_LM tr").not(":first").not(":last").each(function () {
         if (vLM) vLM += "¬";
@@ -279,7 +279,7 @@ function DoSave() {
     });
     $("#ctl00_head_lst_p1_LM").val(vLM);
 
-    // Validation Criteria
+    // Validation Criteria   
     var vVC = "";
     $("#tbl_p1_VC tr").not(":first").not(":last").each(function () {
         if (vVC) vVC += "¬";
@@ -303,11 +303,11 @@ function DoSave() {
 
 function VB_Populate(CN, Name) {
     $("#ctl00_workarea_txt_p1_VBno").val(CN);
-    $("#ctl00_workarea_txt_p1_VBname").val(Name);
+    $("#ctl00_workarea_txt_p1_VBname").val(Name);    
     if (CN) {
         $("#ctl00_workarea_txt_p1_validateddate, #ctl00_workarea_txt_p1_VBno").attr("required", "required");
         if (!$("#ctl00_workarea_txt_p1_validateddate").val())
-            $("#ctl00_workarea_txt_p1_validateddate").val(formatDate(new Date(), DisplayDateFormat));
+            $("#ctl00_workarea_txt_p1_validateddate").val(formatDate(new Date(), DisplayDateFormat));        
         ShowRequired($("#ctl00_workarea_txt_p1_VBno"));
         ShowRequired($("#ctl00_workarea_txt_p1_validateddate"));
     }
@@ -337,7 +337,7 @@ function VB_SearchClick() {
         pk_val("Master.User.ON"),
         pk_val("Page.UseCN")
     );
-
+    
     return false;
 }
 
@@ -349,7 +349,7 @@ function CheckVBno() {
         $.system_alert("A member cannot validate their own training.");
         VB_Populate("", "");
     }
-    else
+    else 
         $.validate_member("TRVB" + (pk_val("Page.YA") === "Y" ? "_Y" : "_A"),
             VB_Populate,
             function () { VB_Populate("", ""); $.system_alert("Not a valid Training Validator number.", self); },
@@ -361,7 +361,7 @@ function CheckVBno() {
 
 function TA_Populate(CN, Name) {
     if (!CN) $("#ctl00_workarea_txt_p1_TAname").val("");
-
+     
     $("#ctl00_workarea_txt_p1_TAno").val(CN);
     $("#ctl00_workarea_txt_p1_TAname").val(Name);
     if (($("#ctl00_workarea_txt_p1_TAno").data("db") || "") != CN)
@@ -375,7 +375,7 @@ function TA_SearchClick() {
         "Find A Training Advisor",
         pk_val("Master.User.ON"),
         pk_val("Page.UseCN"));
-
+    
     return false;
 }
 
@@ -386,7 +386,7 @@ function CheckTAno(self) {
         TA_Populate("", "");
         $.system_alert("A member cannot be their own training advisor.");
     }
-    else
+    else 
         $.validate_member("TADV" + (pk_val("Page.YA") === "Y" ? "_Y" : "_A"),
             TA_Populate,
             function () { TA_Populate("", ""); $.system_alert("Not a valid training advisor number.", self); },
@@ -397,7 +397,7 @@ function CheckTAno(self) {
 }
 
 function VB_DateChange(self) {
-    if ($(self).val()) {
+    if ($(self).val()) {    
         $("#ctl00_workarea_txt_p1_validateddate, #ctl00_workarea_txt_p1_VBno").attr("required", "required");
 
         if (!$("#ctl00_workarea_txt_p1_VBno").val()) {
@@ -416,7 +416,7 @@ function VB_DateChange(self) {
         SetControlError("#ctl00_workarea_txt_p1_validateddate",false);
     }
     else if (!$(self).val() && $("#ctl00_workarea_txt_p1_VBno").val()) {
-        $("#ctl00_workarea_txt_p1_validateddate").attr("required", "required");
+        $("#ctl00_workarea_txt_p1_validateddate").attr("required", "required");        
         SetControlError("#ctl00_workarea_txt_p1_validateddate", true);
     }
 }
@@ -426,7 +426,7 @@ function CheckVALBY(DontResetVB) {
     $(".LM_DAC_TXT").not(":last").each(function () {
         if ($(this).val()) ItemsComplete++;
     });
-
+    
   if ($('select[id$="ctl00_workarea_cb_p1_learningreq"]').val() === "True" && ItemsComplete === 0 && !vIsReadonly && !vLoading && !DontResetVB)
     {
         $("#ctl00_workarea_txt_p1_validateddate, #ctl00_workarea_txt_p1_VBno, #ctl00_workarea_txt_p1_VBname").attr("readonly", "readonly").val("");
@@ -488,7 +488,7 @@ function PopulateModuleData(TMN) {
                         $("#ctl00_workarea_cbo_p1_ValidationCriteria").append(
                             $("<option></option>").attr("value", vItem1.split('~')[0]).attr("data-mandatory", (vItem1.split('~')[2] === "Y" ? "Y" : "")).text(vItem1.split('~')[1])
                             );
-                    }
+                    }                    
                 }
 
                 if (result.ValidationMethods) {
@@ -512,12 +512,12 @@ function PopulateModuleData(TMN) {
                 $("#ctl00_workarea_cbo_p1_ValidationCriteria").append($("<option></option>").text("--- There are no validation criteria setup for this module ---"));
                 $(".VCCBO").attr("disabled", "disabled");
             }
-            else $(".VCCBO").removeAttr("disabled");
+            else $(".VCCBO").removeAttr("disabled");            
 
             PopulateLMCBO(1);
             PopulateVCCBO(1);
             AssignLMEvents();
-            AssignVCEvents();
+            AssignVCEvents();            
             AddMandatoryVC(false);
             SetEnabled();
         }, error: ServiceFailed
@@ -609,7 +609,7 @@ function RemoveLM(self) {
 
 function AddLM(Code, PC, AC) {
     if (Code) {
-        $("option[value='" + Code + "']", $(".LMCBO").last()).attr('selected', 'selected');
+        $("option[value='" + Code + "']", $(".LMCBO").last()).attr('selected', 'selected');        
         $(".LM_DPL_TXT").last().val(PC);
         $(".LM_DAC_TXT").last().val(AC);
 
@@ -633,8 +633,8 @@ function AddLM(Code, PC, AC) {
         $("#tbl_p1_LM").append("<tr>" + HTML + "</tr>");
         $('.LM_DPL_TXT, .LMPL_D, .LM_DAC_TXT, .LMAC_D, .LM_Remove', $("#tbl_p1_LM tr:eq(" + ($("#tbl_p1_LM tr").length - 1) + ")")).css("display", "none");
         CheckVALBY();
-        AssignLMEvents();
-    }
+        AssignLMEvents();        
+    }    
 }
 
 function AssignLMEvents() {
@@ -659,13 +659,13 @@ function AddMandatoryVC(OnlyReadonlyBit) {
                 $(".VCCBO").last().data("orig", vTVN);
                 VCCBOChange($(".VCCBO").last());
             }
-        });
+        });        
         vLoadingVC = false;
     }
 
     $(".VCCBO").each(function () {
         if ($("option:selected", this).data("mandatory")) {
-            $(this).closest("select").attr("disabled", "disabled");
+            $(this).closest("select").attr("disabled", "disabled");            
             $(".VC_Remove", this.parentElement.parentElement).css("display","none");
         }
     });
@@ -722,12 +722,12 @@ function VCCBOChange(self) {
         AddVC();
         PopulateVCCBO($("#tbl_p1_VC tr").length - 1);
         //AddMandatoryVC(true);
-    } else {
+    } else {        
         if (!$(".VCCBO option:selected", $(self).closest("tr")).data("mandatory"))
             $(".VC_Remove", $(self).closest("tr")).css("display", "");
         else
             $(".VC_Remove", $(self).closest("tr")).css("display", "none");
-    }
+    }   
 }
 
 function RemoveVC(self) {
@@ -748,9 +748,9 @@ function RemoveVC(self) {
 
 function AddVC(TVN, PC, AC) {
     if (TVN) {
-        $("option[value='" + TVN + "']", $(".VCCBO").last()).attr('selected', 'selected');
+        $("option[value='" + TVN + "']", $(".VCCBO").last()).attr('selected', 'selected');        
         $(".VC_DPL_TXT").last().val(PC);
-        $(".VC_DAC_TXT").last().val(AC);
+        $(".VC_DAC_TXT").last().val(AC);        
         VCCBOChange($(".VCCBO").last());
 
         // if selected item is archived, remove all others and disable
