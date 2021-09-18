@@ -61,14 +61,14 @@ function ValidatePage(PageNo) {
 
         return vValid;
     }
-
+    
     return true;
 }
 
 function ClientSave() {
-    if (!ValidatePage(vCurrentPageNo)) return false;
+    if (!ValidatePage(vCurrentPageNo)) return false;    
     $("#ctl00_workarea_h_cbo_p1_module").val($("#ctl00_workarea_cbo_p1_module").val());
-    $("#ctl00_workarea_h_cb_p1_AddMore").val($("#ctl00_footer_cb_p1_AddMore").is(":checked") ? "Y" : "N");
+    $("#ctl00_workarea_h_cb_p1_AddMore").val($("#ctl00_footer_cb_p1_AddMore").is(":checked") ? "Y" : "N"); 
 
     if (SaveFormCheck("#ctl00_footer_bnSave1, #ctl00_footer_bnSaveAdd1"))
     {
@@ -210,7 +210,7 @@ function ClientSave() {
 //    do {
 //        swapped = false;
 //        for (var i = 0; i < a.length - 1; i++) {
-//            //if (parseDate(a[i].Date) < parseDate(a[i + 1].Date)) { //comparing the output of parseDate puts them in alphanumeric order, not date order
+//            //if (parseDate(a[i].Date) < parseDate(a[i + 1].Date)) { //comparing the output of parseDate puts them in alphanumeric order, not date order 
 //            if (Date.parse(a[i].Date) < Date.parse(a[i + 1].Date)) {
 //                    var temp = a[i];
 //                a[i] = a[i + 1];
