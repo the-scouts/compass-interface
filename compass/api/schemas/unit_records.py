@@ -2,7 +2,7 @@ from typing import NamedTuple, Union
 
 import pydantic
 
-from compass.core.schemas import hierarchy as schema
+import compass.core as ci
 
 
 class UnitRecord(NamedTuple):
@@ -19,5 +19,5 @@ class UnitRecordModel(pydantic.BaseModel):
 
     name: str
     parent: int
-    children: list[schema.HierarchyUnit]
-    sections: list[schema.HierarchyUnit]
+    children: list[ci.HierarchyUnit]
+    sections: list[ci.HierarchyUnit]

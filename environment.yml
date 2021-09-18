@@ -6,7 +6,7 @@ dependencies:
   - pip
 
   # Compass-Interface Core
-  - compass-interface-core>=0.15.1
+  - compass-interface-core>=0.20.0
 
   # Compass-Interface Utilities
   - pydantic>=1.8.2  # cache
