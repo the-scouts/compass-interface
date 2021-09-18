@@ -5,7 +5,7 @@ import base64
 import os
 from pathlib import Path
 import time
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -13,15 +13,11 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose import JWTError
-from starlette import requests
 
 from compass.api.schemas.auth import User
 from compass.api.util.http_errors import auth_error
 import compass.core as ci
 from compass.core.logger import logger
-
-if TYPE_CHECKING:
-    from aioredis import Redis
 
 SECRET_KEY = os.environ["SECRET_KEY"]  # hard fail if key not in env
 aes_gcm = AESGCM(bytes.fromhex(SECRET_KEY))
@@ -35,30 +31,25 @@ async def encrypt(data: bytes) -> bytes:
     return nonce + aes_gcm.encrypt(nonce, data, None)
 
 
-async def store_kv(key: str, value: bytes, redis: Optional[Redis] = None, expire_seconds: int = 600) -> None:
-    # expire param is integer number of seconds for key to live
-    if redis is not None:
-        await redis.set(f"session:{key}", value, expire=expire_seconds)
+async def persist_session(key: str, value: bytes) -> None:
     SESSION_STORE.joinpath(f"{key}.bin").write_bytes(value)  # TODO async
 
 
-async def create_token(username: str, pw: str, role: Optional[str], location: Optional[str], store: Redis) -> str:
+async def create_token(username: str, pw: str, role: Optional[str], location: Optional[str]) -> str:
     try:
         user, _ = await authenticate_user(username, pw, role, location)
     except ci.errors.CompassError:
         raise auth_error("A10", "Incorrect username or password!")
-    access_token_expire_minutes = 30
 
-    jwt_expiry_time = int(time.time()) + access_token_expire_minutes * 60
-    to_encode = dict(sub=f"{user.props.cn}", exp=jwt_expiry_time)
+    to_encode = dict(sub=f"{user.props.cn}", exp=int(time.time()) + 3600)
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     data = await encrypt(user.json().encode())
     encoded = base64.b85encode(data)
-    logger.debug(f"Created JWT for user {username}. Redis key={access_token}, data={encoded}")
+    logger.debug(f"Created JWT for user {username}. key={access_token}, data={encoded}")
 
-    logger.debug(f"Writing {username}'s session key to redis!")
-    asyncio.create_task(store_kv(access_token, data, store, expire_seconds=access_token_expire_minutes * 60))
+    logger.debug(f"Persisting {username}'s session key!")
+    asyncio.create_task(persist_session(access_token, data))
 
     return access_token
 
@@ -79,7 +70,11 @@ async def authenticate_user(username: str, password: str, role: Optional[str], l
     return user, api
 
 
-async def get_current_user(request: requests.Request, token: str) -> ci.CompassInterface:
+def retrieve_token_data(token: str) -> bytes:
+    return SESSION_STORE.joinpath(f"{token}.bin").read_bytes()
+
+
+async def get_current_user(token: str) -> ci.CompassInterface:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
@@ -90,15 +85,10 @@ async def get_current_user(request: requests.Request, token: str) -> ci.CompassI
         raise auth_error("A26", "Your token has expired! Please get a new token.")
 
     logger.debug(f"Getting data from token:{token}")
-    try:  # try fast-path
-        session_decoded = SESSION_STORE.joinpath(f"{token}.bin").read_bytes()
+    try:
+        session_decoded = retrieve_token_data(token)
     except (FileNotFoundError, IOError):
-        store = request.app.state.redis
-        session_encoded = await store.get(f"session:{token}")
-        try:
-            session_decoded = base64.b85decode(session_encoded)
-        except ValueError:
-            raise auth_error("A21", "Could not validate credentials")
+        raise auth_error("A21", "Could not validate credentials")
 
     try:
         session_decrypted = aes_gcm.decrypt(session_decoded[:12], session_decoded[12:], None)
@@ -115,7 +105,7 @@ async def get_current_user(request: requests.Request, token: str) -> ci.CompassI
         api = ci.CompassInterface(ci.Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role))
     else:
         user, api = await authenticate_user(*user.logon_info)
-        asyncio.create_task(store_kv(token, await encrypt(user.json().encode())))
+        asyncio.create_task(persist_session(token, await encrypt(user.json().encode())))
 
     try:
         if int(payload["sub"]) == int(api.user.membership_number):
@@ -125,10 +115,10 @@ async def get_current_user(request: requests.Request, token: str) -> ci.CompassI
         raise auth_error("A25", "Could not validate credentials")
 
 
-async def ci_user(request: requests.Request, token: str = Depends(oauth2_scheme)) -> ci.CompassInterface:
+async def ci_user(token: str = Depends(oauth2_scheme)) -> ci.CompassInterface:
     """Returns an initialised ci.CompassInterface object.
 
     Note `Depends` adds the oAuth2 integration with OpenAPI.
     TODO: manual integration without depends?
     """
-    return await get_current_user(request, token)
+    return await get_current_user(token)
