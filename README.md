@@ -122,8 +122,7 @@ To stop docker, run `docker-compose down`.
 #### Ports
 
 When the containers are running, the FastAPI app is reached at
-[localhost:8888](http://localhost:8888) and  Redis UI is available at
-[localhost:8001](http://localhost:8001). 
+[localhost:8888](http://localhost:8888). 
 
 If you are running the deployment configuration, you will also find the Traefik 
 reverse proxy at [localhost:80](http://localhost:80) and Traefik's dashboard at 
