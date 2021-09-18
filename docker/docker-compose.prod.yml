@@ -78,16 +78,6 @@ services:
         # to disable www redirection remove the section: ${STACK_NAME?Variable not set}-www-redirect,
         - traefik.http.routers.${STACK_NAME?Variable not set}-proxy-http.middlewares=${STACK_NAME?Variable not set}-www-redirect,${STACK_NAME?Variable not set}-https-redirect
 
-  p3x-redis-ui: # redis db visualization dashboard
-    container_name: p3x-redis-ui
-    image: patrikx3/p3x-redis-ui:latest
-    restart: always
-    ports:
-      - 8001:8001
-    volumes:
-      # here you can set your own `p3x-redis-ui-settings` folder
-      - ./p3x-redis-ui-settings:/settings
-
   backend:
     labels:
       - traefik.enable=true
@@ -100,11 +90,6 @@ services:
 #        - traefik.constraint-label-stack=${TRAEFIK_TAG?Variable not set}
 #        - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.rule=PathPrefix(`/v1`, `/docs`, `/redoc`, `/openapi.json`)
 #        - traefik.http.services.${STACK_NAME?Variable not set}-backend.loadbalancer.server.port=8888
-
-
-volumes:
-  redis-data:
-  redisinsight:
 
 networks:
   traefik-public:

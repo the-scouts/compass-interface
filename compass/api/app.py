@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from compass.api.routes import authentication
 from compass.api.routes import hierarchy
 from compass.api.routes import members
-from compass.api.util import redis
 
 open_api_tag_metadata = [
     {
@@ -37,7 +36,6 @@ app = FastAPI(
     version="0.24.1",
     openapi_tags=open_api_tag_metadata,
 )
-app.router.lifespan_context = redis.lifetime
 
 # V1 Routing
 version_one = APIRouter()
