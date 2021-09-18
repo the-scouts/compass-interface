@@ -1,23 +1,6 @@
 version: "3.3"
 services:
 
-  redis:
-    container_name: redis-cont
-    image: "redis:alpine"
-    environment:
-      - REDIS_REPLICATION_MODE=master
-    ports:
-      - "6379:6379"
-    volumes:
-      # save redisearch data to your current working directory
-      - ./redis-data:/data
-    command:
-      # Set password
-#      - "--requirepass ${REDIS_PASSWORD}"
-      # Enable persistence
-      - "--appendonly yes"
-      - "--appendfsync everysec"
-
   backend:
     container_name: backend-cont
     ports:
@@ -25,21 +8,13 @@ services:
     volumes:
       - ./compass:/app/compass
     image: scouts/compass-interface-backend
-    depends_on:
-      - redis
     env_file:
       - .env
     environment:
       - SECRET_KEY=${SECRET_KEY?Variable not set}
       - PORT=8888
-      - REDIS_HOST=redis
-      - REDIS_PASS=ubuntu
     build:
       context: ./docker/
       dockerfile: backend.dockerfile
 #      args:
 #        INSTALL_DEV: ${INSTALL_DEV-false}
-
-volumes:
-  redis-data:
-  redisinsight:
