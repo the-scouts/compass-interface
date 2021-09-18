@@ -906,7 +906,7 @@ function SetupDevRequired()
 }
 
 function ShowDocumentation(URL) {
-    if ((URL.toLowerCase).indexOf("login.ashx") >= 0)
+    if (URL.toLowerCase().indexOf("login.ashx") >= 0)
         URL = Append(URL, "ON", pk_val("Page.NG_ID"));
     OpenDocument(URL);
     return false;
