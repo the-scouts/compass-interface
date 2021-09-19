@@ -9,7 +9,7 @@ import compass.core as ci
 from compass.core.logger import logger
 
 router = APIRouter()
-error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: "A31"})
+error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: http_errors.A31})
 
 
 # @router.get("/", response_model=list[ci.MemberDetails])

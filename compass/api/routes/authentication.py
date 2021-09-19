@@ -2,7 +2,7 @@ import fastapi
 from starlette import exceptions
 
 from compass.api.schemas import auth
-from compass.api.util.http_errors import http_error
+from compass.api.util import http_errors
 from compass.api.util.oauth2 import create_token
 from compass.core.logger import logger
 
@@ -17,5 +17,5 @@ async def login_for_access_token(form_data: auth.OAuth2Details = auth.Form(...))
     except exceptions.HTTPException as err:
         raise err
     except Exception:
-        raise http_error("A1") from None
+        raise http_errors.A1 from None
     return auth.Token(access_token=access_token)
