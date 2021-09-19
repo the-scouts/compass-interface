@@ -12,8 +12,7 @@ import compass.core as ci
 
 def http_error(error_code: str, /) -> NoReturn:
     try:
-        status_code, message, headers = api_errors_registry[error_code]
-        raise HTTPException(status_code, {"code": error_code, "message": message}, headers=headers) from None
+        raise api_errors_registry[error_code] from None
     except KeyError as err:
         raise http_error("Z2") from err
     except Exception as err:
@@ -50,7 +49,7 @@ class ErrorHandling:
             raise http_error("Z0")
 
 
-api_errors_registry: dict[str, tuple[int, str, dict[str, str] | None]] = {
+_api_errors_registry: dict[str, tuple[int, str, dict[str, str] | None]] = {
     # authentication
     "A1": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Authentication error!", None),
     "A10": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", {"WWW-Authenticate": "Bearer"}),
@@ -73,4 +72,9 @@ api_errors_registry: dict[str, tuple[int, str, dict[str, str] | None]] = {
     "Z0": (status.HTTP_500_INTERNAL_SERVER_ERROR, "API Error (Core)! Please contact Adam.", None),
     "Z1": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Library)! Please contact Adam.", None),
     "Z2": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Error Handling)! Please contact Adam.", None),
+}
+api_errors_registry = {
+    error_code: HTTPException(status_code, {"code": error_code, "message": message}, headers=headers)
+    for error_code, (status_code, message, headers)
+    in _api_errors_registry.items()
 }
