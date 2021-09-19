@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from fastapi import Depends
-from starlette import status
 
 from compass.api.schemas.unit_records import UnitRecordModel
 from compass.api.util import flatten_units
@@ -10,15 +9,14 @@ import compass.core as ci
 from compass.core.logger import logger
 
 router = APIRouter()
-cpe_hierarchy = status.HTTP_403_FORBIDDEN, "A32", "Your current role does not have permission for the requested unit!"
-error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: cpe_hierarchy})
+error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: http_errors.A32})
 HIERARCHY = flatten_units.load_hierarchy_map()
 
 
 async def get_unit(unit_id: int) -> UnitRecordModel:
     unit = HIERARCHY.get(unit_id)
     if unit is None:
-        raise http_errors.http_error(status.HTTP_404_NOT_FOUND, "H10", "Requested unit ID was not found!")
+        raise http_errors.H10
     return UnitRecordModel(
         name=unit.name,
         parent=unit.parent,

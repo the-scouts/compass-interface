@@ -15,7 +15,7 @@ from jose import jwt
 from jose import JWTError
 
 from compass.api.schemas.auth import User
-from compass.api.util.http_errors import auth_error
+from compass.api.util import http_errors
 import compass.core as ci
 from compass.core.logger import logger
 
@@ -39,7 +39,7 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
     try:
         user, _ = await authenticate_user(username, pw, role, location)
     except ci.errors.CompassError:
-        raise auth_error("A10", "Incorrect username or password!")
+        raise http_errors.A10
 
     to_encode = dict(sub=f"{user.props.cn}", exp=int(time.time()) + 3600)
     access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -78,28 +78,28 @@ async def get_current_user(token: str) -> ci.CompassInterface:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
-        raise auth_error("A20", "Could not validate credentials")
+        raise http_errors.A20
     if not {"sub", "exp"} <= payload.keys():
-        raise auth_error("A26", "Your token is malformed! Please get a new token.")
+        raise http_errors.A26
     if time.time() > payload["exp"]:
-        raise auth_error("A26", "Your token has expired! Please get a new token.")
+        raise http_errors.A26
 
     logger.debug(f"Getting data from token:{token}")
     try:
         session_decoded = retrieve_token_data(token)
     except (FileNotFoundError, IOError):
-        raise auth_error("A21", "Could not validate credentials")
+        raise http_errors.A21
 
     try:
         session_decrypted = aes_gcm.decrypt(session_decoded[:12], session_decoded[12:], None)
     except InvalidTag:
-        raise auth_error("A22", "Could not validate credentials")
+        raise http_errors.A22
 
     try:
         user = User.parse_raw(session_decrypted)
         logger.debug(f"Created parsed user object {user.__dict__}")
     except KeyError:
-        raise auth_error("A23", "Could not validate credentials")
+        raise http_errors.A23
 
     if time.time() < user.expires:
         api = ci.CompassInterface(ci.Logon.from_session(user.asp_net_id, user.props.__dict__, user.session_id, user.selected_role))
@@ -110,9 +110,9 @@ async def get_current_user(token: str) -> ci.CompassInterface:
     try:
         if int(payload["sub"]) == int(api.user.membership_number):
             return api
-        raise auth_error("A24", "Could not validate credentials")  # this should be impossible
+        raise http_errors.A24  # this should be impossible
     except ValueError:
-        raise auth_error("A25", "Could not validate credentials")
+        raise http_errors.A25
 
 
 async def ci_user(token: str = Depends(oauth2_scheme)) -> ci.CompassInterface:
