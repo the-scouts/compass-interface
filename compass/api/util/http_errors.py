@@ -10,9 +10,15 @@ from starlette import status
 import compass.core as ci
 
 
+class _HTTPException(HTTPException):
+    def __init__(self, error_code: str, status_code: int, message: str, headers: dict[str, str] | None = None) -> None:
+        super().__init__(status_code, {"code": error_code, "message": message}, headers)
+
+
 def http_error(error_code: str, /) -> NoReturn:
     try:
-        raise api_errors_registry[error_code] from None
+        status_code, message, headers = api_errors_registry[error_code]
+        raise _HTTPException(error_code, status_code, message, headers) from None
     except KeyError as err:
         raise http_error("Z2") from err
     except Exception as err:
@@ -49,17 +55,18 @@ class ErrorHandling:
             raise http_error("Z0")
 
 
-_api_errors_registry: dict[str, tuple[int, str, dict[str, str] | None]] = {
+_auth_headers = {"WWW-Authenticate": "Bearer"}
+api_errors_registry: dict[str, tuple[int, str, dict[str, str] | None]] = {
     # authentication
     "A1": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Authentication error!", None),
-    "A10": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", {"WWW-Authenticate": "Bearer"}),
-    "A20": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials", {"WWW-Authenticate": "Bearer"}),
-    "A21": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials", {"WWW-Authenticate": "Bearer"}),
-    "A22": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials", {"WWW-Authenticate": "Bearer"}),
-    "A23": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials", {"WWW-Authenticate": "Bearer"}),
-    "A24": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials", {"WWW-Authenticate": "Bearer"}),
-    "A25": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials", {"WWW-Authenticate": "Bearer"}),
-    "A26": (status.HTTP_401_UNAUTHORIZED, "Your token is malformed! Please get a new token.", {"WWW-Authenticate": "Bearer"}),
+    "A10": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A20": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A21": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A22": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A23": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A24": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A25": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!", _auth_headers),
+    "A26": (status.HTTP_401_UNAUTHORIZED, "Your token is malformed! Please get a new token.", _auth_headers),
     # authorisation
     "A30": (status.HTTP_403_FORBIDDEN, "Your current role does not have permission to do this!", None),
     "A31": (status.HTTP_403_FORBIDDEN, "Your current role does not have permission to access details for the requested member!", None),
@@ -72,9 +79,4 @@ _api_errors_registry: dict[str, tuple[int, str, dict[str, str] | None]] = {
     "Z0": (status.HTTP_500_INTERNAL_SERVER_ERROR, "API Error (Core)! Please contact Adam.", None),
     "Z1": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Library)! Please contact Adam.", None),
     "Z2": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Error Handling)! Please contact Adam.", None),
-}
-api_errors_registry = {
-    error_code: HTTPException(status_code, {"code": error_code, "message": message}, headers=headers)
-    for error_code, (status_code, message, headers)
-    in _api_errors_registry.items()
 }
