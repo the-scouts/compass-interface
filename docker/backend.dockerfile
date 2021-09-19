@@ -105,3 +105,8 @@ COPY $gunicorn_conf "/home/gunicorn_conf.py"
 # the gunicorn executable hardcodes the python path, which we change, so run in `python -m` form.
 # To use uvicorn, change `gunicorn.app.wsgiapp` to `uvicorn.main`
 ENTRYPOINT ["/env/bin/python", "-m", "gunicorn.app.wsgiapp", "-c", "/home/gunicorn_conf.py"]
+
+# to push a new version to docker hub:
+# docker push scouts/compass-interface-backend
+# docker image tag scouts/compass-interface-backend scouts/compass-interface-backend:VERSION_NUMBER_GOES_HERE
+# docker push scouts/compass-interface-backend:VERSION_NUMBER_GOES_HERE
