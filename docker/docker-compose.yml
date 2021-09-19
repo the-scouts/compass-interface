@@ -1,20 +1,23 @@
-version: "3.3"
 services:
-
   backend:
     container_name: backend-cont
     ports:
       - 8888:8888
     volumes:
-      - ./compass:/app/compass
+      - backend_vol:/sessions
     image: scouts/compass-interface-backend
     env_file:
       - .env
     environment:
       - SECRET_KEY=${SECRET_KEY?Variable not set}
       - PORT=8888
+      - CI_SESSION_STORE=/sessions
+    command: "compass.api.app:app"
     build:
-      context: ./docker/
+      context: ./
       dockerfile: backend.dockerfile
-#      args:
-#        INSTALL_DEV: ${INSTALL_DEV-false}
+      args:
+        gunicorn_conf: "gunicorn_conf.py"
+
+volumes:
+  backend_vol:
