@@ -108,10 +108,10 @@ To run Compass Interface locally, we provide docker templates in `/docker`.
 
 #### Local hosting / development
 
-To start docker, run `docker-compose -f docker-compose.yml up -d`.  
-To rebuild the Compass Interface backend, run `docker-compose build backend`.  
-To access an interative shell, run `docker run -it backend bash`.  
-To stop docker, run `docker-compose down`.
+To start docker, run `docker compose -f docker-compose.yml up -d`.  
+To rebuild the Compass Interface backend, run `docker buildx build -t scouts/compass-interface-backend --load -f backend.dockerfile .`.  
+To stop docker, run `docker compose down`.  
+To remove old build files, run `docker container prune -f; docker image prune -f`
 
 #### Deployment
 
