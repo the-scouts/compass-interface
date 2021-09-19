@@ -10,16 +10,22 @@ from starlette import status
 import compass.core as ci
 
 
-def http_error(status_code: int, error_code: str, message: str, /, headers: dict[str, str] | None = None) -> NoReturn:
-    raise HTTPException(status_code, {"code": error_code, "message": message}, headers=headers) from None
+def http_error(error_code: str, /, *, headers: dict[str, str] | None = None) -> NoReturn:
+    try:
+        status_code, message = api_errors_registry[error_code]
+        raise HTTPException(status_code, {"code": error_code, "message": message}, headers=headers) from None
+    except KeyError as err:
+        raise http_error("Z2") from err
+    except Exception as err:
+        raise http_error("Z0") from err
 
 
-def auth_error(error_code: str, message: str, /, status_code: int = status.HTTP_401_UNAUTHORIZED) -> NoReturn:
-    raise http_error(status_code, error_code, message, headers={"WWW-Authenticate": "Bearer"})
+def auth_error(error_code: str, /) -> NoReturn:
+    raise http_error(error_code, headers={"WWW-Authenticate": "Bearer"})
 
 
 class ErrorHandling:
-    def __init__(self, overrides: dict[type[ci.CompassError], tuple[int, str, str]] | None = None, /):
+    def __init__(self, overrides: dict[type[BaseException], str] | None = None, /):
         self.overrides = overrides or {}
 
     async def __aenter__(self):
@@ -31,8 +37,7 @@ class ErrorHandling:
             return True
 
         if exc_type in self.overrides:
-            status_code, error_code, message = self.overrides[exc_type]
-            raise http_error(status_code, error_code, message)
+            raise http_error(self.overrides[exc_type])
 
         # pass-through for Starlette HTTP exceptions
         if issubclass(exc_type, exceptions.HTTPException):
@@ -40,10 +45,31 @@ class ErrorHandling:
 
         # fallback
         if exc_type == ci.CompassPermissionError:
-            raise http_error(status.HTTP_403_FORBIDDEN, "A30", "Your current role does not have permission to do this!")
+            raise http_error("A30")
         if exc_type == ci.CompassNetworkError:
-            raise http_error(status.HTTP_503_SERVICE_UNAVAILABLE, "R1", "The request to the Compass server failed!")
+            raise http_error("R1")
         if exc_type == ci.CompassError:
-            raise http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Z1", "API Error (Core)! Please contact Adam.")
+            raise http_error("Z1")
         if issubclass(exc_type, Exception):
-            raise http_error(status.HTTP_500_INTERNAL_SERVER_ERROR, "Z0", "Server panic (Interpreter)! Please contact Adam.")
+            raise http_error("Z0")
+
+
+api_errors_registry: dict[str, tuple[int, str]] = {
+    "A1": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Authentication error!"),
+    "A10": (status.HTTP_401_UNAUTHORIZED, "Incorrect username or password!"),
+    "A20": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
+    "A21": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
+    "A22": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
+    "A23": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
+    "A24": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
+    "A25": (status.HTTP_401_UNAUTHORIZED, "Could not validate credentials"),
+    "A26": (status.HTTP_401_UNAUTHORIZED, "Your token is malformed! Please get a new token."),
+    "A30": (status.HTTP_403_FORBIDDEN, "Your current role does not have permission to do this!"),
+    "A31": (status.HTTP_403_FORBIDDEN, "Your current role does not have permission to access details for the requested member!"),
+    "A32": (status.HTTP_403_FORBIDDEN, "Your current role does not have permission for the requested unit!"),
+    "R1": (status.HTTP_503_SERVICE_UNAVAILABLE, "The request to the Compass server failed!"),
+    "H10": (status.HTTP_404_NOT_FOUND, "Requested unit ID was not found!"),
+    "Z0": (status.HTTP_500_INTERNAL_SERVER_ERROR, "API Error (Core)! Please contact Adam."),
+    "Z1": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Library)! Please contact Adam."),
+    "Z2": (status.HTTP_500_INTERNAL_SERVER_ERROR, "Server panic (Error Handling)! Please contact Adam."),
+}

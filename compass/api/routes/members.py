@@ -2,7 +2,6 @@ from typing import Optional
 
 from fastapi import APIRouter
 from fastapi import Depends
-from starlette import status
 
 from compass.api.util import http_errors
 from compass.api.util.oauth2 import ci_user
@@ -10,8 +9,7 @@ import compass.core as ci
 from compass.core.logger import logger
 
 router = APIRouter()
-cpe_members = status.HTTP_403_FORBIDDEN, "A31", "Your current role does not have permission to access details for the requested member!"  # fmt: skip
-error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: cpe_members})
+error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: "A31"})
 
 
 # @router.get("/", response_model=list[ci.MemberDetails])
