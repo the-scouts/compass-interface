@@ -9,14 +9,14 @@ import compass.core as ci
 from compass.core.logger import logger
 
 router = APIRouter()
-error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: "A32"})
+error_handler = http_errors.ErrorHandling({ci.CompassPermissionError: http_errors.A32})
 HIERARCHY = flatten_units.load_hierarchy_map()
 
 
 async def get_unit(unit_id: int) -> UnitRecordModel:
     unit = HIERARCHY.get(unit_id)
     if unit is None:
-        raise http_errors.http_error("H10")
+        raise http_errors.H10
     return UnitRecordModel(
         name=unit.name,
         parent=unit.parent,
