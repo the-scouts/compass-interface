@@ -4,7 +4,7 @@
 [![PyPI Latest Release](https://img.shields.io/pypi/v/compass-interface.svg)](https://pypi.org/project/compass-interface/)
 [![Conda Latest Release](https://img.shields.io/conda/vn/conda-forge/compass-interface.svg)](https://anaconda.org/conda-forge/compass-interface)
 [![License](https://img.shields.io/pypi/l/compass-interface.svg)](https://github.com/the-scouts/compass-interface/blob/master/LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 The ***Compass Interface*** project aims to provide a unified and 
 well-documented API to the Scouts' national membership system, 
