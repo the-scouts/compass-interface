@@ -1,10 +1,10 @@
 # Compass Interface - Core
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/compass-interface-core)
-![PyPI - Status](https://img.shields.io/pypi/status/compass-interface-core)
+![Python Versions](https://img.shields.io/pypi/pyversions/compass-interface-core.svg)
+![Status](https://img.shields.io/pypi/status/compass-interface-core.svg)
 [![PyPI Latest Release](https://img.shields.io/pypi/v/compass-interface-core.svg)](https://pypi.org/project/compass-interface-core/)
-[![Conda Latest Release](https://anaconda.org/conda-forge/compass-interface-core/badges/version.svg)](https://anaconda.org/conda-forge/compass-interface-core/)
+[![Conda Latest Release](https://img.shields.io/conda/vn/conda-forge/compass-interface-core.svg)](https://anaconda.org/conda-forge/compass-interface-core/)
 [![License](https://img.shields.io/pypi/l/compass-interface-core.svg)](https://github.com/the-scouts/compass-interface-core/blob/master/LICENSE)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 The ***Compass Interface*** project aims to provide a unified and well-documented API to 
 the Scouts' national membership system, *[Compass](https://compass.scouts.org.uk)*. 
