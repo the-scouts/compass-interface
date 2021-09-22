@@ -1,7 +1,14 @@
 # Build system requirements.
 [build-system]
-requires = ["setuptools>=41.0", "wheel"]  #"setuptools-scm",
+requires = ["setuptools>=45.0", "wheel", "setuptools-scm>=6.2"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "compass/core/__version__.py"
+write_to_template = """\
+__version__ = "{version}"
+__version_info__ = {version_tuple}
+"""
 
 # Black configuration
 [tool.black]
