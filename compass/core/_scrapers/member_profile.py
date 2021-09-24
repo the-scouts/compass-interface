@@ -600,7 +600,6 @@ def _process_role_data(role: html.HtmlElement) -> tuple[int, dict[str, Union[Non
     role_data["role_title"] = child_nodes[0].text_content()
     role_data["role_start"] = parse_date(child_nodes[1].text_content())
     status_with_review = child_nodes[2].text_content()
-    # TODO for `Ending: blah` roles, should we store the ending date?
     if status_with_review.startswith("Full (Review Due: ") or status_with_review.startswith("Full (Ending: "):
         role_data["role_status"] = "Full"
         date_str = status_with_review.removeprefix("Full (Review Due: ").removeprefix("Full (Ending: ").rstrip(")")
