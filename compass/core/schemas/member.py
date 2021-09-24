@@ -130,7 +130,8 @@ class MemberRoleDetail(MemberBase, MemberRoleBase):
     line_manager: Optional[str] = None
 
     # Approval information
-    ce_check: Optional[datetime.date]  # Optional for Closed roles - e.g. #499, role closed 1976, or if Pending
+    ce_check_valid: bool
+    ce_check_date: Optional[datetime.date]  # Optional for Closed roles - e.g. #499, role closed 1976, or if Pending
     disclosure_check: Optional[TYPES_DISCLOSURES_APPOINTMENT]
     disclosure_date: Optional[datetime.date]
     references: Optional[TYPES_REFERENCES] = None
