@@ -194,6 +194,9 @@ def _process_misc_sections(entries: list[str]) -> dict[str, str]:
     return out
 
 
+ROLE_STATUS_MAP = {"A": "Full"}
+
+
 def get_contact_roles(client: Client, membership_number: int, /) -> ci.MemberRolesCollection:
     response = client.post(f"{Settings.base_url}/Contact/Roles", json={"ContactNumber": f"{membership_number}"})
     data = json.loads(response.content.decode("utf-8"))
@@ -210,11 +213,10 @@ def get_contact_roles(client: Client, membership_number: int, /) -> ci.MemberRol
             location_name=role_dict["location"].strip(),
             role_start=_parse_iso_date(role_dict["start_date"]),  # type  ignore[arg-type]
             role_end=role_dict["end_Date"],  # None  # this API seems to only return open roles
-            role_status=role_dict["status_desc"].split(" (")[0],  # TODO text processing
+            role_status=ROLE_STATUS_MAP[role_dict["status"]],
             review_date=_parse_iso_date(role_dict["review_date"]),
-            can_view_details=False,  # TODO implement this
+            can_view_details=True,  # assume true as you can only use this API call if you can create roles
         )
-        # status_code = role_dict["status"]  # TODO work out code -> status map ("A" == "Full"?)
 
         roles_data[role_details.role_number] = role_details
 
