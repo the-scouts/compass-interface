@@ -30,7 +30,7 @@ jobs:
             deps: "bandit"
           # packaging (CheeseShop) compliance
           - tool: "pyroma"
-            command: "pyroma ."
+            command: "python ci/pyroma-version-fixer.py && pyroma ."
             deps: "pyroma"
           # type checking
           - tool: "mypy"
