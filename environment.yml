@@ -35,7 +35,7 @@ dependencies:
   - pep8-naming
   - pydocstyle
   - bandit
-  - pyroma
+#  - pyroma (outdated on CF as at 2021-09-24)
   - mypy
   - lxml-stubs
 
@@ -45,3 +45,6 @@ dependencies:
   - pip:
     # Type validation
     - phonenumberslite
+
+    # Linting
+    - pyroma
