@@ -73,6 +73,8 @@ lookup_occupation = {
 def get_contact_profile(client: Client, membership_number: int, /) -> ci.MemberDetails:
     request_json = {"Source": "ADULT", "ContactNumber": f"{membership_number}"}
     response = client.post(f"{Settings.base_url}/Contact/Profile", json=request_json)
+    if response.content == b"null":
+        raise ci.CompassPermissionError(f"You do not have permission to the details of {membership_number}")
     # yes, double loading the JSON is deliberate. The serialisation from Compass is insane...
     data = json.loads(json.loads(response.content.decode("utf-8")))
 
