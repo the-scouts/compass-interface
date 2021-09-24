@@ -78,7 +78,8 @@ def get_roles_detail(client: Client, role_number: int, /) -> ci.MemberRolePopup:
           'role_status': '...',
           'line_manager_number': ...,
           'line_manager': '...',
-          'ce_check': datetime.datetime(...),
+          'ce_check_valid': bool,
+          'ce_check_date': datetime.datetime(...),
           'disclosure_check': '...',
           'references': '...',
           'appointment_panel_approval': '...',
@@ -104,7 +105,8 @@ def get_roles_detail(client: Client, role_number: int, /) -> ci.MemberRolePopup:
     fields: dict[str, str] = {k: v.value for k, v in inputs.items() if v.value is not None}
 
     line_manager_number, line_manager_name = _extract_line_manager(inputs["ctl00$workarea$cbo_p2_linemaneger"])
-    ce_check = fields.get("ctl00$workarea$txt_p2_cecheck", "")  # CE (Confidential Enquiry) Check
+    ce_check_raw = fields.get("ctl00$workarea$txt_p2_cecheck", "")  # CE (Confidential Enquiry) Check
+    ce_check_date = parse_date(ce_check_raw) if ce_check_raw != "Pending" else None
     disclosure_check, disclosure_date = _extract_disclosure_date(fields.get("ctl00$workarea$txt_p2_disclosure", ""))
 
     approval_values = {row[1][0].get("data-app_code"): row[1][0].get("data-db") for row in tree.xpath("//tr[@class='trProp']")}
@@ -125,7 +127,8 @@ def get_roles_detail(client: Client, role_number: int, /) -> ci.MemberRolePopup:
         line_manager_number=line_manager_number,
         line_manager=line_manager_name,
         review_date=parse_date(fields.get("ctl00$workarea$txt_p2_review", "")),
-        ce_check=parse_date(ce_check) if ce_check != "Pending" else None,  # TODO if CE check date != current date then is valid
+        ce_check_valid=ce_check_date < datetime.date.today() if ce_check_date else False,
+        ce_check_date=ce_check_date,
         disclosure_check=disclosure_check,
         disclosure_date=disclosure_date,
         references=references_codes.get(fields.get("ctl00$workarea$cbo_p2_referee_status", "")),
