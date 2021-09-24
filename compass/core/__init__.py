@@ -5,6 +5,8 @@ This module exposes the public api for CI core
 from __future__ import annotations
 
 from compass.core import logger
+from compass.core.__version__ import __version__
+from compass.core.__version__ import __version_info__
 from compass.core.errors import CompassAuthenticationError
 from compass.core.errors import CompassError
 from compass.core.errors import CompassNetworkError
@@ -63,6 +65,9 @@ def login(username: str, password: str, /, *, role: str | None = None, location:
 
 
 __all__ = (
+    # public metadata
+    "__version__",
+    "__version_info__",
     # public sub-modules
     "logger",
     # public classes
