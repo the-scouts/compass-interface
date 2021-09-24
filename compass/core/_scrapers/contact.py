@@ -198,6 +198,24 @@ ROLE_STATUS_MAP = {"A": "Full"}
 
 
 def get_contact_roles(client: Client, membership_number: int, /) -> ci.MemberRolesCollection:
+    """Get a member's roles from the /Contact/ API.
+
+    The API only works for roles that can create/update roles.
+
+    Returned role objects have the following keys:
+        base_role_description, class_desc, country, end_Date, Level, location,
+        member_role_number, org_status, organisation_number, parent_role,
+        preferred_order, review_date, role_class, Role_Desc, Role_Number,
+        Section_Type, start_date, status, status_desc, suspension_status
+
+    Args:
+        client: A client object that has been authenticated against Compass
+        membership_number: Membership number to get roles for
+
+    Returns:
+        A MemberRolesCollection object
+
+    """
     response = client.post(f"{Settings.base_url}/Contact/Roles", json={"ContactNumber": f"{membership_number}"})
     data = json.loads(response.content.decode("utf-8"))
 
