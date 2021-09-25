@@ -137,11 +137,16 @@ def _process_phone_numbers(phone_numbers: list[dict[str, str]]) -> str:
         "IsMain": bool
     }
 
+    The "Type" key gives the phone number type, one of "Home","Home Mobile",
+    "Daytime", "Daytime Mobile", "Scouting Enquiries", "Volunteering", or
+    "Unspecified". It could also be "Daytime Fax" or "Home Fax", but I would
+    really despair if people have listed their facsimile numbers on Compass...
+
+    The "CommunicationNumber" key seems to be a unique identifier for the phone
+    number record itself
+
     Args:
         phone_numbers: list of phone number records
-
-    Todo:
-        We could use the number type properties?
 
     Returns: main phone number
 
