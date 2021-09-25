@@ -171,11 +171,14 @@ def _process_email(email_addresses: list[dict[str, str]]) -> str:
         "IsMain": bool
     }
 
+    The "Type" key gives the phone number type, one of "Home","Volunteering",
+    "Scouting Enquiries", "Work", or "Unspecified".
+
+    The "CommunicationNumber" key seems to be a unique identifier for the email
+    address record itself
+
     Args:
         email_addresses: list of email records
-
-    Todo:
-        We could use the number type properties?
 
     Returns: main email address
 
