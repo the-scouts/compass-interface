@@ -213,7 +213,9 @@ def _add_member_to_o365(
 # ## ### CLI SECTION ### ## #
 
 
-def read_config_from_file(ctx: click.Context, _param: click.Parameter, file: TextIOWrapper) -> None:
+def read_config_from_file(ctx: click.Context, _param: click.Parameter, file: TextIOWrapper | None) -> None:
+    if file is None:
+        return
     try:
         ctx.default_map = tomli.loads(file.read())
     except tomli.TOMLDecodeError:
@@ -224,7 +226,6 @@ def read_config_from_file(ctx: click.Context, _param: click.Parameter, file: Tex
 @click.option(
     "--config",
     type=click.File(mode="r", encoding="utf-8", lazy=False),
-    default="config.toml",
     callback=read_config_from_file,
     is_eager=True,
     expose_value=False,
