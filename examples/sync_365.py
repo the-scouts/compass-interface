@@ -291,7 +291,7 @@ def read_config_from_file(ctx: click.Context, _param: click.Parameter, file: Tex
     envvar="O365_DOMAIN",
 )
 @click.option(
-    "--o365-domain",
+    "--organisation-name",
     type=str,
     required=True,
     help="Your organisation's name, this will be set as users' company name. Should be of the form 'XYZ Scouts'.",
