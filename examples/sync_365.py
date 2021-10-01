@@ -54,7 +54,7 @@ def sync_compass_o365(
     domain: str,
     organisation_name: str,
     graph_auth: tuple[str, str, str],
-    session: httpx.Client
+    session: httpx.Client,
 ) -> None:
     # Fetch summary member report from Compass.
     member_ids_compass = api.hierarchy.unique_members(use_default=True)
@@ -103,7 +103,7 @@ def _add_member_details(api: ci.CompassInterface, member_num: int) -> None:
             # "primary_role_id": roles.primary_role,
             "primary_role_location": roles_details.roles[roles_details.primary_role].location_name,
             # "roles": roles.roles,
-        }
+        },
     )
 
 
@@ -133,7 +133,7 @@ def _add_member_to_o365(
     domain: str,
     organisation_name: str,
     graph_auth: tuple[str, str, str],
-    session: httpx.Client
+    session: httpx.Client,
 ) -> None:
     """Creates a new user on Office 365."""
     # Lookup the member from Compass
@@ -185,8 +185,7 @@ def _add_member_to_o365(
 
     o365_id = result.json()["id"]
     _update_member_details(
-        membership_id,
-        {"o365_profile": {"id": o365_id, "mail": user_principal_name}, "last_o365_sync": datetime.datetime.now()}
+        membership_id, {"o365_profile": {"id": o365_id, "mail": user_principal_name}, "last_o365_sync": datetime.datetime.now()}
     )
 
     # assign license
@@ -203,7 +202,7 @@ def _add_member_to_o365(
     # Enterprise Mobility & Security: efccb6f7-5641-4e0e-bd10-b4976e1bf68e
 
     o365_license = {"addLicenses": [{"skuId": "6634e0ce-1a9f-428c-a498-f84ec7b8aa2e"}], "removeLicenses": []}
-    result = session.post(f"{GRAPH_URL}/users/{o365_id}/assignLicense", json=o365_license)  # , headers={"Content-Type": "application/json"}
+    result = session.post(f"{GRAPH_URL}/users/{o365_id}/assignLicense", json=o365_license)
     if result.status_code != 200:
         raise RuntimeError(f"ERROR assigning license to user: {o365_id}")
 
@@ -317,9 +316,9 @@ def cli(
         o365_domain.lower(),
         organisation_name,
         (graph_app_id, f"https://login.microsoftonline.com/{tenant_id}", graph_app_secret),
-        session
+        session,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()
