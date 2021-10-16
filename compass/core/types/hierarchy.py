@@ -16,6 +16,7 @@ TYPES_ENDPOINT_LEVELS = Literal[
 ]
 TYPES_SECTION = Literal[
     "EY Pilot",
+    "Squirrel Scout",
     "Beavers",
     "Cubs",
     "Scouts",
