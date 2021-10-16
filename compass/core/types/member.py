@@ -171,7 +171,7 @@ TYPES_PERMIT_CATEGORIES = Literal[
     "With Compound Bows",
     "Without Compound Bows",
 ]
-TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory"]
+TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory", "Personal"]
 TYPES_AWARD_TYPE = Literal[
     "Chief Scout's 5 years Service Award",
     "Chief Scout's 10 years Service Award",
