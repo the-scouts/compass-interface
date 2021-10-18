@@ -172,6 +172,7 @@ TYPES_PERMIT_CATEGORIES = Literal[
     "Without Compound Bows",
 ]
 TYPES_PERMIT_TYPE = Literal["Leadership", "Supervisory", "Personal"]
+# https://heritage.scouts.org.uk/wp-content/uploads/2019/07/Awards-Decorations-and-their-Emblems-of-The-Scout-Association-formerly-the-Boy-Scout-Association.pdf
 TYPES_AWARD_TYPE = Literal[
     "Chief Scout's 5 years Service Award",
     "Chief Scout's 10 years Service Award",
@@ -203,9 +204,14 @@ TYPES_AWARD_TYPE = Literal[
     # Other Awards
     "The Cornwell Scout Badge",
     "The Chief Scout's Personal Award",
+    # Non-TSA Awards
+    "Bronze Wolf",
     # Past Awards (not in the current awards scheme)
-    "Medal of Merit",
-    "Bar to the Medal of Merit",
+    "Medal of Merit",  # stopped being awarded in 2007
+    "Bar to the Medal of Merit",  # stopped being awarded in 2007
+    "Chief Scout's Commendation for Gallantry",  # stopped being awarded in 2006-04
+    "Certificate for Meritorious Conduct",  # stopped being awarded in 2006-04
+    "Bar to the Medal for Meritorious Conduct",
 ]
 TYPES_DISCLOSURE_PROVIDERS = Literal[
     "Access NI",
