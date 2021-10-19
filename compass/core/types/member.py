@@ -76,6 +76,17 @@ TYPES_DISCLOSURES_APPOINTMENT = Literal[
     "Disclosure Issued",
     "ID check required",
     "No Disclosure",
+    "No disclosure",
+    "Expired",
+    "Application Withdrawn",
+    "Final applicant information required",
+    "Application received at Atlantic Data",
+    "Issued : ",
+    "ID selection required",
+    "Form returned to District",
+    "Application form required",
+    "Form returned to applicant",
+    "Application received at HQ",
 ]  # Disclosure statuses in role details popup
 TYPES_LEARNING_METHOD = Literal[
     "Course",
@@ -213,6 +224,17 @@ TYPES_AWARD_TYPE = Literal[
     "Certificate for Meritorious Conduct",  # stopped being awarded in 2006-04
     "Bar to the Medal for Meritorious Conduct",
 ]
+TYPES_DISCLOSURES_COUNTRIES = Optional[
+    Literal[
+        "England & Wales",
+        "Northern Ireland",
+        "Overseas",
+        "Scotland",
+        "The Scout Association",
+        "Test Country",
+        "UK"
+    ]
+]
 TYPES_DISCLOSURE_PROVIDERS = Literal[
     "Access NI",
     "Atlantic Data",
@@ -220,6 +242,7 @@ TYPES_DISCLOSURE_PROVIDERS = Literal[
     "Disclosure Scotland",
     "Local Check",  # BSO
     "Other",
+    "UKHQ"
 ]
 TYPES_DISCLOSURE_STATUSES = Literal[
     "Application Withdrawn",
@@ -231,6 +254,12 @@ TYPES_DISCLOSURE_STATUSES = Literal[
     "Final applicant information required",  # BSO
     "ID check required",
     "ID selection required",
+    "No Disclosure",
+    "Application received at Atlantic Data",
+    "Application form required",
+    "Form returned to District",
+    "Issued",
+    "Form returned to applicant",
 ]  # Disclosure statuses in disclosures tab
 
 
