@@ -121,7 +121,8 @@ def get_roles_detail(client: Client, role_number: int, /) -> ci.MemberRolePopup:
         membership_number=int(fields.get("ctl00$workarea$txt_p1_memberno", 0)),
         # `name` is ignored, no corresponding field in MemberTrainingRole:
         name=fields.get("ctl00$workarea$txt_p1_membername", " ").split(" ", 1)[1],
-        role_title=fields.get("ctl00$workarea$txt_p1_alt_title"),
+        # There is only one known example of no role title (746659):
+        role_title=fields.get("ctl00$workarea$txt_p1_alt_title", ""),
         role_start=parse_date(fields.get("ctl00$workarea$txt_p1_startdate", "")),
         role_status=fields.get("ctl00$workarea$txt_p2_status"),
         line_manager_number=line_manager_number,
