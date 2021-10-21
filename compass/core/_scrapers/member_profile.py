@@ -114,8 +114,25 @@ NON_VOLUNTEER_TITLES = {
     "scout network member",
     "district scout network",
     "district scout network member",
+    "district occasional helper - network",  # one district used this twice back in 2015...
     "county scout network member",
+    "county scout network member (pre-prov)",
+    "area scout network member",
     "bso scout network member",
+    "scotland region scout network member",
+    "network member",
+    "scout network member",
+    "scout network member (pre-prov)",
+    "scout network member - dofe gold",
+    "district scout network",
+    "area scout network",
+    "bso scout network",
+    "county scout network",
+    "scotland region scout network",
+    "scotland regional scout network",
+    "scout network",
+    # district scout network chairperson
+    # district scout network programme coordinator
 }
 
 # _reduce_date_list
