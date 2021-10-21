@@ -67,9 +67,21 @@ NON_VOLUNTEER_TITLES = {
     # occasional helper roles:
     "group occasional helper",
     "group occasional helper.",
+    "group occasional helper (pre-prov)",
+    "group occasional helper (prov)",
+    "group occassional helper",
+    "group ocassional helper",
     "district occasional helper",
+    "district occasional helper (pre-prov)",
+    "district occasional helper (prov)",
     "county occasional helper",
+    "area occasional helper",
     "country occasional helper",
+    "occasional helper",
+    "occasional helper (pre-prov)",
+    "occassional helper",
+    "oh",
+    "parent helper",
     # pvg roles:
     "group non member pvg only"
     "group non member pvg only (prov)"
