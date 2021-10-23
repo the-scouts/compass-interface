@@ -146,6 +146,15 @@ mogl_modules = {
     "gdpr": "gdpr",  # phony entry, used for key
 }
 
+# get_awards tab
+NO_DEFINITE_ARTICLE = {
+    "Medal for Meritorious Conduct",
+    "Gilt Cross",
+    "Silver Cross",
+    "Bronze Cross",
+    "Chief Scout's Personal Award",
+}
+
 
 def _get_member_profile_tab(client: Client, membership_number: int, profile_tab: MEMBER_PROFILE_TAB_TYPES) -> html.HtmlElement:
     """Returns data from a given tab in MemberProfile for a given member.
@@ -724,10 +733,13 @@ def get_awards_tab(client: Client, membership_number: int, /) -> list[ci.MemberA
     with validation_errors_logging(membership_number):
         for row in rows:
             award_props = row[1][0]  # Properties are stored as yet another sub-table
+            award_type = award_props[0][1].text_content()
+            if award_type in NO_DEFINITE_ARTICLE:
+                award_type = "The " + award_type
             awards.append(
                 ci.MemberAward(
                     membership_number=membership_number,
-                    type=award_props[0][1].text_content(),
+                    type=award_type,
                     location=award_props[1][1].text_content() or None,
                     date=parse_date(award_props[2][1].text_content() or ""),  # type  ignore[arg-type]
                 )
