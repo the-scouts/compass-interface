@@ -148,7 +148,7 @@ def get_members_with_roles_in_unit(
     client.post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
 
     # Fetch results from Compass
-    search_results = client.get(f"{Settings.base_url}/SearchResults.aspx")
+    search_results = client.get(f"{Settings.base_url}/SearchResults.aspx", timeout=150)  # 11916011 is UK Scout Network with 8728 members
 
     # Gets the compass form from the returned document
     form = html.fromstring(search_results.content).forms[0]
