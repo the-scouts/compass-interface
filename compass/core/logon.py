@@ -233,7 +233,7 @@ def _create_session() -> Client:
     """Create a session and get ASP.Net Session ID cookie from the compass server."""
     client = Client()
 
-    client.head(f"{Settings.base_url}/", allow_redirects=False)  # use .head() as only headers needed to grab session cookie
+    client.head(f"{Settings.base_url}/", follow_redirects=False)  # use .head() as only headers needed to grab session cookie
     Settings.total_requests += 1
 
     if not client.cookies:
