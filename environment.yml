@@ -7,14 +7,14 @@ dependencies:
   - pip
 
   # For web requests
-  - httpx
+  - httpx>=0.20
 
   # For parsing results
   - lxml
 
   # Type validation
   - pydantic>=1.8.2
-  - email-validator
+  - email-validator>=1.1.0
 #  - phonenumberslite  # not on conda (2021-03-20)
 
   # Testing
