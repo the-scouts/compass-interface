@@ -255,7 +255,8 @@ class MemberAward(MemberBase):
 class MemberDisclosure(MemberBase):
     country: Optional[Literal["England & Wales", "Northern Ireland", "Overseas", "Scotland", "The Scout Association"]]
     provider: TYPES_DISCLOSURE_PROVIDERS
-    type: Literal["Enhanced with Barring"]
+    # enhanced with barring is almost always the case.
+    type: Literal["Enhanced with Barring", "Enhanced", "Local Check", "Adult Enhanced with Barring", "Unknown Disclosure Type"]
     # If Application Withdrawn, no disclosure number. If Scottish in the early 2000s, 7 digits ending with an R
     number: Union[int, None, pydantic.constr(regex=r"^\d{7}R$")]  # type: ignore[valid-type]  # NoQA: F722
     issuer: Optional[TYPES_DISCLOSURE_PROVIDERS]
