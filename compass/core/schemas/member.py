@@ -137,7 +137,7 @@ class MemberRoleDetail(MemberBase, MemberRoleBase):
     references: Optional[TYPES_REFERENCES] = None
     appointment_panel_approval: Optional[Literal["NC", "NR", "S", "U"]] = None
     commissioner_approval: Optional[Literal["NC", "NR", "RR", "S", "U"]] = None
-    committee_approval: Optional[Literal["NC", "S", "U"]] = None
+    committee_approval: Optional[Literal["NC", "NR", "S", "U"]] = None
 
 
 # Roles Tab (Role Detail Popup - Hierarchy)
