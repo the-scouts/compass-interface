@@ -8,6 +8,7 @@ import phonenumbers
 import pydantic
 
 from compass.core.types.member import TYPES_AWARD_TYPE
+from compass.core.types.member import TYPES_DISCLOSURES_COUNTRIES
 from compass.core.types.member import TYPES_DISCLOSURE_PROVIDERS
 from compass.core.types.member import TYPES_DISCLOSURE_STATUSES
 from compass.core.types.member import TYPES_DISCLOSURES_APPOINTMENT
@@ -253,7 +254,7 @@ class MemberAward(MemberBase):
 
 
 class MemberDisclosure(MemberBase):
-    country: Optional[Literal["England & Wales", "Northern Ireland", "Overseas", "Scotland", "The Scout Association"]]
+    country: TYPES_DISCLOSURES_COUNTRIES
     provider: TYPES_DISCLOSURE_PROVIDERS
     # enhanced with barring is almost always the case.
     type: Literal["Enhanced with Barring", "Enhanced", "Local Check", "Adult Enhanced with Barring", "Unknown Disclosure Type"]
