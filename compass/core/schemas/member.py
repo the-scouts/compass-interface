@@ -253,13 +253,17 @@ class MemberAward(MemberBase):
     date: datetime.date
 
 
+_DISCLOSURE_NUM_SCOTLAND = Union[pydantic.constr(regex=r"^\d{7}R$"), Literal["Non-OSCR Reg"]]  # type: ignore[valid-type]  # NoQA: F722
+_DISCLOSURE_NUM_NI = pydantic.constr(regex=r"^PECS(VC)?\d{6}(CM|BM|RL)$")  # PECS was Pre-Employment Consultancy Service
+
+
 class MemberDisclosure(MemberBase):
     country: TYPES_DISCLOSURES_COUNTRIES
     provider: TYPES_DISCLOSURE_PROVIDERS
     # enhanced with barring is almost always the case.
     type: Literal["Enhanced with Barring", "Enhanced", "Local Check", "Adult Enhanced with Barring", "Unknown Disclosure Type"]
     # If Application Withdrawn, no disclosure number. If Scottish in the early 2000s, 7 digits ending with an R
-    number: Union[int, None, pydantic.constr(regex=r"^\d{7}R$")]  # type: ignore[valid-type]  # NoQA: F722
+    number: Union[int, None, _DISCLOSURE_NUM_SCOTLAND, _DISCLOSURE_NUM_NI]  # type: ignore[valid-type]  # NoQA: F722
     issuer: Optional[TYPES_DISCLOSURE_PROVIDERS]
     issue_date: Optional[datetime.date]  # If Application Withdrawn, maybe no issue date
     status: TYPES_DISCLOSURE_STATUSES
