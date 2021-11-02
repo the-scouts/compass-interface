@@ -783,6 +783,9 @@ def get_disclosures_tab(client: Client, membership_number: int, /) -> list[ci.Me
         for row in rows:
             # Get children (cells in row)
             cells = list(row)
+            number = cells[3].text_content() or None  # If Application Withdrawn, no disclosure number
+            if number == "Non-OSCR-Reg":
+                number = "Non-OSCR Reg"
 
             disclosures.append(
                 ci.MemberDisclosure(
@@ -790,7 +793,7 @@ def get_disclosures_tab(client: Client, membership_number: int, /) -> list[ci.Me
                     country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
                     provider=cells[1].text_content(),
                     type=cells[2].text_content(),
-                    number=cells[3].text_content() or None,  # If Application Withdrawn, no disclosure number
+                    number=number,
                     issuer=cells[4].text_content() or None,
                     issue_date=parse_date(cells[5].text_content()),  # If Application Withdrawn, maybe no issue date
                     status=cells[6].text_content(),
