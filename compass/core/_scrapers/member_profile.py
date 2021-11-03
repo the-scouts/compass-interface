@@ -790,7 +790,7 @@ def get_disclosures_tab(client: Client, membership_number: int, /) -> list[ci.Me
             disclosures.append(
                 ci.MemberDisclosure(
                     membership_number=membership_number,
-                    country=cells[0].text_content() or None,  # Country sometimes missing (Application Withdrawn)
+                    country=cells[0].text_content().strip() or None,  # Country sometimes missing (Application Withdrawn)
                     provider=cells[1].text_content(),
                     type=cells[2].text_content(),
                     number=number,
