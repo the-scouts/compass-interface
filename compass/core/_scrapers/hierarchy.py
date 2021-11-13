@@ -147,8 +147,8 @@ def get_members_with_roles_in_unit(
     # JSON data MUST be in the rather odd format of {"Key": key, "Value": value} for each (key, value) pair
     client.post(f"{Settings.base_url}/Search/Members", json=compass_restify(data))
 
-    # Fetch results from Compass
-    search_results = client.get(f"{Settings.base_url}/SearchResults.aspx", timeout=150)  # 11916011 is UK Scout Network with 8728 members
+    # Fetch results from Compass. We extend timeout as there is one unit with ~8,750 members (UK Scout Network, 11916011)
+    search_results = client.get(f"{Settings.base_url}/SearchResults.aspx", timeout=150)
 
     # Gets the compass form from the returned document
     form = html.fromstring(search_results.content).forms[0]

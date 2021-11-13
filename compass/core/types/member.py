@@ -232,7 +232,7 @@ TYPES_DISCLOSURES_COUNTRIES = Optional[
         "Scotland",
         "The Scout Association",
         "Test Country",
-        "UK"
+        "UK",
     ]
 ]
 TYPES_DISCLOSURE_PROVIDERS = Literal[
@@ -242,7 +242,7 @@ TYPES_DISCLOSURE_PROVIDERS = Literal[
     "Disclosure Scotland",
     "Local Check",  # BSO
     "Other",
-    "UKHQ"
+    "UKHQ",
 ]
 TYPES_DISCLOSURE_STATUSES = Literal[
     "Application Withdrawn",

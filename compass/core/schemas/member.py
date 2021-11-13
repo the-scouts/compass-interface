@@ -8,10 +8,10 @@ import phonenumbers
 import pydantic
 
 from compass.core.types.member import TYPES_AWARD_TYPE
-from compass.core.types.member import TYPES_DISCLOSURES_COUNTRIES
 from compass.core.types.member import TYPES_DISCLOSURE_PROVIDERS
 from compass.core.types.member import TYPES_DISCLOSURE_STATUSES
 from compass.core.types.member import TYPES_DISCLOSURES_APPOINTMENT
+from compass.core.types.member import TYPES_DISCLOSURES_COUNTRIES
 from compass.core.types.member import TYPES_ETHNICITY
 from compass.core.types.member import TYPES_LEARNING_METHOD
 from compass.core.types.member import TYPES_OCCUPATION
