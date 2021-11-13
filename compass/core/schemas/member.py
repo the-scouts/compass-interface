@@ -133,7 +133,7 @@ class MemberRoleDetail(MemberBase, MemberRoleBase):
     # Approval information
     ce_check_valid: bool
     ce_check_date: Optional[datetime.date]  # Optional for Closed roles - e.g. #499, role closed 1976, or if Pending
-    disclosure_check: Union[TYPES_DISCLOSURES_APPOINTMENT, None, pydantic.constr(regex=r"^Issued : \d\d [A-Z][a-z]+ \d\d\d\d$")]
+    disclosure_check: Union[TYPES_DISCLOSURES_APPOINTMENT, None, pydantic.constr(regex=r"^Issued : \d\d [A-Z][a-z]+ \d\d\d\d$")]  # type: ignore[valid-type]  # NoQA: F722
     disclosure_date: Optional[datetime.date]
     references: Optional[TYPES_REFERENCES] = None
     appointment_panel_approval: Optional[Literal["NC", "NR", "S", "U"]] = None
@@ -253,7 +253,7 @@ class MemberAward(MemberBase):
     date: datetime.date
 
 
-_DISCLOSURE_NUM_SCOTLAND = Union[pydantic.constr(regex=r"^\d{7}R$"), Literal["Non-OSCR Reg"]]  # type: ignore[valid-type]  # NoQA: F722
+_DISCLOSURE_NUM_SCOTLAND = Union[pydantic.constr(regex=r"^\d{7}R$"), Literal["Non-OSCR Reg"]]  # type: ignore[misc]  # NoQA: F722
 _DISCLOSURE_NUM_NI = pydantic.constr(regex=r"^PECS(VC)?\d{6}(CM|BM|RL)$")  # PECS was Pre-Employment Consultancy Service
 
 
