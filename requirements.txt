@@ -1,20 +1,9 @@
-# Compass-Interface Core
-compass-interface-core>=0.20.0
-
-# Compass-Interface Utilities
-pydantic>=1.8.2
-numba>0.52
-pandas>=1.2.0
-pyarrow>=1.0.0
-
-# API
-fastapi>=0.65.1
-
-# API - auth
-python-jose>=3.1.0
-crypyography
-python-multipart>=0.0.5
+# api
+-r requirements-api.txt
 
 # Deployment
 gunicorn; platform_system != "Windows"
 uvicorn; platform_system == "Windows"
+
+# dev
+ipython
