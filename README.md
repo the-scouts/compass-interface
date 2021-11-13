@@ -16,7 +16,7 @@ This is ***not*** an official API to Compass and as such should be used in a
 way that doesn't cause a high request load on the Compass system.
 
 Please also remember your personal data handling obligations (under both GDPR 
-and Scouting policies) whilst using this system.
+and Scouting policies) whilst using this library.
 
 ## Objectives
 
@@ -31,19 +31,20 @@ The project aims to:
 The source code for the project is hosted on GitHub at 
 [the-scouts/compass-interface](https://github.com/the-scouts/compass-interface)
 
-The project can be installed through either `pip` or `conda`.
+Installers for the latest release are availibe on
+[Conda](https://anaconda.org/conda-forge/compass-interface/) and at the
+[Python Package Index (PyPI)](https://pypi.org/project/compass-interface/).
 
-```shell
+```sh
 # conda
-conda env update
-conda activate compass-interface
+conda install compass-interface
 ```
 
 If installing dependencies with `pip`, 
 [use a virtual environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 to isolate your packages. 
 
-```shell
+```sh
 # or PyPI
 
 # create venv
@@ -55,10 +56,11 @@ python -m venv venv
 source env/bin/activate 
 
 # install dependencies
-python -m pip install -r requirements.txt 
+python -m pip install --upgrade pip
+pip install compass-interface
 ```
 
-### Dependencies
+## Dependencies
 
 - [compass](https://github.com/the-scouts/compass-interface-core) - Core 
   Compass Interface, with parsing and validation logic
@@ -71,18 +73,13 @@ python -m pip install -r requirements.txt
 - [uvicorn](https://github.com/encode/uvicorn) - serving on the lightning-fast 
   ASGI server 
 
-#### Dev-dependencies
-
-We use `black`, `isort`, `ipython` and others to speed up the development 
-process!
-
 ## Licence
 
 ***Compass Interface*** is naturally 
 [open source](https://github.com/the-scouts/compass-interface) and is 
 licensed under the **[MIT license](https://choosealicense.com/licenses/mit/)**.
 
-## Usage
+## API Usage
 
 ### Running the API
 
