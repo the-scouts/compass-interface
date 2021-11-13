@@ -160,7 +160,7 @@ class Logon:  # pylint: disable=too-many-instance-attributes
             Initialised Logon object
 
         """
-        client = Client()
+        client = Client(timeout=60)  # default 60s timeout
         client.cookies.set("ASP.NET_SessionId", asp_net_id, domain=Settings.base_domain)
 
         logon = cls(
@@ -231,7 +231,7 @@ def _change_role(
 
 def _create_session() -> Client:
     """Create a session and get ASP.Net Session ID cookie from the compass server."""
-    client = Client()
+    client = Client(timeout=60)  # default 60s timeout
 
     client.head(f"{Settings.base_url}/", follow_redirects=False)  # use .head() as only headers needed to grab session cookie
     Settings.total_requests += 1
