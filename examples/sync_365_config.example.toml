@@ -1,0 +1,12 @@
+compass_username = "JohnSmith"
+compass_password = "Hunter2"
+
+tenant_id = "balamory.onmicrosoft.com"
+o365_domain = "balamoryscouts.org.uk"
+organisation_name = "Balamory Scouts"
+
+# options can also be specified via enviromnent variables or command-line options.
+
+# WARNING:
+# if you keep sensitive information (passwords, app secrets) in this file, do
+# not commit it to version control.

@@ -1,3 +1,9 @@
+# core, testing
+-r ci/requirements-test.txt
+
+# type stubs
+-r ci/requirements-typing.txt
+
 # api
 -r requirements-api.txt
 
@@ -7,3 +13,18 @@ uvicorn; platform_system == "Windows"
 
 # dev
 ipython
+
+# linting
+black
+isort
+pre-commit
+pylint
+flake8
+pep8-naming
+pydocstyle
+bandit
+pyroma
+mypy
+
+# build
+build

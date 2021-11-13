@@ -1,0 +1,23 @@
+repos:
+    # Enforce code style
+  - repo: https://github.com/psf/black
+    rev: 21.5b1
+    hooks:
+      - id: black
+        name: Enforce code style (Black)
+
+    # Check markup files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-toml
+        name: Check for valid syntax in TOML files
+      - id: check-yaml
+        name: Check for valid syntax in YAML files
+
+    # Enforce import ordering
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.8.0
+    hooks:
+      - id: isort
+        name: Enforce import ordering (isort)

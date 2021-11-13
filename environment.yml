@@ -5,35 +5,64 @@ dependencies:
   - python>=3.9
   - pip
 
-  # Compass-Interface Core
-  - compass-interface-core>=0.20.0
+  # For web requests
+  - httpx>=0.20
 
-  # Compass-Interface Utilities
-  - pydantic>=1.8.2  # cache
+  # For parsing results
+  - lxml
+
+  # Type validation
+  - pydantic>=1.8.2
+  - email-validator>=1.1.0
+  #  - phonenumberslite  # not on conda (2021-03-20)
+
+  # compass-interface Utilities
   - numba>0.52  # JIT compilation
   - pandas  # data transformation
-  - pyarrow   # .feather format
+  - pyarrow  # .feather format
 
   # API
   - fastapi>=0.65.1  # API framework
 
   # API - Auth
+  - authlib
   - python-jose  # JSON Web Tokens
   - python-multipart  # Form Data (OAuth2)
   - cryptography  # Encryption
 
   # Deployment
   - uvicorn
-#  - gunicorn  # *NIX only, no windows support
+  #  - gunicorn  # *NIX only, no windows support
 
-  # Testing:
-#  - pytest
-#  - hypothesis
-#  - pytest-cov
+  # Testing
+  - hypothesis
+  - pytest
+  - starlette
+  - uvicorn
 
-  # Development requirements:
-#  - pre-commit
-  - black
-  - isort
+  # Development
   - ipython
-#  - dtale
+  #  - dtale
+
+  # Linting
+  - black
+  - isort>=5
+  - pre-commit
+  - pylint
+  - flake8
+  - pep8-naming
+  - pydocstyle
+  - bandit
+  #  - pyroma (outdated on CF as at 2021-09-24)
+  - mypy
+  - lxml-stubs
+
+  # Build
+  - build  # PyPA build package
+
+  - pip:
+      # Type validation
+      - phonenumberslite
+
+      # Linting
+      - pyroma

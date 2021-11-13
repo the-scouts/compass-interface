@@ -1,4 +1,4 @@
-﻿var vCurrentPageNo = 1;
+var vCurrentPageNo = 1;
 var vEditing = false;
 var timer;
 

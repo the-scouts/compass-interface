@@ -1,0 +1,9 @@
+# bandit configuration
+
+# skip checking usages of assertions in test files
+assert_used:
+  skips: ['*/*_test.py', '*/test_*.py']
+
+skips: [
+    'B410', # import lxml.* (defusedxml.lxml is deprecated)
+]
