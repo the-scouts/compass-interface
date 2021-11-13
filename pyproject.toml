@@ -10,9 +10,10 @@ target-version = ["py39"]  # Remember to change this if we change pins from Pyth
 
 # isort configuration
 [tool.isort]
-sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'COMPASS', 'FIRSTPARTY', 'LOCALFOLDER']
-known_compass = ['compass']
 line_length = 132
 profile = "google"
 py_version = "39"
 skip_gitignore = true
+known_namespace = ['compass']
+known_tests = ['tests']
+sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'NAMESPACE', 'FIRSTPARTY', "TESTS", 'LOCALFOLDER']
