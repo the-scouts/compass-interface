@@ -26,8 +26,8 @@ def _flatten_hierarchy(d: Union[ci.UnitData, ci.DescendantData], parent_id: int)
         yield section.unit_id, UnitRecord(section.name, unit_id, {}, {})
 
 
-def make_hierarchy_resource(session: ci.Logon) -> dict[int, UnitRecord]:
-    full_hierarchy = ci.Hierarchy(session).unit_data(ci.Settings.org_number, "Organisation")
+def make_hierarchy_resource(api: ci.CompassInterface) -> dict[int, UnitRecord]:
+    full_hierarchy = api.hierarchy.unit_data(ci.Settings.org_number, "Organisation")
     full_hierarchy.name = "The Scout Association"
     TREE_PATH.write_text(full_hierarchy.json(ensure_ascii=False), encoding="utf-8")
     flat_hierarchy = dict(_flatten_hierarchy(full_hierarchy, ci.Settings.org_number))
