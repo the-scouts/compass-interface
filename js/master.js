@@ -1,4 +1,4 @@
-﻿var MyCloseFunction;
+var MyCloseFunction;
 var StopResize = false; // simple variable, if set will halt timed screen resize refresh
 var startTime;
 

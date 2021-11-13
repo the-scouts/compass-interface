@@ -1,0 +1,48 @@
+name: 👷 linting
+
+on:
+  pull_request:
+  push:
+    branches: [master]  # on all branches?
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # (pyflakes, pycodestyle, mccabe) + pep8-naming
+          - tool: "flake8"
+            command: "python -m flake8 ."
+            deps: "flake8 pep8-naming flake8-bugbear"
+          # source linting
+          - tool: "pylint"
+            command: "python -m pylint compass"  # also lint tests/ ?
+            deps: "pylint"
+          # PEP 257 compliance
+          - tool: "pydocstyle"
+            command: "python -m pydocstyle ."
+            deps: "pydocstyle"
+          # Common security issues
+          - tool: "bandit"
+            command: "python -m bandit -c ci/bandit.yml -r ."
+            deps: "bandit"
+          # packaging (CheeseShop) compliance
+          - tool: "pyroma"
+            command: "python ci/pyroma-version-fixer.py && pyroma ."
+            deps: "pyroma"
+          # type checking
+          - tool: "mypy"
+            command: "mypy --namespace-packages -p compass"
+            deps: "-r ci/requirements-typing.txt mypy"
+    name: lint using ${{ matrix.tool }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: python -m pip install ${{ matrix.deps }}
+      - name: Run ${{ matrix.tool }}
+        run:  ${{ matrix.command }}

@@ -1,7 +1,14 @@
 # Build system requirements.
 [build-system]
-requires = ["setuptools>=41.0", "wheel"]  #"setuptools-scm",
+requires = ["setuptools>=45.0", "wheel", "setuptools-scm>=6.2"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "compass/core/__version__.py"
+write_to_template = """\
+__version__ = "{version}"
+__version_info__ = {version_tuple}
+"""
 
 # Black configuration
 [tool.black]
@@ -17,3 +24,106 @@ skip_gitignore = true
 known_namespace = ['compass']
 known_tests = ['tests']
 sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'NAMESPACE', 'FIRSTPARTY', "TESTS", 'LOCALFOLDER']
+
+# mypy configuration
+[tool.mypy]
+#plugins = ["pydantic.mypy"]  TODO re-enable (https://github.com/samuelcolvin/pydantic/issues/2895)
+# help finding errors
+show_error_codes = true
+show_error_context = true
+# suppress errors from imported modules
+follow_imports = "silent"
+# warn about config that doesn't hit files
+warn_unused_configs = true
+
+# mypy --strict config:
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+implicit_reexport = false
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = ["lxml"]
+ignore_missing_imports = true
+
+#[[tool.mypy.overrides]]
+#module = "pydantic"
+#init_forbid_extra = true
+#init_typed = true
+#warn_required_dynamic_aliases = true
+#warn_untyped_fields = true
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "6.2"
+norecursedirs = "tests/util"
+testpaths = [
+    "tests",
+]
+# -rxXs -- show extra test summary info for skipped, xfailed, xpassed
+addopts = "-rxXs --strict-config --strict-markers"
+# use strict xfail (https://docs.pytest.org/en/latest/how-to/skipping.html#strict-parameter)
+xfail_strict = true
+
+# pylint configuration
+[tool.pylint]
+MASTER.persistent=false  # pylint runs on CI, so no point saving
+MASTER.jobs=0  # auto-detect the number of processors to use
+DESIGN.max-statements=60
+FORMAT.max-line-length=132
+SIMILARITIES.ignore-imports=true
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "fixme",
+    "too-few-public-methods",  # pydantic models have 0 public methods, we would have ~50 local excludes
+    "import-error",  # pylint does not (2021-03-20) support namespace packages
+    "logging-fstring-interpolation",  # f-strings are quicker than %-formatting
+    # https://docs.pylint.org/en/latest/faq.html#i-am-using-another-popular-linter-alongside-pylint-which-messages-should-i-disable-to-avoid-duplicates
+    # pycodestyle duplication
+    "unneeded-not",
+    "line-too-long",
+    "unnecessary-semicolon",
+    "trailing-whitespace",
+    "missing-final-newline",
+    "bad-indentation",
+    "multiple-statements",
+    "bare-except",
+    # pyflakes duplication
+    "undefined-variable",
+    "unused-import",
+    "unused-variable",
+    # McCabe duplication
+    "too-many-branches",
+    # pydocstyle duplication
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    # pep8-naming duplication
+    "invalid-name",
+    "bad-classmethod-argument",
+    "bad-mcs-classmethod-argument",
+    "no-self-argument",
+    # isort duplication
+    "wrong-import-order",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    # re-enable the standard pragma
+    "pragma: no cover",
+
+    # don't complain about non-runnable blocks
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "if Settings.debug:",
+]

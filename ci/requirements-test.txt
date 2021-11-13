@@ -1,0 +1,7 @@
+-r requirements-run.txt
+
+# testing
+hypothesis
+pytest
+starlette
+uvicorn
