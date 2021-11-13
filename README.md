@@ -6,8 +6,9 @@
 [![License](https://img.shields.io/pypi/l/compass-interface-core.svg)](https://github.com/the-scouts/compass-interface-core/blob/master/LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-The ***Compass Interface*** project aims to provide a unified and well-documented API to 
-the Scouts' national membership system, *[Compass](https://compass.scouts.org.uk)*. 
+The ***Compass Interface*** project aims to provide a unified and 
+well-documented API to the Scouts' national membership system, 
+*[Compass](https://compass.scouts.org.uk)*. 
 
 ## Notice
 
@@ -15,7 +16,15 @@ This is ***not*** an official API to Compass and as such should be used in a
 way that doesn't cause a high request load on the Compass system.
 
 Please also remember your personal data handling obligations (under both GDPR 
-and Scouting policies) whilst using this module.
+and Scouting policies) whilst using this library.
+
+## Objectives
+
+The project aims to:
+- increase flexibility and simplicity when developing applications that
+  interface with *Compass* data,
+- provide  stability and abstract complexities of *Compass*, and
+- enable greater support to our adult  volunteers and members.
 
 ## Where to get it
 
