@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 from compass.api.schemas.unit_records import UnitRecord
+from compass.core.settings import Settings
 import compass.core as ci
 
 if TYPE_CHECKING:
@@ -27,10 +28,10 @@ def _flatten_hierarchy(d: Union[ci.UnitData, ci.DescendantData], parent_id: int)
 
 
 def make_hierarchy_resource(api: ci.CompassInterface) -> dict[int, UnitRecord]:
-    full_hierarchy = api.hierarchy.unit_data(ci.Settings.org_number, "Organisation")
+    full_hierarchy = api.hierarchy.unit_data(Settings.org_number, "Organisation")
     full_hierarchy.name = "The Scout Association"
     TREE_PATH.write_text(full_hierarchy.json(ensure_ascii=False), encoding="utf-8")
-    flat_hierarchy = dict(_flatten_hierarchy(full_hierarchy, ci.Settings.org_number))
+    flat_hierarchy = dict(_flatten_hierarchy(full_hierarchy, Settings.org_number))
     FLAT_PATH.write_text(json.dumps(flat_hierarchy, ensure_ascii=False), encoding="utf-8")
     return flat_hierarchy
 
