@@ -98,9 +98,10 @@ The main project is found at
 
 ```python
 import compass.core as ci
+from compass.core.logger import enable_debug_logging
 
 # Turn on debug logging for development
-ci.logger.enable_debug_logging()
+enable_debug_logging()
 
 # Login to Compass
 api = ci.login("username", "password")
@@ -117,9 +118,10 @@ follows:
 
 ```python
 import compass.core as ci
+from compass.core.logger import enable_debug_logging
 
 # Turn on debug logging for development
-ci.logger.enable_debug_logging()
+enable_debug_logging()
 
 # Login to Compass
 api = ci.login("username", "password", role="role_as_on_compass")
@@ -137,9 +139,10 @@ differentiated by also specifying a role location, as follows:
 
 ```python
 import compass.core as ci
+from compass.core.logger import enable_debug_logging
 
 # Turn on debug logging for development
-ci.logger.enable_debug_logging()
+enable_debug_logging()
 
 # Login to Compass
 api = ci.login("username", "password", role="role_as_on_compass", location="location_as_on_compass")
