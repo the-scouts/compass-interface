@@ -2,8 +2,8 @@
 
 This module exposes the public api for CI core
 """
-from compass.core.__version__ import __version__
-from compass.core.__version__ import __version_info__
+__version__ = "0.26.0"
+__version_info__ = (0, 26, 0)
 
 from compass.core.interface import login
 from compass.core.logger import enable_debug_logging
