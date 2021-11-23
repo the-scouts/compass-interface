@@ -6,7 +6,6 @@ build-backend = "flit_core.buildapi"
 # project metadata
 [project]
 name = "compass_interface_experiments"
-version = "0.26.0"
 description = "The unofficial API to the Scouts' national membership system, Compass"
 readme = "../README.md"
 urls.Homepage = "https://github.com/the-scouts/compass-interface"  # Homepage is what setuptools used to set
@@ -25,6 +24,7 @@ classifiers = [  # Classifiers list: https://pypi.org/classifiers/
     "Topic :: Utilities",
 ]
 keywords = ["API", "scouts"]
+dynamic = ["version"]
 
 # project requirements
 requires-python = ">=3.9"

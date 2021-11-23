@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
 
+from compass.api import __version__
 from compass.api.routes import authentication
 from compass.api.routes import hierarchy
 from compass.api.routes import members
@@ -33,7 +34,7 @@ and is licensed under the **[MIT license](https://choosealicense.com/licenses/mi
 app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
     description=long_description,
-    version="0.26.0",
+    version=__version__,
     openapi_tags=open_api_tag_metadata,
 )
 
