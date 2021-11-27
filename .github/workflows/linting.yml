@@ -12,6 +12,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # code style (blacken)
+          - tool: "black"
+            command: "python -m black --check --diff --color ."
+            deps: "black"
+          # code style (import ordering)
+          - tool: "isort"
+            command: "python -m isort --check --diff --color ."
+            deps: "isort"
           # (pyflakes, pycodestyle, mccabe) + pep8-naming
           - tool: "flake8"
             command: "python -m flake8 ."
@@ -45,4 +53,4 @@ jobs:
       - name: Install dependencies
         run: python -m pip install ${{ matrix.deps }}
       - name: Run ${{ matrix.tool }}
-        run:  ${{ matrix.command }}
+        run: ${{ matrix.command }}
