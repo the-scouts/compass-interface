@@ -56,4 +56,5 @@ def do_build(package_dir: Path) -> None:
 if __name__ == "__main__":
     for package_name in sys.argv[1:]:
         print(f"\nBuilding {package_name}")
+        shutil.copy2(PROJECT_ROOT / "LICENSE", PROJECT_ROOT / package_name / "LICENSE")
         do_build(PROJECT_ROOT / package_name)

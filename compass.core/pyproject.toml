@@ -7,10 +7,11 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "compass_interface_core"
 description = "The unofficial API to the Scouts' national membership system, Compass"
-readme = "../README.md"
+readme.text = "See the [README](https://github.com/the-scouts/compass-interface/blob/master/README.md)"
+readme.content-type = "text/markdown"
 urls.Homepage = "https://github.com/the-scouts/compass-interface"  # Homepage is what setuptools used to set
 urls.Source = "https://github.com/the-scouts/compass-interface"
-license.file = "../LICENSE"  # only gets included in sdist as flit assumes a hardcoded path for wheels (TODO report bug)
+license.file = "LICENSE"  # only gets included in sdist as flit assumes a hardcoded path for wheels (TODO report bug)
 classifiers = [  # Classifiers list: https://pypi.org/classifiers/
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
