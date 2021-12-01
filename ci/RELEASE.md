@@ -17,7 +17,7 @@ git tag -a "vX.Y.Z"
 git push origin master --follow-tags
 ```
 
-4. GitHub Actions will build the artifacts and  automatically release to PyPI
+4. GitHub Actions will build the artifacts and automatically release to PyPI
 
 5. Review the created release at 
    [the-scouts/compass-interface-core/releases](https://github.com/the-scouts/compass-interface-core/releases), 
