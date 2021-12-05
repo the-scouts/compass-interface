@@ -15,7 +15,7 @@ sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'NAMESPACE', 'FIRSTPARTY', "TESTS"
 
 # mypy configuration
 [tool.mypy]
-#plugins = ["pydantic.mypy"]  TODO re-enable (https://github.com/samuelcolvin/pydantic/issues/2895)
+#plugins = ["pydantic.mypy"]  # TODO re-enable (https://github.com/samuelcolvin/pydantic/issues/2895)
 # help finding errors
 show_error_codes = true
 show_error_context = true
