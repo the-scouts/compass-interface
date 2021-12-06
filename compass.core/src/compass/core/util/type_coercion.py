@@ -42,8 +42,8 @@ def parse_date(value: str) -> Optional[datetime.date]:
     datetime.datetime.strptime works, this is 10x quicker
 
     Two date formats:
-     - %d %B %Y  e.g. 01 January 2000
-     - %d %b %Y  e.g. 01 Jan 2000
+     - %d %B %Y e.g. 01 January 2000
+     - %d %b %Y e.g. 01 Jan 2000
 
      Args:
          value: date string to parse

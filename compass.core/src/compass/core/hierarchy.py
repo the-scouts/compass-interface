@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from compass.core.util.client import Client
 
 # Holds unit level metadata. Keys are from `schema.TYPES_UNIT_LEVELS`, values
-# are a three-tuple of child level, unit level endpoint, and unit  level
+# are a three-tuple of child level, unit level endpoint, and unit level
 # section endpoint.
 # Suppress PyCharm inspection (not great at literals)
 # noinspection PyTypeChecker

@@ -237,7 +237,7 @@ def get_contact_roles(client: Client, membership_number: int, /) -> ci.MemberRol
             role_type=role_dict["base_role_description"],
             location_id=role_dict["organisation_number"],
             location_name=role_dict["location"].strip(),
-            role_start=_parse_iso_date(role_dict["start_date"]),  # type  ignore[arg-type]
+            role_start=_parse_iso_date(role_dict["start_date"]),  # type: ignore[arg-type]
             role_end=role_dict["end_Date"],  # None  # this API seems to only return open roles
             role_status=ROLE_STATUS_MAP[role_dict["status"]],
             review_date=_parse_iso_date(role_dict["review_date"]),
