@@ -23,8 +23,8 @@ and Scouting policies) whilst using this library.
 The project aims to:
 - increase flexibility and simplicity when developing applications that
   interface with *Compass* data,
-- provide  stability and abstract complexities of *Compass*, and
-- enable greater support to our adult  volunteers and members.
+- provide stability and abstract complexities of *Compass*, and
+- enable greater support to our adult volunteers and members.
 
 ## Where to get it
 
