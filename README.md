@@ -58,7 +58,7 @@ source env/bin/activate
 
 # install dependencies
 python -m pip install --upgrade pip
-pip install compass-interface
+python -m pip install compass-interface
 ```
 
 ## Dependencies
