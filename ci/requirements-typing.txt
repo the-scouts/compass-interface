@@ -1,4 +1,4 @@
--r requirements-run.txt
+# typing: compass-interface-core
 
 # type stubs
 lxml-stubs
