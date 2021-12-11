@@ -43,7 +43,7 @@ jobs:
           # type checking
           - tool: "mypy"
             command: "mypy --namespace-packages -p compass"
-            deps: "-r ci/requirements-typing.txt mypy"
+            deps: "-r ci/requirements-core.txt -r ci/requirements-typing.txt mypy"
     name: lint using ${{ matrix.tool }}
     steps:
       - uses: actions/checkout@v2

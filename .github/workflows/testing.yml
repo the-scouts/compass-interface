@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r ci/requirements-test.txt
+          python -m pip install -r ci/requirements-core.txt -r ci/requirements-test.txt
 
       - name: Install pytest-cov, codecov
         run: |
