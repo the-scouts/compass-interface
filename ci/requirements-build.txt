@@ -1,0 +1,8 @@
+# build dependencies
+
+# build
+build>=0.7
+# backend
+flit-core>=3.6
+# uploader
+twine>=3.7
