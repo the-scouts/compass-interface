@@ -62,9 +62,10 @@ if __name__ == "__main__":
     subprocess.check_call(["git", "config", "user.name", "Adam Turner"])
     subprocess.check_call(["git", "config", "user.email", "9087854+AA-Turner@users.noreply.github.com"])
 
-    new_version = bumper.get_new_version(release_kind())
-    print(f"Cutting release at {new_version}")
-    bumper.bump_version(new_version)
+    release_type = release_kind()
+    new_version = bumper.get_new_version(release_type)
+    print(f"Creating release for version {new_version}")
+    bumper.bump_version(release_type)
 
     print("Updating changelog")
     update_changelog(new_version)
