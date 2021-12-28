@@ -107,7 +107,7 @@ if __name__ == "__main__":
     from compass.core.logger import enable_debug_logging
 
     enable_debug_logging()
-    uvicorn.run("app:app", host="0.0.0.0", port=8002)
+    uvicorn.run("app:app", host="0.0.0.0", port=8002)  # nosec (B104; don't care as explicitly for local testing)
     print()
 
 
