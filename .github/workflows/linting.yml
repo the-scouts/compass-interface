@@ -19,7 +19,7 @@ jobs:
           # code style (import ordering)
           - tool: "isort"
             command: "python -m isort --check --diff --color ."
-            deps: "isort"
+            deps: "isort colorama"
           # (pyflakes, pycodestyle, mccabe) + pep8-naming
           - tool: "flake8"
             command: "python -m flake8 ."

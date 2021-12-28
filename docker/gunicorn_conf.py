@@ -1,4 +1,4 @@
-from os import cpu_count, getenv
+from os import cpu_count, getenv  # isort: skip
 
 # Non-gunicorn variables
 host = getenv("HOST", "0.0.0.0")
