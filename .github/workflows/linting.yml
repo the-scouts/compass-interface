@@ -36,10 +36,10 @@ jobs:
           - tool: "bandit"
             command: "python -m bandit --configfile pyproject.toml --recursive ."
             deps: "bandit toml"
-          # packaging (CheeseShop) compliance
-          - tool: "pyroma"
-            command: "pyroma ."
-            deps: "pyroma"
+#          # packaging (CheeseShop) compliance [DISABLED, pyroma doesn't support PEP 621 metadata yet]
+#          - tool: "pyroma"
+#            command: "pyroma ."
+#            deps: "pyroma"
           # type checking
           - tool: "mypy"
             command: "mypy --namespace-packages -p compass"
