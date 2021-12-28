@@ -18,16 +18,16 @@ open_api_tag_metadata = [
 ]
 
 long_description = """
-The ***Compass Interface*** project aims to provide a unified and well-documented API to 
-the Scouts' national membership system, *[Compass](https://compass.scouts.org.uk)*. 
+The ***Compass Interface*** project aims to provide a unified and well-documented API to
+the Scouts' national membership system, *[Compass](https://compass.scouts.org.uk)*.
 
-The project aims to: 
- - increase flexibility and simplicity when developing applications that interface with *Compass* data, 
- - provide stability and abstract complexities of *Compass*, and 
- - enable greater support to our adult volunteers and 
-members. 
+The project aims to:
+ - increase flexibility and simplicity when developing applications that interface with *Compass* data,
+ - provide stability and abstract complexities of *Compass*, and
+ - enable greater support to our adult volunteers and
+members.
 
-***Compass Interface*** is naturally [open source](https://github.com/the-scouts/compass-interface) 
+***Compass Interface*** is naturally [open source](https://github.com/the-scouts/compass-interface)
 and is licensed under the **[MIT license](https://choosealicense.com/licenses/mit/)**.
 """
 
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     from compass.core.logger import enable_debug_logging
 
     enable_debug_logging()
-    uvicorn.run("app:app", host="0.0.0.0", port=8002)
+    uvicorn.run("app:app", host="0.0.0.0", port=8002)  # nosec (B104; don't care as explicitly for local testing)
     print()
 
 

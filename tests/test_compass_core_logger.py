@@ -2,8 +2,8 @@ import logging
 import pathlib
 import sys
 
-from compass.core.logger import logger
 from compass.core.logger import enable_debug_logging
+from compass.core.logger import logger
 
 
 class TestLogger:

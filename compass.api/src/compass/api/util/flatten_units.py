@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 from compass.api.schemas.unit_records import UnitRecord
-from compass.core.settings import Settings
 import compass.core as ci
+from compass.core.settings import Settings
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

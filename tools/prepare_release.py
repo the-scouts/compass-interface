@@ -30,7 +30,7 @@ def update_changelog(version):
         "\n".join(RELEASE_FILE.read_text(encoding="utf-8").split("\n")[1:]).strip(),
         "",
         *lines[3:],
-        ""
+        "",
     )
     HISTORY_FILE.write_text("\n".join(new_changelog_lines), encoding="utf-8")
 
@@ -73,10 +73,10 @@ if __name__ == "__main__":
     print("Committing changes")
     commit(new_version)
 
-    print(f"Creating tag")
+    print("Creating tag")
     tag(new_version)
 
-    print(f"Pushing changes")
+    print("Pushing changes")
     push_with_tags(new_version)
 
     raise SystemExit(0)

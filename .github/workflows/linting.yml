@@ -19,7 +19,7 @@ jobs:
           # code style (import ordering)
           - tool: "isort"
             command: "python -m isort --check --diff --color ."
-            deps: "isort"
+            deps: "isort colorama"
           # (pyflakes, pycodestyle, mccabe) + pep8-naming
           - tool: "flake8"
             command: "python -m flake8 ."
@@ -34,12 +34,12 @@ jobs:
             deps: "pydocstyle"
           # Common security issues
           - tool: "bandit"
-            command: "python -m bandit -c ci/bandit.yml -r ."
-            deps: "bandit"
-          # packaging (CheeseShop) compliance
-          - tool: "pyroma"
-            command: "pyroma ."
-            deps: "pyroma"
+            command: "python -m bandit --configfile pyproject.toml --recursive ."
+            deps: "bandit toml"
+#          # packaging (CheeseShop) compliance [DISABLED, pyroma doesn't support PEP 621 metadata yet]
+#          - tool: "pyroma"
+#            command: "pyroma ."
+#            deps: "pyroma"
           # type checking
           - tool: "mypy"
             command: "mypy --namespace-packages -p compass"
@@ -56,12 +56,13 @@ jobs:
         run: ${{ matrix.command }}
 
   release-file:
+    name: check for RELEASE.rst
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v2
       - name: Check for RELEASE.rst
         run: test -e RELEASE.rst
-      - name: No RELEASE.rst file found!
+      - name: You need to add a RELEASE.rst file at the top-level.
         if: failure()
-        run: echo "::error::You need to add a RELEASE.rst file at the top-level."
+        run: echo "::error::No RELEASE.rst file found!"

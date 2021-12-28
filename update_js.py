@@ -44,7 +44,7 @@ async def main() -> list[str]:
     return [resp.content for resp in responses]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     files_contents = asyncio.run(main())
     for i, filename in enumerate(files):
         Path(f"js/{filename}.js").write_bytes(files_contents[i].decode("utf-8-sig").encode("utf-8"))
