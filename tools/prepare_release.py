@@ -77,6 +77,6 @@ if __name__ == "__main__":
     tag(new_version)
 
     print(f"Pushing changes")
-    push_with_tags(f"v{new_version}")
+    push_with_tags(new_version)
 
     raise SystemExit(0)
