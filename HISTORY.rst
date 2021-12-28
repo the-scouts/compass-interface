@@ -1,13 +1,6 @@
 Release history
 ===============
 
-Version 0.27.0
---------------
-
-Merged with ``compass-interface-core``.
-
-Reorganised to per-subpackage directories.
-
 Version 0.26.0
 --------------
 
