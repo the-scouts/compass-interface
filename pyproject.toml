@@ -112,6 +112,7 @@ convention = "google"
 add_select = ["D413"]
 # ignore missing docstrings in public modules, public classes, public methods, and public functions
 add_ignore = ["D100", "D101", "D102", "D103"]
+match-dir = "(?!tools|tests).*"
 
 [tool.coverage.report]
 exclude_lines = [
