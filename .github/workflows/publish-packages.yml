@@ -47,13 +47,9 @@ jobs:
             dist/compass_interface*.whl
 
       - name: Upload to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-#          TWINE_REPOSITORY_URL: ""
         run: |
           twine check dist/*
-          twine upload dist/*
+          twine upload --verbose --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} dist/*
 
       - name: (DEBUG) Upload files
         uses: actions/upload-artifact@v2
