@@ -66,6 +66,7 @@ xfail_strict = true
 [tool.pylint]
 MASTER.persistent=false  # pylint runs on CI, so no point saving
 MASTER.jobs=0  # auto-detect the number of processors to use
+MASTER.ignore-paths="^tests/.*"
 DESIGN.max-statements=60
 FORMAT.max-line-length=132
 SIMILARITIES.ignore-imports=true
@@ -113,6 +114,19 @@ add_select = ["D413"]
 # ignore missing docstrings in public modules, public classes, public methods, and public functions
 add_ignore = ["D100", "D101", "D102", "D103"]
 match-dir = "(?!tools|tests).*"
+
+# bandit configuration
+[tool.bandit]
+exclude_dirs = [
+    "./docker/*",
+    "./scripts/*",
+    "./tests/*",
+    "./tools/*",
+]
+
+skips = [
+'B410', # import lxml.* (defusedxml.lxml is deprecated)
+]
 
 [tool.coverage.report]
 exclude_lines = [

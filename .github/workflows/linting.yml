@@ -34,8 +34,8 @@ jobs:
             deps: "pydocstyle"
           # Common security issues
           - tool: "bandit"
-            command: "python -m bandit -c ci/bandit.yml -r ."
-            deps: "bandit"
+            command: "python -m bandit --configfile pyproject.toml --recursive ."
+            deps: "bandit toml"
           # packaging (CheeseShop) compliance
           - tool: "pyroma"
             command: "pyroma ."
