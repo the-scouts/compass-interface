@@ -26,7 +26,9 @@ async def get_current_member(api: ci.CompassInterface = Depends(ci_user)) -> ci.
 
 
 @router.get("/me/roles", response_model=ci.MemberRolesCollection)
-async def get_current_member_roles(api: ci.CompassInterface = Depends(ci_user), volunteer_only: bool = False) -> ci.MemberRolesCollection:
+async def get_current_member_roles(
+    api: ci.CompassInterface = Depends(ci_user), volunteer_only: bool = False
+) -> ci.MemberRolesCollection:
     """Gets my roles."""
     logger.debug(f"Getting /me/roles for {api.user.membership_number}")
     async with error_handler:

@@ -54,7 +54,9 @@ async def create_token(username: str, pw: str, role: Optional[str], location: Op
     return access_token
 
 
-async def authenticate_user(username: str, password: str, role: Optional[str], location: Optional[str]) -> tuple[User, ci.CompassInterface]:
+async def authenticate_user(
+    username: str, password: str, role: Optional[str], location: Optional[str]
+) -> tuple[User, ci.CompassInterface]:
     logger.info(f"Logging in to Compass -- {username}")
     api = ci.login(username, password, role=role, location=location)
 

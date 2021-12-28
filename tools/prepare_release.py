@@ -30,7 +30,7 @@ def update_changelog(version):
         "\n".join(RELEASE_FILE.read_text(encoding="utf-8").split("\n")[1:]).strip(),
         "",
         *lines[3:],
-        ""
+        "",
     )
     HISTORY_FILE.write_text("\n".join(new_changelog_lines), encoding="utf-8")
 
