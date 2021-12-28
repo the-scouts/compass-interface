@@ -73,10 +73,10 @@ if __name__ == "__main__":
     print("Committing changes")
     commit(new_version)
 
-    print(f"Creating tag")
+    print("Creating tag")
     tag(new_version)
 
-    print(f"Pushing changes")
+    print("Pushing changes")
     push_with_tags(new_version)
 
     raise SystemExit(0)

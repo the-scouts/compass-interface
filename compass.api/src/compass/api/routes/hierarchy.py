@@ -42,7 +42,7 @@ async def get_unit_data(unit_id: int) -> UnitRecordModel:
 
 
 @router.get("/{unit_id}/children", response_model=list[ci.HierarchyUnit])
-async def get_unit_data(unit_id: int) -> list[ci.HierarchyUnit]:
+async def get_unit_children(unit_id: int) -> list[ci.HierarchyUnit]:
     """Gets hierarchy details for given unit ID."""
     logger.debug(f"Getting /hierarchy/{{unit_id}} for {unit_id=}")
     async with error_handler:
@@ -50,7 +50,7 @@ async def get_unit_data(unit_id: int) -> list[ci.HierarchyUnit]:
 
 
 @router.get("/{unit_id}/sections", response_model=list[ci.HierarchyUnit])
-async def get_unit_data(unit_id: int) -> list[ci.HierarchyUnit]:
+async def get_unit_sections(unit_id: int) -> list[ci.HierarchyUnit]:
     """Gets hierarchy details for given unit ID."""
     logger.debug(f"Getting /hierarchy/{{unit_id}} for {unit_id=}")
     async with error_handler:
