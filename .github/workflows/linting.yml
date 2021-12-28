@@ -56,12 +56,13 @@ jobs:
         run: ${{ matrix.command }}
 
   release-file:
+    name: check for RELEASE.rst
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v2
       - name: Check for RELEASE.rst
         run: test -e RELEASE.rst
-      - name: No RELEASE.rst file found!
+      - name: You need to add a RELEASE.rst file at the top-level.
         if: failure()
-        run: echo "::error::You need to add a RELEASE.rst file at the top-level."
+        run: echo "::error::No RELEASE.rst file found!"
