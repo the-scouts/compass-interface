@@ -1,3 +1,6 @@
+"""This module exposes the public exceptions for CI core."""
+
+
 class CompassError(Exception):
     pass
 

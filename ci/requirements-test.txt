@@ -1,4 +1,4 @@
--r requirements-run.txt
+# testing: compass-interface-core
 
 # testing
 hypothesis

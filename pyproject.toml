@@ -1,15 +1,3 @@
-# Build system requirements.
-[build-system]
-requires = ["setuptools>=45.0", "wheel", "setuptools-scm>=6.2"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
-write_to = "compass/core/__version__.py"
-write_to_template = """\
-__version__ = "{version}"
-__version_info__ = {version_tuple}
-"""
-
 # Black configuration
 [tool.black]
 line-length = 132  # 120*1.1
@@ -27,7 +15,7 @@ sections = ['FUTURE', 'STDLIB', 'THIRDPARTY', 'NAMESPACE', 'FIRSTPARTY', "TESTS"
 
 # mypy configuration
 [tool.mypy]
-#plugins = ["pydantic.mypy"]  TODO re-enable (https://github.com/samuelcolvin/pydantic/issues/2895)
+#plugins = ["pydantic.mypy"]  # TODO re-enable (https://github.com/samuelcolvin/pydantic/issues/2895)
 # help finding errors
 show_error_codes = true
 show_error_context = true
@@ -127,3 +115,51 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if Settings.debug:",
 ]
+
+[tool.bumper]
+current_version = "0.26.0"
+
+[[tool.bumper.file]]
+src = "pyproject.toml"
+template = "{major}.{minor}.{micro}"
+search = 'current_version = "{current_version}"'
+
+[[tool.bumper.file]]
+src = "compass.core/src/compass/core/__init__.py"
+template = "{major}.{minor}.{micro}"
+search = '__version__ = "{current_version}"'
+
+[[tool.bumper.file]]
+src = "compass.core/src/compass/core/__init__.py"
+template = "({major}, {minor}, {micro})"
+search = "__version_info__ = {current_version}"
+
+[[tool.bumper.file]]
+src = "compass.api/src/compass/api/__init__.py"
+template = "{major}.{minor}.{micro}"
+search = '__version__ = "{current_version}"'
+
+[[tool.bumper.file]]
+src = "compass.api/src/compass/api/__init__.py"
+template = "({major}, {minor}, {micro})"
+search = "__version_info__ = {current_version}"
+
+[[tool.bumper.file]]
+src = "compass.experiments/src/compass/experiments/__init__.py"
+template = "{major}.{minor}.{micro}"
+search = '__version__ = "{current_version}"'
+
+[[tool.bumper.file]]
+src = "compass.experiments/src/compass/experiments/__init__.py"
+template = "({major}, {minor}, {micro})"
+search = "__version_info__ = {current_version}"
+
+[[tool.bumper.file]]
+src = "compass-metapackage/setup.cfg"
+template = "{major}.{minor}.{micro}"
+search = 'version = {current_version}'
+
+[[tool.bumper.file]]
+src = "compass-metapackage/setup.cfg"
+template = "{major}.{minor}.{micro}"
+search = '    compass-interface-core == {current_version}'

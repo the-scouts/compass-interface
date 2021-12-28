@@ -58,7 +58,7 @@ async def authenticate_user(username: str, password: str, role: Optional[str], l
     logger.info(f"Logging in to Compass -- {username}")
     api = ci.login(username, password, role=role, location=location)
 
-    logger.info(f"Successfully authenticated  -- {username}")
+    logger.info(f"Successfully authenticated -- {username}")
     user = User(
         selected_role=api.user.current_role,
         logon_info=(username, password, role, location),

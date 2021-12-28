@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
 
+from compass.api import __version__
 from compass.api.routes import authentication
 from compass.api.routes import hierarchy
 from compass.api.routes import members
@@ -22,8 +23,8 @@ the Scouts' national membership system, *[Compass](https://compass.scouts.org.uk
 
 The project aims to: 
  - increase flexibility and simplicity when developing applications that interface with *Compass* data, 
- - provide  stability and abstract complexities of *Compass*, and 
- - enable greater support to our adult  volunteers and 
+ - provide stability and abstract complexities of *Compass*, and 
+ - enable greater support to our adult volunteers and 
 members. 
 
 ***Compass Interface*** is naturally [open source](https://github.com/the-scouts/compass-interface) 
@@ -33,7 +34,7 @@ and is licensed under the **[MIT license](https://choosealicense.com/licenses/mi
 app = FastAPI(
     title="Compass Interface — the unofficial Compass API",
     description=long_description,
-    version="0.26.0",
+    version=__version__,
     openapi_tags=open_api_tag_metadata,
 )
 
@@ -90,7 +91,7 @@ app.include_router(
 #              /organisations
 #              /countries
 #              /regions
-#              /counties  - symlinks for Areas/Scot Region/Islands/Bailiwicks?
+#              /counties - symlinks for Areas/Scot Region/Islands/Bailiwicks?
 #              /districts
 #              /groups
 #              /XXX/children ✔

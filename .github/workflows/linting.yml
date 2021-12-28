@@ -12,6 +12,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # code style (blacken)
+          - tool: "black"
+            command: "python -m black --check --diff --color ."
+            deps: "black"
+          # code style (import ordering)
+          - tool: "isort"
+            command: "python -m isort --check --diff --color ."
+            deps: "isort"
           # (pyflakes, pycodestyle, mccabe) + pep8-naming
           - tool: "flake8"
             command: "python -m flake8 ."
@@ -30,12 +38,12 @@ jobs:
             deps: "bandit"
           # packaging (CheeseShop) compliance
           - tool: "pyroma"
-            command: "python ci/pyroma-version-fixer.py && pyroma ."
+            command: "pyroma ."
             deps: "pyroma"
           # type checking
           - tool: "mypy"
             command: "mypy --namespace-packages -p compass"
-            deps: "-r ci/requirements-typing.txt mypy"
+            deps: "-r ci/requirements-core.txt -r ci/requirements-typing.txt mypy"
     name: lint using ${{ matrix.tool }}
     steps:
       - uses: actions/checkout@v2
@@ -45,4 +53,15 @@ jobs:
       - name: Install dependencies
         run: python -m pip install ${{ matrix.deps }}
       - name: Run ${{ matrix.tool }}
-        run:  ${{ matrix.command }}
+        run: ${{ matrix.command }}
+
+  release-file:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check for RELEASE.rst
+        run: test -e RELEASE.rst
+      - name: No RELEASE.rst file found!
+        if: failure()
+        run: echo "::error::You need to add a RELEASE.rst file at the top-level."

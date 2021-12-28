@@ -1,7 +1,9 @@
--r requirements-run.txt
+# runtime: compass-interface-api
+
+-r requirements-core.txt
 
 # Compass-Interface Core
-compass-interface-core>=0.20.0
+compass_interface_core>=0.20.0
 
 # Compass-Interface Utilities
 pydantic>=1.8.2

@@ -1,3 +1,5 @@
+# runtime: compass-interface-core
+
 # core
 httpx>=0.20
 lxml
