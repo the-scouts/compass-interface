@@ -21,3 +21,8 @@ jobs:
 
       - name: Run release tool
         run: python tools/prepare_release.py
+
+  call-publish:
+    name: Run publish workflow
+    needs: release
+    uses: the-scouts/compass-interface/.github/workflows/publish-packages.yml@master
